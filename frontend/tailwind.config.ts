@@ -2,7 +2,12 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: "class",
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -13,6 +18,12 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-montserrat)", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "monospace"],
+        decorative: ["var(--font-love-story)", "cursive"],
+        script: ["var(--font-dancing-script)", "cursive"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -57,6 +68,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        pastel: {
+          lilac: "#d8c4fa", // lilac pastel que me mostraste
+          hover: "#e6dff1",
+          dark: "#7b5ca2",
+        },
+        // Nuevos colores personalizados
+        softBeige: "#faf5e5",  // beige claro para fondo
+        pastelLilac: "#d8c4fa", // lila pastel
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -87,5 +106,5 @@ export default {
       },
     },
   },
- // plugins: [require("tailwindcss-animate")],
+  // plugins: [require("tailwindcss-animate")],
 } satisfies Config;
