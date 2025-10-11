@@ -8,7 +8,7 @@ import {
 
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-//import { SidebarProvider } from "@/components/ui/sidebar";
+import { AuthProvider } from "@/context/AuthContext"; // <-- Importa tu AuthProvider aquí
 
 // Tipografías base
 const geistSans = Geist({
@@ -35,7 +35,7 @@ const montserrat = Montserrat({
 
 const dancingScript = Dancing_Script({
   variable: "--font-dancing-script",
-  weight: ["400", "500", "700"], // Podés ajustar los pesos si querés
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
 });
 
@@ -62,12 +62,13 @@ export default function RootLayout({
     >
       <body className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans">
         {/* <SidebarProvider> */}
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>
             {children}
-          </ThemeProvider>
+          </AuthProvider>
+        </ThemeProvider>
         {/* </SidebarProvider> */}
       </body>
     </html>
   );
 }
-

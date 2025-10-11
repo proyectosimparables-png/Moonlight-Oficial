@@ -13,29 +13,32 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
+import { useAuth } from "@/hooks/useAuth"; // IMPORTA TU HOOK DE AUTH
+
 const TopBanner = () => {
-  const text = "3 CUOTAS SIN INTERÉS TODOS LOS DÍAS! 💳  |  10% DE DESCUENTO POR TRANSFERENCIA BANCARIA.  ";
+  const text =
+    "3 CUOTAS SIN INTERÉS TODOS LOS DÍAS! 💳  |  10% DE DESCUENTO POR TRANSFERENCIA BANCARIA.  ";
 
   return (
-    <div className="bg-[#b298b9fd] text-gray-900 text-sm font-normal select-none overflow-hidden whitespace-nowrap relative h-9 flex items-center px-6">
-      <div
-        className="absolute whitespace-nowrap animate-marquee"
-        style={{ willChange: "transform" }}
-      >
-        {text + text}
+    <div className="bg-[#cebbf5] text-gray-500 text-[11px] font-normal select-none overflow-hidden relative h-9 flex items-center">
+      <div className="flex animate-marquee whitespace-nowrap">
+        <span className="px-4">{text.repeat(20)}</span>
+        <span className="px-4">{text.repeat(20)}</span>
       </div>
 
       <style jsx>{`
         @keyframes marquee {
           0% {
-            transform: translateX(100%);
+            transform: translateX(0%);
           }
           100% {
             transform: translateX(-50%);
           }
         }
+
         .animate-marquee {
-          animation: marquee 20s linear infinite;
+          display: flex;
+          animation: marquee 300s linear infinite;
         }
       `}</style>
     </div>
@@ -44,6 +47,7 @@ const TopBanner = () => {
 
 const Navbar = () => {
   const [cartCount] = useState(3);
+  const { isAuthenticated, login, logout, user } = useAuth(); // usa el hook
 
   const menuItems = [
     "Productos",
@@ -59,14 +63,18 @@ const Navbar = () => {
   return (
     <>
       <TopBanner />
-      <nav className="sticky top-0 z-50 bg-white border-b border-[#ddd] backdrop-blur-sm">
+      <nav className="sticky top-0 z-50 bg-[#FAFCEF] border-b border-[#ddd] backdrop-blur-sm">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Left: Menu Dropdown */}
             <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="hover:bg-[#e6dff1]">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hover:bg-[#e6dff1]"
+                  >
                     <Menu className="h-5 w-5 text-[#7b5ca2]" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -134,11 +142,25 @@ const Navbar = () => {
                 </SheetContent>
               </Sheet>
 
-              <Button variant="ghost" size="icon" className="hover:bg-[#e6dff1]">
-                <User className="h-5 w-5 text-[#7b5ca2]" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={isAuthenticated ? logout : login}
+                className="hover:bg-[#e6dff1]"
+                title={
+                  isAuthenticated
+                    ? `Cerrar sesión (${user?.email})`
+                    : "Iniciar sesión con Google"
+                }
+              >
+                <User className="h-7 w-7 text-[#7b5ca2]" /> {/* Icono más grande */}
               </Button>
 
-              <Button variant="ghost" size="icon" className="relative hover:bg-[#e6dff1]">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative hover:bg-[#e6dff1]"
+              >
                 <ShoppingCart className="h-5 w-5 text-[#7b5ca2]" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#665ca2] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
