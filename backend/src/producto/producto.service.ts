@@ -16,6 +16,7 @@ export class ProductoService {
         categoriaId: data.categoriaId!,
         tipoPrendaId: data.tipoPrendaId!,
         imagenUrl: imagenUrl ?? null,
+        stock: data.stock ?? 0,
       },
     });
   }
@@ -76,20 +77,33 @@ export class ProductoService {
   }
 
   // Actualizar producto
-  async update(id: string, data: CreateProductoDto, imagenUrl?: string) {
-    return this.prisma.producto.update({
-      where: { id },
-      data: {
-        ...data,
-        imagenUrl: imagenUrl ?? data['imagenUrl'],
-      },
-    });
+ async update(id: string, data: CreateProductoDto, imagenUrl?: string) {
+  const updateData: any = {
+    ...data,
+  };
+
+  if (imagenUrl) {
+    updateData.imagenUrl = imagenUrl;
   }
+
+  return this.prisma.producto.update({
+    where: { id },
+    data: updateData,
+  });
+}
+
 
   // Eliminar producto
   async remove(id: string) {
     return this.prisma.producto.delete({ where: { id } });
   }
+  async removeImagen(id: string) {
+  return this.prisma.producto.update({
+    where: { id },
+    data: { imagenUrl: null },
+  });
+}
+
 
   // Publicar producto
   async publicar(id: string) {

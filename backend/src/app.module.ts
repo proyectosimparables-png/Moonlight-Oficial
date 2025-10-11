@@ -4,6 +4,7 @@ import { ProductoModule } from './producto/producto.module';
 import { AuthModule } from './auth/auth.module'; // ✅ de tu rama
 import { AdminModule } from './admin/admin.module'; // ✅ de la rama maca
 import { CloudinaryModule } from './claudinary/cloudinary.module'; // ✅ de la rama maca
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { CloudinaryModule } from './claudinary/cloudinary.module'; // ✅ de la 
     AuthModule,
     AdminModule,
     CloudinaryModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

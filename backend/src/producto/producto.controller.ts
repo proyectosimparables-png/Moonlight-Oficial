@@ -16,15 +16,18 @@ import {
 import { ProductoService } from './producto.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { v2 as cloudinary } from 'cloudinary';
-import { Readable } from 'stream';
 import type { Express } from 'express';
+import { CloudinaryService } from 'src/claudinary/cloudinary.service';
+
 
 @Controller('productos')
 export class ProductoController {
-  constructor(private readonly productoService: ProductoService) {}
+  constructor(
+    private readonly productoService: ProductoService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
-  // ✅ Crear producto
+  // ✅ Crear producto (sin imagen)
   @Post()
   create(@Body() dto: CreateProductoDto) {
     return this.productoService.create(dto);
@@ -32,24 +35,24 @@ export class ProductoController {
 
   // ✅ Obtener todos los productos
   @Get()
-  findAll(
-    @Query('published') published?: string,
-    @Query('seccionId') seccionId?: string,
-    @Query('categoriaId') categoriaId?: string,
-    @Query('tipoPrendaId') tipoPrendaId?: string,
-  ) {
-    const isPublished =
-      published === 'true' ? true : published === 'false' ? false : undefined;
+findAll(
+  @Query('published') published?: string,
+  @Query('seccionId') seccionId?: string,
+  @Query('categoriaId') categoriaId?: string,
+  @Query('tipoPrendaId') tipoPrendaId?: string,
+) {
+  const isPublished =
+    published === 'true' ? true : published === 'false' ? false : undefined;
 
-    return this.productoService.findAll(
-      isPublished,
-      seccionId,
-      categoriaId,
-      tipoPrendaId,
-    );
-  }
+  return this.productoService.findAll(
+    isPublished,
+    seccionId,
+    categoriaId,
+    tipoPrendaId,
+  );
+}
 
-  // ✅ Subir producto con imagen a Cloudinary
+  // ✅ Crear producto con imagen
   @Post('upload-producto')
   @UseInterceptors(FileInterceptor('file'))
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -59,33 +62,64 @@ export class ProductoController {
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
 
-    const streamUpload = () =>
-      new Promise<{ secure_url: string }>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: 'productos' },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          },
-        );
-        Readable.from(file.buffer).pipe(stream);
-      });
+    const imagenUrl = await this.cloudinaryService.uploadImage(file);
 
-    const uploadResult = await streamUpload();
+    return this.productoService.create(
+      {
+        ...body,
+        seccionId: body.seccionId ? String(body.seccionId) : undefined,
+        categoriaId: String(body.categoriaId),
+        tipoPrendaId: String(body.tipoPrendaId),
+      },
+      imagenUrl,
+    );
+  }
 
-    return this.productoService.create({
-      ...body,
-      seccionId: body.seccionId ? String(body.seccionId) : undefined,
-      categoriaId: String(body.categoriaId),
-      tipoPrendaId: String(body.tipoPrendaId),
-      imagenUrl: uploadResult.secure_url,
-    });
+  // ✅ Actualizar producto (sin imagen)
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: CreateProductoDto) {
+    return this.productoService.update(id, dto);
+  }
+   @Put(':id/remover-imagen')
+async removeImagen(@Param('id') id: string) {
+  return this.productoService.removeImagen(id);
+}
+
+  // ✅ Actualizar producto con nueva imagen
+  @Put(':id/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async updateProductoWithImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: CreateProductoDto,
+  ) {
+    let imagenUrl: string | undefined;
+
+    if (file) {
+      imagenUrl = await this.cloudinaryService.uploadImage(file);
+    }
+
+    return this.productoService.update(id, body, imagenUrl);
+  }
+ 
+
+
+  // ✅ Eliminar producto
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.productoService.remove(id);
+  }
+
+  // ✅ Publicar producto
+  @Put(':id/publicar')
+  publicar(@Param('id') id: string) {
+    return this.productoService.publicar(id);
   }
 
   // ✅ Obtener secciones
   @Get('secciones')
   getSecciones() {
-    console.log('GET /productos/secciones llamado');
     return this.productoService.getSecciones();
   }
 
@@ -101,25 +135,7 @@ export class ProductoController {
     return this.productoService.getTiposPrenda();
   }
 
-  // ✅ Actualizar producto
-  @Put(':id')
-  update(@Param('id') id: string, @Body() dto: CreateProductoDto) {
-    return this.productoService.update(id, dto);
-  }
-
-  // ✅ Eliminar producto
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productoService.remove(id);
-  }
-
-  // ✅ Publicar producto
-  @Put(':id/publicar')
-  publicar(@Param('id') id: string) {
-    return this.productoService.publicar(id);
-  }
-
-  // ✅ Obtener producto por ID (debe ir AL FINAL)
+  // ✅ Obtener producto por ID
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productoService.findOne(id);

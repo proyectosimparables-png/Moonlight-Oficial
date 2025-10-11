@@ -4,125 +4,85 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed...');
 
-  // Crear Secciones principales
-  const ropa = await prisma.seccion.upsert({
-    where: { nombre: 'Ropa' },
-    update: {},
-    create: { nombre: 'Ropa' },
-  });
-  console.log(`🧩 Sección creada: ${ropa.nombre}`);
+  // Crear Secciones
+  const seccionesData = [
+    'Ropa',
+    'Ediciones Especiales',
+    'Bazar',
+    'Lo más vendido',
+    'Ofertas',
+    'Lo más nuevo',
+  ];
 
-  const ediciones = await prisma.seccion.upsert({
-    where: { nombre: 'Ediciones Especiales' },
-    update: {},
-    create: { nombre: 'Ediciones Especiales' },
-  });
-  console.log(`🧩 Sección creada: ${ediciones.nombre}`);
+  const secciones = {};
+  for (const nombre of seccionesData) {
+    const seccion = await prisma.seccion.upsert({
+      where: { nombre },
+      update: {},
+      create: { nombre },
+    });
+    secciones[nombre] = seccion;
+    console.log(`🧩 Sección creada: ${nombre}`);
+  }
 
-  const bazar = await prisma.seccion.upsert({
-    where: { nombre: 'Bazar' },
-    update: {},
-    create: { nombre: 'Bazar' },
-  });
-  console.log(`🧩 Sección creada: ${bazar.nombre}`);
+  // Crear Tipos de Prenda
+  const tiposPrendaData = ['Remera', 'Hoodie', 'Buzo', 'Accesorio'];
+  const tiposPrenda = {};
+  for (const nombre of tiposPrendaData) {
+    const tipo = await prisma.tipoPrenda.upsert({
+      where: { nombre },
+      update: {},
+      create: { nombre },
+    });
+    tiposPrenda[nombre] = tipo;
+    console.log(`👕 Tipo de Prenda creada: ${nombre}`);
+  }
 
-  // Crear categorías principales
-  const remeras = await prisma.categoria.upsert({
-    where: { nombre: 'Remeras' },
-    update: {},
-    create: {
-      nombre: 'Remeras',
-      seccion: { connect: { id: ropa.id } },
-    },
-  });
-  console.log(`📁 Categoría principal creada: ${remeras.nombre}`);
+  // Crear Categorías principales
+  // Nota: Relacionamos las categorías con seccionId y tipoPrendaId (si aplica)
+  const categoriasPrincipalesData = [
+    { nombre: 'Remeras', seccion: secciones['Ropa'], tipoPrenda: tiposPrenda['Remera'] },
+    { nombre: 'Hoodies', seccion: secciones['Ropa'], tipoPrenda: tiposPrenda['Hoodie'] },
+    { nombre: 'Buzos', seccion: secciones['Ropa'], tipoPrenda: tiposPrenda['Buzo'] },
+    { nombre: 'Accesorios', seccion: secciones['Ropa'], tipoPrenda: tiposPrenda['Accesorio'] },
+    { nombre: 'Bangtan Limited Edition', seccion: secciones['Ediciones Especiales'], tipoPrenda: null },
+    { nombre: 'Bangtan Bags', seccion: secciones['Ediciones Especiales'], tipoPrenda: null },
+    { nombre: 'Bangtan Home', seccion: secciones['Bazar'], tipoPrenda: null },
+  ];
 
-  const hoodies = await prisma.categoria.upsert({
-    where: { nombre: 'Hoodies' },
-    update: {},
-    create: {
-      nombre: 'Hoodies',
-      seccion: { connect: { id: ropa.id } },
-    },
-  });
-  console.log(`📁 Categoría principal creada: ${hoodies.nombre}`);
-
-  const buzos = await prisma.categoria.upsert({
-    where: { nombre: 'Buzos' },
-    update: {},
-    create: {
-      nombre: 'Buzos',
-      seccion: { connect: { id: ropa.id } },
-    },
-  });
-  console.log(`📁 Categoría principal creada: ${buzos.nombre}`);
-
-  const accesorios = await prisma.categoria.upsert({
-    where: { nombre: 'Accesorios' },
-    update: {},
-    create: {
-      nombre: 'Accesorios',
-      seccion: { connect: { id: ropa.id } },
-    },
-  });
-  console.log(`📁 Categoría principal creada: ${accesorios.nombre}`);
-
-  const limited = await prisma.categoria.upsert({
-    where: { nombre: 'Bangtan Limited Edition' },
-    update: {},
-    create: {
-      nombre: 'Bangtan Limited Edition',
-      seccion: { connect: { id: ediciones.id } },
-    },
-  });
-  console.log(`📁 Categoría principal creada: ${limited.nombre}`);
-
-  const bags = await prisma.categoria.upsert({
-    where: { nombre: 'Bangtan Bags' },
-    update: {},
-    create: {
-      nombre: 'Bangtan Bags',
-      seccion: { connect: { id: ediciones.id } },
-    },
-  });
-  console.log(`📁 Categoría principal creada: ${bags.nombre}`);
-
-  const home = await prisma.categoria.upsert({
-    where: { nombre: 'Bangtan Home' },
-    update: {},
-    create: {
-      nombre: 'Bangtan Home',
-      seccion: { connect: { id: bazar.id } },
-    },
-  });
-  console.log(`📁 Categoría principal creada: ${home.nombre}`);
+  const categoriasPrincipales = {};
+  for (const cat of categoriasPrincipalesData) {
+    const categoria = await prisma.categoria.upsert({
+      where: { nombre: cat.nombre },
+      update: {},
+      create: {
+        nombre: cat.nombre,
+        seccionId: cat.seccion.id,
+        tipoPrendaId: cat.tipoPrenda ? cat.tipoPrenda.id : undefined,
+      },
+    });
+    categoriasPrincipales[cat.nombre] = categoria;
+    console.log(`📁 Categoría principal creada: ${cat.nombre}`);
+  }
 
   // Subcategorías de Remeras
-  const remeraBTS = await prisma.categoria.upsert({
-    where: { nombre: 'BTS' },
-    update: {},
-    create: {
-      nombre: 'BTS',
-      padreId: remeras.id,
-    },
-  });
-  console.log(`  └─ 📂 Subcategoría creada: ${remeraBTS.nombre} (de Remeras)`);
-
-  const otrasSubRemeras = ['Stray Kids', 'The Rose', 'New Jeans'];
-  for (const nombre of otrasSubRemeras) {
-    await prisma.categoria.upsert({
+  const subcategoriasRemerasData = ['BTS', 'Stray Kids', 'The Rose', 'New Jeans'];
+  const subcategoriasRemeras = {};
+  for (const nombre of subcategoriasRemerasData) {
+    const subcat = await prisma.categoria.upsert({
       where: { nombre },
       update: {},
       create: {
         nombre,
-        padreId: remeras.id,
+        padreId: categoriasPrincipales['Remeras'].id,
       },
     });
+    subcategoriasRemeras[nombre] = subcat;
     console.log(`  └─ 📂 Subcategoría creada: ${nombre} (de Remeras)`);
   }
 
   // Sub-subcategorías de BTS
-  const miembrosBTS = [
+  const subSubcategoriasBTS = [
     'RM',
     'Jin',
     'Suga',
@@ -134,13 +94,13 @@ async function main() {
     'Vocal Line',
   ];
 
-  for (const nombre of miembrosBTS) {
+  for (const nombre of subSubcategoriasBTS) {
     await prisma.categoria.upsert({
       where: { nombre },
       update: {},
       create: {
         nombre,
-        padreId: remeraBTS.id,
+        padreId: subcategoriasRemeras['BTS'].id,
       },
     });
     console.log(`      └─ 🔸 Sub-subcategoría creada: ${nombre} (de BTS)`);

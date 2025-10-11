@@ -1,101 +1,153 @@
+'use client';
+
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Edit, Trash2, FolderTree } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getCategoriasConProductos } from "@/services/productos";
 
-// Datos mock basados en el esquema con jerarquía
-const mockCategorias = [
-  {
-    id: "1",
-    nombre: "Camisetas",
-    subcategorias: ["Manga Corta", "Manga Larga", "Tank Tops"],
-    productoCount: 45,
-    seccion: "Ropa Superior",
-  },
-  {
-    id: "2",
-    nombre: "Sudaderas",
-    subcategorias: ["Con Capucha", "Sin Capucha", "Crop"],
-    productoCount: 32,
-    seccion: "Ropa Superior",
-  },
-  {
-    id: "3",
-    nombre: "Pantalones",
-    subcategorias: ["Jeans", "Deportivos", "Casuales"],
-    productoCount: 28,
-    seccion: "Ropa Inferior",
-  },
-  {
-    id: "4",
-    nombre: "Accesorios",
-    subcategorias: ["Gorras", "Bolsos", "Cinturones"],
-    productoCount: 56,
-    seccion: "Complementos",
-  },
-];
+type Subcategoria = {
+  id: string;
+  nombre: string;
+};
+
+type CategoriaConProductos = {
+  id: string;
+  nombre: string;
+  seccion: string;
+  productoCount: number;
+  subcategorias: Subcategoria[];
+};
 
 const Categorias = () => {
+  const [categorias, setCategorias] = useState<CategoriaConProductos[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      setLoading(true);
+      try {
+        const data = await getCategoriasConProductos();
+        setCategorias(data);
+      } catch (err) {
+        console.error("Error cargando categorías:", err);
+        setError("No se pudieron cargar las categorías.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategorias();
+  }, []);
+
+  if (loading) {
+    return <p className="text-center mt-8">Cargando categorías...</p>;
+  }
+  if (error) {
+    return <p className="text-center mt-8 text-red-600">{error}</p>;
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Categorías</h1>
-          <p className="text-muted-foreground">
-            Organiza tus productos por categorías
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-heading)]">Categorías</h1>
+          <p className="text-[var(--color-dark-gray)]">Organiza tus productos por categorías</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2 bg-[var(--color-purple)] text-white hover:bg-[var(--color-light-purple)]">
           <Plus className="h-4 w-4" />
           Nueva Categoría
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {mockCategorias.map((categoria) => (
-          <Card key={categoria.id} className="group hover:shadow-lg transition-all">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                    <FolderTree className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{categoria.nombre}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {categoria.seccion}
-                    </p>
-                  </div>
+        {categorias.map((categoria) => (
+          <Card
+            key={categoria.id}
+            className="group hover:shadow-lg transition-all border min-w-[220px]" // Ajustamos ancho mínimo
+          >
+            <CardHeader className="relative">
+              {/* Íconos flotantes */}
+              <div className="absolute top-1.5 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out flex gap-1 z-10">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  style={{
+                    backgroundColor: "var(--color-light-purple)",
+                    color: "white",
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  style={{
+                    backgroundColor: "#e74c3c",
+                    color: "white",
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Contenido del header */}
+              <div className="flex items-center gap-3 pt-6">
+                <div
+                  className="h-10 w-10 rounded-lg flex items-center justify-center"
+                  style={{ background: "var(--color-cream)" }}
+                >
+                  <FolderTree
+                    className="h-5 w-5"
+                    style={{ color: "var(--color-purple)" }}
+                  />
                 </div>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div>
+                  <CardTitle className="text-lg text-[var(--text-heading)] break-words">
+                    {categoria.nombre}
+                  </CardTitle>
+                  <p className="text-sm text-[var(--color-dark-gray)]">
+                    {categoria.seccion}
+                  </p>
                 </div>
               </div>
             </CardHeader>
+
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Productos</span>
+                  <span className="text-sm text-[var(--color-dark-gray)]">Productos</span>
                   <Badge variant="secondary">{categoria.productoCount}</Badge>
                 </div>
                 <div>
-                  <p className="text-sm font-medium mb-2">Subcategorías:</p>
+                  <p className="text-sm font-medium mb-2 text-[var(--text-heading)]">
+                    Subcategorías:
+                  </p>
                   <div className="flex flex-wrap gap-1">
-                    {categoria.subcategorias.map((sub) => (
-                      <Badge key={sub} variant="outline" className="text-xs">
-                        {sub}
-                      </Badge>
-                    ))}
+                    {categoria.subcategorias && categoria.subcategorias.length > 0 ? (
+                      categoria.subcategorias.map((sub) => (
+                        <Badge
+                          key={sub.id}
+                          variant="outline"
+                          className="text-xs text-[var(--text-heading)] border-[var(--color-purple)]"
+                        >
+                          {sub.nombre}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="italic text-sm text-muted-foreground">
+                        Sin subcategorías
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
+
         ))}
       </div>
     </div>
