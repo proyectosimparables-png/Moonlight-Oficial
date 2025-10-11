@@ -9,11 +9,8 @@ import {
 import "./globals.css";
 
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/context/AuthContext";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import NavbarAdmin from "@/components/admin/NavbarAdmin";
-import { Toaster } from 'sonner';
-import Providers from "@/components/Provaiders"; // si Providers tiene cosas extras que necesitás
+import { AuthProvider } from "@/context/AuthContext"; // <-- Importa tu AuthProvider aquí
+import { Toaster } from "sonner";
 
 // Tipografías base
 const geistSans = Geist({
@@ -68,22 +65,17 @@ export default function RootLayout({
       <body className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            <Providers>
-              <SidebarProvider>
-                <NavbarAdmin />
-                {children}
-                <Toaster
-                  position="top-center"
-                  toastOptions={{
-                    style: {
-                      background: 'var(--color-lavender)',
-                      color: 'var(--color-dark-gray)',
-                      border: '1px solid var(--color-purple)',
-                    },
-                  }}
-                />
-              </SidebarProvider>
-            </Providers>
+            {children}
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                style: {
+                  background: "var(--color-lavender)",
+                  color: "var(--color-dark-gray)",
+                  border: "1px solid var(--color-purple)",
+                },
+              }}
+            />
           </AuthProvider>
         </ThemeProvider>
       </body>
