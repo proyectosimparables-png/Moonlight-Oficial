@@ -1,8 +1,9 @@
 "use client"
 
-import { createContext,  useEffect, useState, ReactNode } from "react"
+import { createContext, useEffect, useState, ReactNode } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import type { Session, User } from "@supabase/supabase-js"
+import { getUserProfile } from "@/services/userService" // ✅ Importado
 
 type AuthContextType = {
   session: Session | null
@@ -21,18 +22,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession()
       setSession(data.session ?? null)
+
+      if (data.session) {
+        await sendTokenToBackend(data.session.access_token)
+
+        try {
+          const response = await getUserProfile()
+          console.log("✅ Usuario sincronizado:", response.user)
+        } catch (err) {
+          console.error("❌ Error al sincronizar usuario:", err)
+        }
+      }
     }
 
     getSession()
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session ?? null)
-    })
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setSession(session ?? null)
+
+        if (session) {
+          await sendTokenToBackend(session.access_token)
+
+          try {
+            const response = await getUserProfile()
+            console.log("✅ Usuario sincronizado:", response.user)
+          } catch (err) {
+            console.error("❌ Error al sincronizar usuario:", err)
+          }
+        }
+      }
+    )
 
     return () => {
       listener.subscription.unsubscribe()
     }
   }, [])
+
+  const sendTokenToBackend = async (token: string) => {
+    try {
+      await fetch("http://localhost:3000/auth/set-cookie", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+      })
+    } catch (error) {
+      console.error("Error al enviar token al backend:", error)
+    }
+  }
 
   const login = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
@@ -44,6 +84,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     await supabase.auth.signOut()
     setSession(null)
+
+    try {
+      await fetch("http://localhost:3000/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      })
+    } catch (error) {
+      console.error("Error al hacer logout en backend:", error)
+    }
   }
 
   return (

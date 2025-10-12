@@ -2,10 +2,12 @@
 import {
   Controller,
   Get,
+  Post,
   Req,
   Res,
   HttpStatus,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { supabase } from 'src/lib/supabaseClient';
@@ -16,24 +18,51 @@ import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Post('set-cookie')
+  async setAuthCookie(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Body() body: { token: string },
+  ) {
+    const { token } = body;
+
+    if (!token) {
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: 'Token ausente' });
+    }
+
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data?.user) {
+      return res
+        .status(HttpStatus.UNAUTHORIZED)
+        .json({ message: 'Token inválido' });
+    }
+
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7 * 1000, // 7 días en milisegundos
+    });
+
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Token guardado en cookie segura' });
+  }
+
   @Get('protected')
   async getProtected(@Req() req: Request, @Res() res: Response) {
     try {
-      const authHeader = req.headers['authorization'];
-      if (!authHeader) {
-        return res
-          .status(HttpStatus.UNAUTHORIZED)
-          .json({ message: 'Token ausente' });
-      }
+      const token = req.cookies?.access_token;
 
-      const token = authHeader.split(' ')[1];
       if (!token) {
         return res
           .status(HttpStatus.UNAUTHORIZED)
-          .json({ message: 'Token malformado' });
+          .json({ message: 'Token ausente en cookie' });
       }
-
-      // ✅ Validamos el token con Supabase Auth
       const { data, error } = await supabase.auth.getUser(token);
 
       if (error || !data?.user) {
@@ -42,10 +71,8 @@ export class AuthController {
           .json({ message: 'Token inválido' });
       }
 
-      // ✅ El token es válido, sincronizamos usuario en BD
       const dbUser = await this.authService.syncUserWithDatabase(data.user);
 
-      // 🔐 Ocultamos el campo password antes de responder
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...safeUser } = dbUser;
 
@@ -82,7 +109,6 @@ export class AuthController {
         });
       }
 
-      // 🔐 Ocultamos el campo password antes de responder
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...safeUser } = dbUser;
 
@@ -97,5 +123,18 @@ export class AuthController {
         error: message,
       });
     }
+  }
+
+  @Post('logout')
+  logout(@Res() res: Response) {
+    res.cookie('access_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 0,
+    });
+
+    return res.status(HttpStatus.OK).json({ message: 'Sesión cerrada' });
   }
 }

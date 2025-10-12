@@ -1,9 +1,13 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Usar cookie-parser para habilitar lectura de cookies
+  app.use(cookieParser());
 
   // 🛡️ Activar validación automática
   app.useGlobalPipes(new ValidationPipe());
