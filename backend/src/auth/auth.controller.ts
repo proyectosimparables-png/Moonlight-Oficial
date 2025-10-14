@@ -13,6 +13,8 @@ import type { Request, Response } from 'express';
 import { supabase } from 'src/lib/supabaseClient';
 import { AuthService } from './auth.service';
 import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -136,5 +138,15 @@ export class AuthController {
     });
 
     return res.status(HttpStatus.OK).json({ message: 'Sesión cerrada' });
+  }
+
+  // Endpoint solo para admins
+  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @Get('admin-only')
+  getAdminOnlyData(@Req() req: Request, @Res() res: Response) {
+    return res.status(HttpStatus.OK).json({
+      message: 'Este contenido es solo para usuarios ADMIN',
+    });
   }
 }
