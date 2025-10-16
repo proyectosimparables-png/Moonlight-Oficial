@@ -121,29 +121,17 @@
   }
 }
 :root {
-  --color-cream: #f6f0d9;
-  --color-lavender: #d3c3f3;
-  --color-mint: #b9f3d0;
-  --color-soft-yellow: #fae69e;
-  --color-light-purple: #a385e8;
-  --color-jade: #72c19e;
-  --color-purple: #6c48a1;
-  --color-dark-gray: #535353;
+  --color-lilac: #d8c4fa;
+  --color-hover: #e6dff1;
+  --color-dark: #7b5ca2;
+  --color-soft-beige: #faf5e5;
+  --color-pastel-lilac: #d8c4fa;
 
-  /* Ejemplo de uso extra */
-  --text-heading: var(--color-dark-gray);
-  --bg-primary: var(--color-lavender);
-  --accent: var(--color-purple);
+  /* Variables personalizadas para diseño */
+  --text-heading: var(--color-dark);
+  --bg-primary: var(--color-soft-beige);
+  --accent: var(--color-lilac);
 }
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
-  background-color: var(--bg-primary)/03;
-  color: var(--text-heading);
-}
-h1{
-  font-size: 2.5rem;
-  color: var(--color-purple);
+.hover\:bg-hover:hover {
+  background-color: var(--color-hover);
 }

@@ -1,6 +1,8 @@
 "use client";
 
-import Navbar from "@/components/home/Navbar";
+import Navbar from "./Navbar";
+
+
 // import HeroCarousel from "@/components/HeroCarousel";
 // import ProductSection from "@/components/ProductSection";
 // import Testimonials from "@/components/Testimonials";
@@ -13,6 +15,7 @@ import Navbar from "@/components/home/Navbar";
 // import product4 from "@/assets/product-4.jpg";
 
 const Home = () => {
+ 
   // Sección de productos deshabilitada por ahora
   const productSections = [
     // {
@@ -38,7 +41,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f0fa]">
-      <Navbar />
+  <Navbar />;
 
       <main className="flex-1">
         {/* Carrusel de inicio (por ahora comentado) */}

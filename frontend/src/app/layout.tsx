@@ -1,4 +1,7 @@
+// app/layout.tsx
 import type { Metadata } from "next";
+import "./globals.css";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import {
   Love_Ya_Like_A_Sister,
@@ -6,35 +9,20 @@ import {
   Dancing_Script,
 } from "next/font/google";
 
-import "./globals.css";
-
 import { ThemeProvider } from "next-themes";
-import { AuthProvider } from "@/context/AuthContext"; // <-- Importa tu AuthProvider aquí
-import { Toaster } from "sonner";
+import { AuthProvider } from "@/context/AuthContext";
+import Provaiders from "@/components/Provaiders";
 
-// Tipografías base
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+import clsx from "clsx";
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Nuevas tipografías decorativas
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 const loveStory = Love_Ya_Like_A_Sister({
   variable: "--font-love-story",
   weight: ["400"],
   subsets: ["latin"],
 });
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-});
-
+const montserrat = Montserrat({ variable: "--font-montserrat", subsets: ["latin"] });
 const dancingScript = Dancing_Script({
   variable: "--font-dancing-script",
   weight: ["400", "500", "700"],
@@ -48,36 +36,32 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  // Formar las clases de forma segura
+  const htmlClassName = clsx(
+    geistSans.variable || "",
+    geistMono.variable || "",
+    loveStory.variable || "",
+    montserrat.variable || "",
+    dancingScript.variable || ""
+  );
+
   return (
-    <html
-      lang="es"
-      className={`
-        ${geistSans.variable}
-        ${geistMono.variable}
-        ${loveStory.variable}
-        ${montserrat.variable}
-        ${dancingScript.variable}
-      `}
-    >
+    <html lang="es" className={htmlClassName}>
       <body className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            {children}
-            <Toaster
-              position="top-center"
-              toastOptions={{
-                style: {
-                  background: "var(--color-lavender)",
-                  color: "var(--color-dark-gray)",
-                  border: "1px solid var(--color-purple)",
-                },
-              }}
-            />
-          </AuthProvider>
-        </ThemeProvider>
+    
+       
+            <AuthProvider>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              <Provaiders>
+                {children}
+                </Provaiders>     
+              </ThemeProvider>
+              </AuthProvider>
+        
+        
       </body>
     </html>
   );

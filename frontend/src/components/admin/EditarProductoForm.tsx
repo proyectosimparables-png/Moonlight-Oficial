@@ -5,6 +5,7 @@ import { updateProducto, updateProductoConImagen, removeImagenProducto } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 export default function EditarProductoForm({ producto, onCancel, onUpdate }: any) {
   const [nombre, setNombre] = useState(producto.nombre);
@@ -30,9 +31,9 @@ export default function EditarProductoForm({ producto, onCancel, onUpdate }: any
     try {
       await removeImagenProducto(producto.id);
       setImagenUrl(null);
-      alert("✅ Imagen eliminada");
+      toast("✅ Imagen eliminada");
     } catch (error) {
-      alert("❌ Error al eliminar imagen");
+      toast("❌ Error al eliminar imagen");
     }
   };
 

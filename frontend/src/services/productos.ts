@@ -42,7 +42,7 @@ export async function removeImagenProducto(id: string) {
 }
 
 // Actualizar producto sin imagen
-export async function updateProducto(id: string, data: any) {
+export async function updateProducto(id: string, data: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/${id}`, {
     method: 'PUT',
     headers: {
@@ -90,6 +90,29 @@ export async function getTiposPrenda() {
   return res.json();
 }
 
+//tipos de prenda para el admin
+export async function eliminarTipoPrenda(id: string) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tipo-prenda/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Error eliminando tipo de prenda");
+  return res.json();
+}
+
+export async function actualizarTipoPrenda(
+  id: string,
+  data: { nombre?: string }
+) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tipo-prenda/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Error actualizando tipo de prenda");
+  return res.json();
+}
 
 
 export async function getProductos() {
@@ -98,10 +121,38 @@ export async function getProductos() {
   return res.json();
 }
 
-export async function getCategoriasConProductos() {
+
+//categorias con sus productos para el admin
+export async function getCategoriasBySeccion() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias`);
-  if (!res.ok) throw new Error('Error cargando categorías con productos');
+   console.log('categories:', res);
+  if (!res.ok) {
+    throw new Error('Error cargando categorías');
+  }
   return res.json();
 }
 
 
+// Eliminar una categoría
+export async function eliminarCategoria(id: string) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!res.ok) throw new Error('Error eliminando categoría');
+  return res.json();
+}
+
+// Editar / actualizar una categoría
+export async function actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string }) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error('Error actualizando categoría');
+  return res.json();
+}

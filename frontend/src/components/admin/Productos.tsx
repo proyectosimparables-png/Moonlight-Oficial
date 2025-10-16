@@ -16,6 +16,7 @@ import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { deleteProducto, getProductos } from "@/services/productos";
 import EditarProductoForm from './EditarProductoForm';
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const Productos = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -57,10 +58,10 @@ const Productos = () => {
     try {
       await deleteProducto(id.toString());
       setProductos((prev) => prev.filter((p) => p.id !== id));
-      alert("✅ Producto eliminado correctamente");
+      toast.success("✅ Producto eliminado correctamente");
     } catch (error) {
       console.error("Error al eliminar producto:", error);
-      alert("❌ No se pudo eliminar el producto");
+      toast.error("❌ No se pudo eliminar el producto");
     }
   };
 

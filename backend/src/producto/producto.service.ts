@@ -129,20 +129,58 @@ export class ProductoService {
   }
 
   // Obtener categorías por sección
-  async getCategoriasBySeccion(seccionId: string) {
-    try {
-      console.log('ProductoService.getCategoriasBySeccion ejecutado con seccionId =', seccionId);
-      const categorias = await this.prisma.categoria.findMany({
-        where: { seccionId },
-        orderBy: { nombre: 'asc' },
-      });
-      console.log('Categorías obtenidas:', categorias);
-      return categorias;
-    } catch (error) {
-      console.error('Error en getCategoriasBySeccion:', error);
-      throw error;
-    }
+ async getCategoriasBySeccion(seccionId: string) {
+  try {
+    const categorias = await this.prisma.categoria.findMany({
+      where: {
+        seccionId,
+        padreId: null, 
+      },
+      orderBy: {
+        nombre: 'asc',
+      },
+      include: {
+        subcategorias: {
+          orderBy: {
+            nombre: 'asc',
+          },
+        },
+      },
+    });
+    return categorias;
+  } catch (error) {
+    console.error('Error en getCategoriasBySeccion:', error);
+    throw error;
   }
+}
+
+
+// Eliminar categoría
+async eliminarCategoria(id: string) {
+  try {
+    return await this.prisma.categoria.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error al eliminar categoría:', error);
+    throw error;
+  }
+}
+
+// Actualizar categoría
+async actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string }) {
+  try {
+    return await this.prisma.categoria.update({
+      where: { id },
+      data,
+    });
+  } catch (error) {
+    console.error('Error al actualizar categoría:', error);
+    throw error;
+  }
+}
+
+
 
   // Obtener tipos de prenda
   async getTiposPrenda() {
@@ -158,4 +196,54 @@ export class ProductoService {
       throw error;
     }
   }
+
+// Eliminar un tipo de prenda
+async eliminarTipoPrenda(id: string) {
+  return this.prisma.tipoPrenda.delete({
+    where: { id },
+  });
 }
+
+// Actualizar tipo de prenda
+async actualizarTipoPrenda(id: string, data: { nombre?: string }) {
+  return this.prisma.tipoPrenda.update({
+    where: { id },
+    data,
+  });
+}
+
+
+async getTiposPrendaConCategoriasYProductos() {
+  const tipos = await this.prisma.tipoPrenda.findMany({
+    include: {
+      categorias: {
+        include: {
+          productos: true, // Necesario para contar productos por categoría
+        },
+      },
+    },
+  });
+
+  // Mapeamos para devolver solo los datos necesarios
+  return tipos.map(tipo => ({
+    id: tipo.id,
+    nombre: tipo.nombre,
+    categorias: tipo.categorias.map(cat => ({
+      id: cat.id,
+      nombre: cat.nombre,
+    })),
+    productoCount: tipo.categorias.reduce(
+      (acc, cat) => acc + cat.productos.length,
+      0
+    ),
+  }));
+}
+
+
+
+}
+
+
+
+
+
