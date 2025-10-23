@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   UsePipes,
   BadRequestException,
+  Patch,
 } from '@nestjs/common';
 import { ProductoService } from './producto.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
@@ -103,13 +104,21 @@ async removeImagen(@Param('id') id: string) {
     return this.productoService.update(id, body, imagenUrl);
   }
  
-
-
   // ✅ Eliminar producto
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productoService.remove(id);
   }
+
+  // ✏️ Actualizar una categoría
+@Patch('categorias/:id')
+actualizarCategoria(
+  @Param('id') id: string,
+  @Body() data: { nombre?: string; seccionId?: string }
+) {
+  return this.productoService.actualizarCategoria(id, data);
+}
+
 
   // ✅ Publicar producto
   @Put(':id/publicar')
@@ -123,21 +132,44 @@ async removeImagen(@Param('id') id: string) {
     return this.productoService.getSecciones();
   }
 
-  // ✅ Obtener categorías por sección
   @Get('categorias')
-  getCategorias(@Query('seccionId') seccionId: string) {
+  async getCategorias(@Query('seccionId') seccionId: string) {
+    if (!seccionId) {
+      throw new BadRequestException('seccionId es obligatorio');
+    }
     return this.productoService.getCategoriasBySeccion(seccionId);
   }
 
-  // ✅ Obtener tipos de prenda
-  @Get('tipo-prenda')
-  getTiposPrenda() {
-    return this.productoService.getTiposPrenda();
-  }
+ @Get('tipo-prenda')
+getTiposPrenda() {
+  return this.productoService.getTiposPrendaConCategoriasYProductos();
+}
+
 
   // ✅ Obtener producto por ID
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productoService.findOne(id);
   }
+  // 🗑 Eliminar una categoría
+@Delete('categorias/:id')
+eliminarCategoria(@Param('id') id: string) {
+  return this.productoService.eliminarCategoria(id);
+}
+
+
+ @Delete("tipo-prenda/:id")
+  eliminarTipoPrenda(@Param("id") id: string) {
+    return this.productoService.eliminarTipoPrenda(id);
+  }
+
+  @Patch("tipo-prenda/:id")
+  actualizarTipoPrenda(
+    @Param("id") id: string,
+    @Body() data: { nombre?: string }
+  ) {
+    return this.productoService.actualizarTipoPrenda(id, data);
+  }
+
+
 }

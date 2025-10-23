@@ -1,6 +1,14 @@
+
+
+import Home from '@/components/home/Home';
 import React from 'react';
-import HomePage from '@/components/home/Home'; 
+
+
 
 export default function Page() {
-  return <HomePage />;
+  return <Home/>;
+
+
+
+
 }
