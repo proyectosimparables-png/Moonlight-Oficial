@@ -7,13 +7,6 @@ import { PublicarProductoDto } from './dto/publicar-producto.dto';
 export class AdminService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Obtener tipos de prenda
-  getTiposPrenda() {
-    return this.prisma.tipoPrenda.findMany({
-      include: { categorias: true },
-    });
-  }
-
   // Obtener secciones
   getSecciones() {
     return this.prisma.seccion.findMany();
@@ -28,20 +21,19 @@ export class AdminService {
         precio: dto.precio,
         stock: dto.stock,
         imagenUrl: dto.imagenUrl,
-        tipoPrendaId: dto.tipoPrendaId,
         categoriaId: dto.categoriaId,
       },
     });
   }
 
-  // Publicar producto: asignar tipo, categoría y seccion
+  // Publicar producto: asignar categoría y sección
   publicarProducto(id: string, dto: PublicarProductoDto) {
     return this.prisma.producto.update({
       where: { id },
       data: {
-        tipoPrendaId: dto.tipoPrendaId,
         categoriaId: dto.categoriaId,
         seccionId: dto.seccionId,
+        published: true,
       },
     });
   }

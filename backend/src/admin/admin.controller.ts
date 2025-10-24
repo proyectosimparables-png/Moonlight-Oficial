@@ -14,11 +14,6 @@ import { PublicarProductoDto } from './dto/publicar-producto.dto';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  @Get('tipos-prenda')
-  getTiposPrenda() {
-    return this.adminService.getTiposPrenda();
-  }
-
   @Get('secciones')
   getSecciones() {
     return this.adminService.getSecciones();

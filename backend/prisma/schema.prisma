@@ -8,7 +8,6 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-
 model User {
   id          String       @id @default(uuid())
   email       String       @unique
@@ -41,27 +40,14 @@ model Producto {
   ordenes     Orden[]
   historial   Historial[]
 
-  categoria   Categoria    @relation(fields: [categoriaId], references: [id])
-  categoriaId String
+  // Relación con categoría (puede quedar null si se borra la categoría)
+  categoria   Categoria?   @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  categoriaId String?
 
-  tipoPrenda   TipoPrenda? @relation(fields: [tipoPrendaId], references: [id])
-  tipoPrendaId String?
-
-   seccion     Seccion?     @relation(fields: [seccionId], references: [id])
-  seccionId   String?     
-
+  // Relación con sección (también opcional)
+  seccion     Seccion?     @relation(fields: [seccionId], references: [id], onDelete: SetNull)
+  seccionId   String?
 }
-
-
-model TipoPrenda {
-  id         String      @id @default(uuid())
-  nombre     String      @unique
-  categorias Categoria[]
-  productos  Producto[]
-}
-
-
-
 
 model Categoria {
   id            String       @id @default(uuid())
@@ -73,28 +59,17 @@ model Categoria {
   padreId       String?
   subcategorias Categoria[]  @relation("CategoriaPadre")
 
-  // Opcional: si querés agrupar por tipo general
-  seccion       Seccion?     @relation(fields: [seccionId], references: [id])
+  // Relación con sección
+  seccion       Seccion?     @relation(fields: [seccionId], references: [id], onDelete: SetNull)
   seccionId     String?
-
-  tipoPrenda   TipoPrenda? @relation(fields: [tipoPrendaId], references: [id])
-  tipoPrendaId String?
-
 }
-
-
 
 model Seccion {
   id          String       @id @default(uuid())
   nombre      String       @unique
   categorias  Categoria[]
   productos   Producto[]
-
 }
-
-
-
-
 
 model Comentario {
   id          String    @id @default(uuid())
