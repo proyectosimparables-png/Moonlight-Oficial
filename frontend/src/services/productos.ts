@@ -71,49 +71,27 @@ export async function updateProductoConImagen(id: string, formData: FormData) {
 //Todos los gets
 export async function getSecciones() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`);
-  console.log('Fetch secciones response:', res);
+
   if (!res.ok) throw new Error('Error cargando secciones');
-  return res.json();
+
+  const text = await res.text();  // primero obtén el texto plano
+  if (!text) {
+    console.error('Respuesta vacía del backend');
+    return [];  // o lo que tenga sentido para tu app
+  }
+
+  const data = JSON.parse(text);
+  console.log('Fetch secciones data:', data);
+
+  return data;
 }
+
 
 export async function getCategorias(seccionId: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias?seccionId=${seccionId}`);
   if (!res.ok) throw new Error('Error cargando categorías');
   return res.json();
 }
-
-
-export async function getTiposPrenda() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tipo-prenda`);
-
-  if (!res.ok) throw new Error('Error cargando tipos de prenda');
-  return res.json();
-}
-
-//tipos de prenda para el admin
-export async function eliminarTipoPrenda(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tipo-prenda/${id}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error("Error eliminando tipo de prenda");
-  return res.json();
-}
-
-export async function actualizarTipoPrenda(
-  id: string,
-  data: { nombre?: string }
-) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tipo-prenda/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Error actualizando tipo de prenda");
-  return res.json();
-}
-
 
 export async function getProductos() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos`);
@@ -137,10 +115,6 @@ export async function getCategoriasBySeccion(seccionId?: string) {
 
   return res.json();
 }
-
-
-
-
 // Eliminar una categoría
 export async function eliminarCategoria(id: string) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias/${id}`, {
@@ -152,8 +126,6 @@ export async function eliminarCategoria(id: string) {
 }
 
 export async function actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string }) {
-  console.log("PATCH /productos/categorias →", { id, data });
-
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -168,9 +140,6 @@ export async function actualizarCategoria(id: string, data: { nombre?: string; s
 
   return res.json();
 }
-
-
-
 
 //Crear categorías (adaptado para enviar el nombre de la sección)
 export async function crearCategoria(data: {
@@ -187,21 +156,5 @@ export async function crearCategoria(data: {
   });
 
   if (!res.ok) throw new Error('Error al crear categoría');
-  return res.json();
-}
-
-
-
-//Crear Tipo de prenda
-export async function crearTipoPrenda(data: { nombre: string }) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tipo-prenda`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!res.ok) throw new Error('Error al crear tipo de prenda');
   return res.json();
 }

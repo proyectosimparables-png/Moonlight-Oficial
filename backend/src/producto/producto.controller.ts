@@ -110,11 +110,13 @@ export class ProductoController {
     return this.productoService.publicar(id);
   }
 
-  // 📚 Obtener secciones
+
+// Obtener secciones
   @Get('secciones')
   getSecciones() {
     return this.productoService.getSecciones();
   }
+
 
   // 📚 Obtener categorías (todas o por sección)
   @Get('categorias')

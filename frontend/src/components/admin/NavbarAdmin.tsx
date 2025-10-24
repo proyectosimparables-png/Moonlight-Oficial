@@ -25,7 +25,6 @@ const menuItems = [
   { title: 'Productos', url: '/admin/productos', icon: Package },
   { title: 'Órdenes', url: '/admin/ordenes', icon: ShoppingCart },
   { title: 'Categorías', url: '/admin/categorias', icon: FolderTree },
-  { title: 'Tipos de Prenda', url: '/admin/tipos-prenda', icon: Shirt },
   { title: 'Usuarios', url: '/admin/usuarios', icon: Users },
   { title: 'Volver a la tienda', url: '/', icon: ShoppingCart },
 ]

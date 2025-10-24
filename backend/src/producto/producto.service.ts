@@ -92,13 +92,16 @@ async create(data: CreateProductoDto, imagenUrl?: string) {
     });
   }
 
-  // 🧭 Obtener todas las secciones
-  async getSecciones() {
-    return this.prisma.seccion.findMany({
-      orderBy: { nombre: 'asc' },
-      include: { categorias: true },
-    });
-  }
+  // Obtener secciones con productos
+async getSecciones() {
+  return this.prisma.seccion.findMany({
+    orderBy: { nombre: 'asc' },
+    include: {
+      productos: true, // trae los productos de cada sección
+    },
+  });
+}
+
 
   // 📚 Obtener TODAS las categorías (sin filtrar)
   async getTodasLasCategorias() {
