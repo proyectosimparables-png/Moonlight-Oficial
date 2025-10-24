@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
@@ -89,10 +91,16 @@ export class ProductoService {
     });
   }
 
-  // Obtener secciones
-  async getSecciones() {
-    return this.prisma.seccion.findMany({ orderBy: { nombre: 'asc' } });
-  }
+  // Obtener secciones con productos
+async getSecciones() {
+  return this.prisma.seccion.findMany({
+    orderBy: { nombre: 'asc' },
+    include: {
+      productos: true, // trae los productos de cada sección
+    },
+  });
+}
+
 
   // Obtener categorías por sección
   async getCategoriasBySeccion(seccionId: string) {
