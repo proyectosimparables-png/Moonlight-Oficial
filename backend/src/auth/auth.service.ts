@@ -38,4 +38,27 @@ export class AuthService {
       where: { email },
     });
   }
+
+
+async findAllUsers() {
+  return this.prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+}
+
+
+
+
+
+
+
 }

@@ -16,6 +16,7 @@ import {
   getTiposPrenda,
   eliminarTipoPrenda,
   actualizarTipoPrenda,
+  crearTipoPrenda,
 } from "@/services/productos";
 import {
   Dialog,
@@ -48,6 +49,7 @@ const TiposPrenda = () => {
   const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoPrenda | null>(null);
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
   // Obtener tipos de prenda
   useEffect(() => {
@@ -106,6 +108,24 @@ const TiposPrenda = () => {
     }
   };
 
+  const handleCrear = async () => {
+    if (!nuevoNombre.trim()) {
+      toast.error("El nombre no puede estar vacío");
+      return;
+    }
+
+    try {
+      const nuevo = await crearTipoPrenda({ nombre: nuevoNombre });
+      setTiposPrenda(prev => [...prev, nuevo]);
+      toast.success("Tipo de prenda creado correctamente");
+      setIsNewModalOpen(false);
+      setNuevoNombre("");
+    } catch (error) {
+      console.error("Error al crear tipo de prenda", error);
+      toast.error("No se pudo crear el tipo de prenda.");
+    }
+  };
+
   return (
     <div className="space-y-6 px-4">
       <div className="flex items-center justify-between">
@@ -113,7 +133,10 @@ const TiposPrenda = () => {
           <h1 className="text-3xl font-bold tracking-tight">Tipos de Prenda</h1>
           <p className="text-muted-foreground">Define los tipos de prendas disponibles</p>
         </div>
-        <Button className="gap-2">
+        <Button
+          className="gap-2 bg-[var(--color-dark)] hover:bg-[var(--color-lilac)] text-white transition-all"
+          onClick={() => setIsNewModalOpen(true)}
+        >
           <Plus className="h-4 w-4" />
           Nuevo Tipo
         </Button>
@@ -137,8 +160,8 @@ const TiposPrenda = () => {
                 <TableRow key={tipo.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                        <Shirt className="h-5 w-5 text-primary" />
+                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-[var(--color-lilac)]/40 to-[var(--color-dark)]/10 flex items-center justify-center">
+                        <Shirt className="h-5 w-5 text-[var(--color-dark)]" />
                       </div>
                       <span className="font-medium">{tipo.nombre}</span>
                     </div>
@@ -178,6 +201,39 @@ const TiposPrenda = () => {
         </div>
       )}
 
+      {/* ✅ MODAL DE NUEVO TIPO */}
+      <Dialog open={isNewModalOpen} onOpenChange={setIsNewModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nuevo Tipo de Prenda</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Label htmlFor="nombre" className="block mb-1">Nombre</Label>
+            <Input
+              id="nombre"
+              placeholder="Ej: Remera, Pantalón..."
+              value={nuevoNombre}
+              onChange={(e) => setNuevoNombre(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="mt-6 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsNewModalOpen(false)}
+              className="border border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCrear}
+              className="bg-[var(--color-dark)] hover:bg-[var(--color-lilac)] text-white transition-all"
+            >
+              Crear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ✅ MODAL DE EDICIÓN */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
@@ -185,18 +241,27 @@ const TiposPrenda = () => {
             <DialogTitle>Editar Tipo de Prenda</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Label htmlFor="nombre">Nuevo nombre</Label>
+            <Label htmlFor="nombre" className="block mb-1">Nuevo nombre</Label>
             <Input
               id="nombre"
               value={nuevoNombre}
               onChange={(e) => setNuevoNombre(e.target.value)}
             />
           </div>
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+          <DialogFooter className="mt-6 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditModalOpen(false)}
+              className="border border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
               Cancelar
             </Button>
-            <Button onClick={guardarEdicion}>Guardar</Button>
+            <Button
+              onClick={guardarEdicion}
+              className="bg-[var(--color-dark)] hover:bg-[var(--color-lilac)] text-white transition-all"
+            >
+              Guardar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

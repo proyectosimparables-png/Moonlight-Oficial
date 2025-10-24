@@ -79,7 +79,8 @@ const Productos = () => {
             <h1 className="text-3xl font-bold tracking-tight">Productos</h1>
             <p className="text-muted-foreground">Gestiona el catálogo de tu tienda</p>
           </div>
-          <Button className="gap-2" onClick={() => router.push("/admin/nuevo-producto")}>
+          <Button className="gap-2 bg-[var(--color-lilac)] hover:bg-[var( --color-dark)] text-white transition-all"
+           onClick={() => router.push("/admin/nuevo-producto")}>
             <Plus className="h-4 w-4" />
             Nuevo Producto
           </Button>

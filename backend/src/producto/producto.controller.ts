@@ -53,6 +53,24 @@ findAll(
   );
 }
 
+// ✅ Crear una nueva categoría
+@Post('categorias')
+crearCategoria(
+  @Body() data: { nombre: string; seccionNombre: string; padreId?: string }
+) {
+  return this.productoService.crearCategoria(data);
+}
+
+
+// ✅ Crear un nuevo tipo de prenda
+@Post('tipo-prenda')
+crearTipoPrenda(@Body() data: { nombre: string }) {
+  return this.productoService.crearTipoPrenda(data);
+}
+
+
+
+
   // ✅ Crear producto con imagen
   @Post('upload-producto')
   @UseInterceptors(FileInterceptor('file'))
@@ -109,9 +127,8 @@ async removeImagen(@Param('id') id: string) {
   remove(@Param('id') id: string) {
     return this.productoService.remove(id);
   }
-
-  // ✏️ Actualizar una categoría
-@Patch('categorias/:id')
+// 🗑 Actualizar una categoría
+ @Patch('categorias/:id')
 actualizarCategoria(
   @Param('id') id: string,
   @Body() data: { nombre?: string; seccionId?: string }
@@ -132,13 +149,17 @@ actualizarCategoria(
     return this.productoService.getSecciones();
   }
 
-  @Get('categorias')
-  async getCategorias(@Query('seccionId') seccionId: string) {
-    if (!seccionId) {
-      throw new BadRequestException('seccionId es obligatorio');
-    }
-    return this.productoService.getCategoriasBySeccion(seccionId);
+ // ✅ Obtener categorías (todas o por sección)
+@Get('categorias')
+async getCategorias(@Query('seccionId') seccionId?: string) {
+  // si no se envía seccionId, devuelve todas
+  if (!seccionId) {
+    return this.productoService.getTodasLasCategorias();
   }
+
+  // si se envía, devuelve solo las de esa sección
+  return this.productoService.getCategoriasBySeccion(seccionId);
+}
 
  @Get('tipo-prenda')
 getTiposPrenda() {
@@ -170,6 +191,7 @@ eliminarCategoria(@Param('id') id: string) {
   ) {
     return this.productoService.actualizarTipoPrenda(id, data);
   }
+
 
 
 }

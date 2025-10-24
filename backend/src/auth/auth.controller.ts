@@ -127,6 +127,25 @@ export class AuthController {
     }
   }
 
+
+  // ✅ Obtener todos los usuarios (solo para admin)
+ @UseGuards(SupabaseAuthGuard)
+@Get('usuarios')
+async getAllUsers() {
+  try {
+    const users = await this.authService.findAllUsers();
+    return {
+      message: 'Usuarios obtenidos correctamente',
+      users,
+    };
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    throw new Error('Error interno del servidor');
+  }
+}
+
+
+
   @Post('logout')
   logout(@Res() res: Response) {
     res.cookie('access_token', '', {

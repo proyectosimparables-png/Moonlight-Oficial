@@ -1,133 +1,120 @@
-'use client';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Eye, Mail } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+'use client'
 
-// Datos mock basados en el esquema
-const mockUsuarios = [
-  {
-    id: "1",
-    name: "Juan Pérez",
-    email: "juan.perez@example.com",
-    ordenes: 5,
-    totalGastado: 450.50,
-    fechaRegistro: "2024-01-10",
-  },
-  {
-    id: "2",
-    name: "María García",
-    email: "maria.garcia@example.com",
-    ordenes: 12,
-    totalGastado: 890.30,
-    fechaRegistro: "2023-12-15",
-  },
-  {
-    id: "3",
-    name: "Carlos López",
-    email: "carlos.lopez@example.com",
-    ordenes: 3,
-    totalGastado: 210.00,
-    fechaRegistro: "2024-01-20",
-  },
-  {
-    id: "4",
-    name: "Ana Martínez",
-    email: "ana.martinez@example.com",
-    ordenes: 8,
-    totalGastado: 620.75,
-    fechaRegistro: "2024-01-05",
-  },
-  {
-    id: "5",
-    name: "Luis Rodríguez",
-    email: "luis.rodriguez@example.com",
-    ordenes: 15,
-    totalGastado: 1250.00,
-    fechaRegistro: "2023-11-28",
-  },
-];
+import React, { useEffect, useState } from 'react'
+import { getAllUsers } from '@/services/userService'
+import { supabase } from '@/lib/supabaseClient'
 
-const Usuarios = () => {
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
+interface Usuario {
+  id: string
+  name: string | null
+  email: string
+  role: string
+  createdAt: string
+  image?: string
+}
+
+const UsuariosPage: React.FC = () => {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getAllUsers()
+
+        // ✅ Determina si el backend devuelve { users: [...] } o directamente un array
+        const usersArray: Usuario[] = Array.isArray(data)
+          ? data
+          : Array.isArray(data.users)
+          ? data.users
+          : []
+
+        // Paso 1: mapeamos los usuarios con una imagen por defecto
+        let enrichedUsers: Usuario[] = usersArray.map((user: Usuario) => ({
+          ...user,
+          image: '/default-avatar.png',
+        }))
+
+        // Paso 2: obtenemos el usuario actual autenticado desde Supabase
+        const { data: authData } = await supabase.auth.getUser()
+        const currentUser = authData?.user
+
+        if (currentUser) {
+          const avatar = currentUser.user_metadata?.avatar_url as string | undefined
+          const email = currentUser.email
+
+          // Si coincide el email, reemplazamos su imagen
+          if (avatar && email) {
+            enrichedUsers = enrichedUsers.map((user: Usuario) =>
+              user.email === email ? { ...user, image: avatar } : user
+            )
+          }
+        }
+
+        setUsuarios(enrichedUsers)
+      } catch (error) {
+        console.error('Error obteniendo usuarios:', error)
+        setError('Error al cargar usuarios')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUsers()
+  }, [])
+
+  if (loading)
+    return <p className="text-center mt-10 text-gray-500">Cargando usuarios...</p>
+  if (error)
+    return <p className="text-center mt-10 text-red-500">{error}</p>
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Usuarios</h1>
-          <p className="text-muted-foreground">
-            Gestiona los usuarios registrados
-          </p>
-        </div>
-      </div>
+    <div className="p-6 bg-purple-50 min-h-screen">
+      <h1 className="text-2xl font-bold text-purple-800 mb-6">
+        Usuarios del sistema
+      </h1>
 
-      <div className="rounded-lg border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Usuario</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Órdenes</TableHead>
-              <TableHead>Total Gastado</TableHead>
-              <TableHead>Fecha Registro</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockUsuarios.map((usuario) => (
-              <TableRow key={usuario.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-semibold">
-                        {getInitials(usuario.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{usuario.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{usuario.email}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{usuario.ordenes}</Badge>
-                </TableCell>
-                <TableCell className="font-semibold">
-                  ${usuario.totalGastado.toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  {new Date(usuario.fechaRegistro).toLocaleDateString('es-ES')}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button variant="ghost" size="icon">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
+      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+        <table className="w-full border-collapse">
+          <thead className="bg-purple-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-bold uppercase text-purple-900">
+                Nombre
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-bold uppercase text-purple-900">
+                Email
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-bold uppercase text-purple-900">
+                Rol
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-bold uppercase text-purple-900">
+                Fecha de registro
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {usuarios.map((u: Usuario) => (
+              <tr key={u.id} className="border-t hover:bg-purple-50 transition">
+                <td className="px-4 py-3 flex items-center gap-3 text-purple-800 font-medium">
+                  <img
+                    src={u.image || '/default-avatar.png'}
+                    className="w-10 h-10 rounded-full border border-purple-300 object-cover"
+                  />
+                  <span>{u.name || 'Sin nombre'}</span>
+                </td>
+                <td className="px-4 py-3 text-purple-800 font-medium">{u.email}</td>
+                <td className="px-4 py-3 text-purple-800 font-medium">{u.role}</td>
+                <td className="px-4 py-3 text-purple-800 font-medium">
+                  {new Date(u.createdAt).toLocaleDateString('es-ES')}
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Usuarios;
+export default UsuariosPage

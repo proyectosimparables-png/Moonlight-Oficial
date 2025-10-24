@@ -113,122 +113,127 @@ export default function FormProducto() {
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
-      <label>Nombre</label>
-      <input
-        type="text"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-      />
+ return (
+  <form
+    onSubmit={handleSubmit}
+    className="space-y-4 max-w-lg mx-auto p-6 bg-white/40 backdrop-blur-md rounded-2xl shadow-lg"
+  >
+    <label className="block font-medium text-gray-700">Nombre</label>
+    <input
+      type="text"
+      value={nombre}
+      onChange={(e) => setNombre(e.target.value)}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+      required
+    />
 
-      <label>Precio</label>
-      <input
-        type="number"
-        value={precio}
-        onChange={(e) => setPrecio(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-      />
+    <label className="block font-medium text-gray-700">Precio</label>
+    <input
+      type="number"
+      value={precio}
+      onChange={(e) => setPrecio(e.target.value)}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+      required
+    />
 
-      <label>Stock</label>
-      <input
-        type="number"
-        value={stock}
-        onChange={(e) => setStock(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-      />
+    <label className="block font-medium text-gray-700">Stock</label>
+    <input
+      type="number"
+      value={stock}
+      onChange={(e) => setStock(e.target.value)}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+      required
+    />
 
-      <label>Descripción</label>
-      <textarea
-        value={descripcion}
-        onChange={(e) => setDescripcion(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-      />
+    <label className="block font-medium text-gray-700">Descripción</label>
+    <textarea
+      value={descripcion}
+      onChange={(e) => setDescripcion(e.target.value)}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+    />
 
-      <label>Sección</label>
-      <select
-        value={seccionIdSeleccionada}
-        onChange={(e) => setSeccionIdSeleccionada(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-      >
-        <option value="">Selecciona una sección</option>
-        {secciones.map((sec) => (
-          <option key={sec.id} value={sec.id}>{sec.nombre}</option>
-        ))}
-      </select>
+    <label className="block font-medium text-gray-700">Sección</label>
+    <select
+      value={seccionIdSeleccionada}
+      onChange={(e) => setSeccionIdSeleccionada(e.target.value)}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+      required
+    >
+      <option value="">Selecciona una sección</option>
+      {secciones.map((sec) => (
+        <option key={sec.id} value={sec.id}>{sec.nombre}</option>
+      ))}
+    </select>
 
-      <label>Categoría</label>
-      <select
-        value={categoriaIdSeleccionada}
-        onChange={(e) => setCategoriaIdSeleccionada(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-        disabled={!seccionIdSeleccionada}
-      >
-        <option value="">Selecciona una categoría</option>
-        {categorias.map((cat) => (
-          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-        ))}
-      </select>
+    <label className="block font-medium text-gray-700">Categoría</label>
+    <select
+      value={categoriaIdSeleccionada}
+      onChange={(e) => setCategoriaIdSeleccionada(e.target.value)}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+      required
+      disabled={!seccionIdSeleccionada}
+    >
+      <option value="">Selecciona una categoría</option>
+      {categorias.map((cat) => (
+        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+      ))}
+    </select>
 
-      <label>Tipo de prenda</label>
-      <select
-        value={tipoPrendaIdSeleccionada}
-        onChange={(e) => setTipoPrendaIdSeleccionada(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-      >
-        <option value="">Selecciona un tipo</option>
-        {tiposPrenda.map((tipo) => (
-          <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
-        ))}
-      </select>
+    <label className="block font-medium text-gray-700">Tipo de prenda</label>
+    <select
+      value={tipoPrendaIdSeleccionada}
+      onChange={(e) => setTipoPrendaIdSeleccionada(e.target.value)}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+      required
+    >
+      <option value="">Selecciona un tipo</option>
+      {tiposPrenda.map((tipo) => (
+        <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
+      ))}
+    </select>
 
-      <label>Imagen</label>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleImageChange}
-        className="w-full border px-3 py-2 rounded"
-        required
-      />
+    <label className="block font-medium text-gray-700">Imagen</label>
+    <input
+      type="file"
+      accept="image/*"
+      onChange={handleImageChange}
+      className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-purple-700 transition"
+      required
+    />
 
-      {previewUrl && (
-        <div className="mt-4">
-          <p className="text-sm text-gray-500 mb-2">Vista previa:</p>
-          <img
-            src={previewUrl}
-            alt="Vista previa"
-            className="w-full max-h-64 object-contain border rounded"
-          />
-        </div>
-      )}
+    {previewUrl && (
+      <div className="mt-4">
+        <p className="text-sm text-gray-500 mb-2">Vista previa:</p>
+        <img
+          src={previewUrl}
+          alt="Vista previa"
+          className="w-full max-h-64 object-contain border rounded"
+        />
+      </div>
+    )}
 
-      <button
-        type="submit"
-        className="bg-[var(--color-purple)] text-white px-4 py-2 rounded hover:bg-[var(--color-light-purple)] transition"
-      >
-        Publicar producto
-      </button>
+    {/* Botón visible y estilizado */}
+    <button
+      type="submit"
+      className="w-full bg-purple-700 text-white font-semibold px-4 py-2 rounded-md hover:bg-purple-800 transition-all shadow-md"
+    >
+      Publicar producto
+    </button>
 
-      {imagenSubidaUrl && (
-        <div className="mt-6 p-4 border border-green-500 rounded bg-green-50 text-sm text-green-800">
-          Imagen subida:
-          <a
-            href={imagenSubidaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline ml-1 text-blue-600"
-          >
-            Ver imagen
-          </a>
-        </div>
-      )}
-    </form>
-  );
+    {imagenSubidaUrl && (
+      <div className="mt-6 p-4 border border-green-500 rounded bg-green-50 text-sm text-green-800">
+        Imagen subida:
+        <a
+          href={imagenSubidaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline ml-1 text-blue-600"
+        >
+          Ver imagen
+        </a>
+      </div>
+    )}
+  </form>
+);
+
 }

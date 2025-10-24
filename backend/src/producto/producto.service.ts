@@ -128,23 +128,42 @@ export class ProductoService {
     }
   }
 
-  // Obtener categorías por sección
- async getCategoriasBySeccion(seccionId: string) {
+  // ✅ Obtener TODAS las categorías (sin filtrar)
+async getTodasLasCategorias() {
+  try {
+    const categorias = await this.prisma.categoria.findMany({
+      where: {
+        padreId: null, 
+      },
+      orderBy: { nombre: 'asc' },
+      include: {
+        subcategorias: {
+          orderBy: { nombre: 'asc' },
+        },
+        seccion: true,
+      },
+    });
+    return categorias;
+  } catch (error) {
+    console.error('Error en getTodasLasCategorias:', error);
+    throw error;
+  }
+}
+
+// ✅ Obtener categorías por sección
+async getCategoriasBySeccion(seccionId: string) {
   try {
     const categorias = await this.prisma.categoria.findMany({
       where: {
         seccionId,
-        padreId: null, 
+        padreId: null,
       },
-      orderBy: {
-        nombre: 'asc',
-      },
+      orderBy: { nombre: 'asc' },
       include: {
         subcategorias: {
-          orderBy: {
-            nombre: 'asc',
-          },
+          orderBy: { nombre: 'asc' },
         },
+        seccion: true,
       },
     });
     return categorias;
@@ -153,6 +172,7 @@ export class ProductoService {
     throw error;
   }
 }
+
 
 
 // Eliminar categoría
@@ -167,18 +187,30 @@ async eliminarCategoria(id: string) {
   }
 }
 
-// Actualizar categoría
+/// ✅ Actualizar categoría con validaciones y logs
 async actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string }) {
   try {
-    return await this.prisma.categoria.update({
+    const camposActualizables: any = {};
+    if (data.nombre) camposActualizables.nombre = data.nombre;
+    if (data.seccionId) camposActualizables.seccionId = data.seccionId;
+
+    if (Object.keys(camposActualizables).length === 0) {
+      throw new Error('No se enviaron datos válidos para actualizar');
+    }
+
+    const categoriaActualizada = await this.prisma.categoria.update({
       where: { id },
-      data,
+      data: camposActualizables,
+      include: { seccion: true, subcategorias: true },
     });
+
+    return categoriaActualizada;
   } catch (error) {
     console.error('Error al actualizar categoría:', error);
     throw error;
   }
 }
+
 
 
 
@@ -239,9 +271,57 @@ async getTiposPrendaConCategoriasYProductos() {
   }));
 }
 
+// ✅ Crear nueva categoría a partir del nombre de la sección
+async crearCategoria(data: { nombre: string; seccionNombre: string; padreId?: string }) {
+  try {
+    const seccion = await this.prisma.seccion.findUnique({
+      where: { nombre: data.seccionNombre },
+    });
+
+    if (!seccion) {
+      throw new Error(`No se encontró la sección con nombre "${data.seccionNombre}"`);
+    }
+
+    return await this.prisma.categoria.create({
+      data: {
+        nombre: data.nombre,
+        seccionId: seccion.id,
+        padreId: data.padreId ?? null,
+      },
+    });
+  } catch (error) {
+    console.error('Error al crear categoría:', error);
+    throw error;
+  }
+}
+
+
+
+// ✅ Crear nuevo tipo de prenda
+async crearTipoPrenda(data: { nombre: string }) {
+  try {
+    return await this.prisma.tipoPrenda.create({
+      data: {
+        nombre: data.nombre,
+      },
+    });
+  } catch (error) {
+    console.error('Error al crear tipo de prenda:', error);
+    throw error;
+  }
+}
+
+
+
+
 
 
 }
+
+
+
+
+
 
 
 

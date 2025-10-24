@@ -1,5 +1,7 @@
 // services/userService.ts
 
+import { getAuthHeaders } from "@/lib/authHelpers";
+
 export async function getUserProfile() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/protected`, {
     method: "GET",
@@ -13,3 +15,32 @@ export async function getUserProfile() {
 
   return res.json()
 }
+
+
+
+//usuarios.ts
+export async function getAllUsers() {
+  try {
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usuarios`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers, // 🔹 Agrega el token de sesión
+      },
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`${res.status} ${errorText}`);
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error("Error obteniendo usuarios:", error);
+    throw error;
+  }
+}
+

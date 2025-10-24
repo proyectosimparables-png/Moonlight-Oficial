@@ -123,14 +123,22 @@ export async function getProductos() {
 
 
 //categorias con sus productos para el admin
-export async function getCategoriasBySeccion() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias`);
-   console.log('categories:', res);
+export async function getCategoriasBySeccion(seccionId?: string) {
+  // Si seccionId existe, agrega el query param; si no, llama al endpoint sin filtro
+  const url = seccionId
+    ? `${process.env.NEXT_PUBLIC_API_URL}/productos/categorias?seccionId=${seccionId}`
+    : `${process.env.NEXT_PUBLIC_API_URL}/productos/categorias`;
+
+  const res = await fetch(url);
+
   if (!res.ok) {
     throw new Error('Error cargando categorías');
   }
+
   return res.json();
 }
+
+
 
 
 // Eliminar una categoría
@@ -143,16 +151,57 @@ export async function eliminarCategoria(id: string) {
   return res.json();
 }
 
-// Editar / actualizar una categoría
 export async function actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string }) {
+  console.log("PATCH /productos/categorias →", { id, data });
+
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias/${id}`, {
     method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("Respuesta error backend:", errText);
+    throw new Error('Error actualizando categoría');
+  }
+
+  return res.json();
+}
+
+
+
+
+//Crear categorías (adaptado para enviar el nombre de la sección)
+export async function crearCategoria(data: {
+  nombre: string;
+  seccionNombre: string;
+  padreId?: string;
+}) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias`, {
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) throw new Error('Error actualizando categoría');
+  if (!res.ok) throw new Error('Error al crear categoría');
+  return res.json();
+}
+
+
+
+//Crear Tipo de prenda
+export async function crearTipoPrenda(data: { nombre: string }) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tipo-prenda`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error('Error al crear tipo de prenda');
   return res.json();
 }
