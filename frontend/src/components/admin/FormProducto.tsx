@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { createProducto, publicarProducto, getSecciones, getCategorias, getTiposPrenda } from '@/services/productos';
-import { Producto } from '@/types/types-productos';
+import { createProducto, publicarProducto, getSecciones, getCategorias } from '@/services/productos';
+
+
+type Seccion = {
+  id: string;
+  nombre: string;
+};
+
+type Categoria = {
+  id: string;
+  nombre: string;
+};
 
 export default function FormProducto() {
   const [nombre, setNombre] = useState('');
@@ -14,28 +24,25 @@ export default function FormProducto() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imagenSubidaUrl, setImagenSubidaUrl] = useState<string | null>(null);
 
+  const [secciones, setSecciones] = useState<Seccion[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [seccionIdSeleccionada, setSeccionIdSeleccionada] = useState('');
   const [categoriaIdSeleccionada, setCategoriaIdSeleccionada] = useState('');
-  const [tipoPrendaIdSeleccionada, setTipoPrendaIdSeleccionada] = useState('');
 
-  const [secciones, setSecciones] = useState<Producto[]>([]);
-  const [categorias, setCategorias] = useState<Producto[]>([]);
-  const [tiposPrenda, setTiposPrenda] = useState<Producto[]>([]);
-
-  // 🔁 Cargar secciones y tipos
+  // 🔁 Cargar secciones al montar el componente
   useEffect(() => {
-    async function cargarIniciales() {
-      const [seccionesData, tiposPrendaData] = await Promise.all([
-        getSecciones(),
-        getTiposPrenda(),
-      ]);
-      setSecciones(seccionesData);
-      setTiposPrenda(tiposPrendaData);
+    async function cargarSecciones() {
+      try {
+        const seccionesData = await getSecciones();
+        setSecciones(seccionesData);
+      } catch (error) {
+        console.error('Error al cargar secciones', error);
+      }
     }
-    cargarIniciales();
+    cargarSecciones();
   }, []);
 
-  // 🔁 Cargar categorías
+  // 🔁 Cargar categorías según sección seleccionada
   useEffect(() => {
     if (!seccionIdSeleccionada) {
       setCategorias([]);
@@ -44,10 +51,16 @@ export default function FormProducto() {
     }
 
     async function cargarCategorias() {
-      const categoriasData = await getCategorias(seccionIdSeleccionada);
-      setCategorias(categoriasData);
-      setCategoriaIdSeleccionada('');
+      try {
+        const categoriasData = await getCategorias(seccionIdSeleccionada);
+        setCategorias(categoriasData);
+        setCategoriaIdSeleccionada('');
+      } catch (error) {
+        console.error('Error al cargar categorías', error);
+        setCategorias([]);
+      }
     }
+
     cargarCategorias();
   }, [seccionIdSeleccionada]);
 
@@ -57,9 +70,7 @@ export default function FormProducto() {
 
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
+      reader.onloadend = () => setPreviewUrl(reader.result as string);
       reader.readAsDataURL(file);
     } else {
       setPreviewUrl(null);
@@ -76,7 +87,7 @@ export default function FormProducto() {
     setImagenSubidaUrl(null);
     setSeccionIdSeleccionada('');
     setCategoriaIdSeleccionada('');
-    setTipoPrendaIdSeleccionada('');
+    setCategorias([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,14 +98,18 @@ export default function FormProducto() {
       return;
     }
 
+    if (!seccionIdSeleccionada || !categoriaIdSeleccionada) {
+      toast.warning('⚠️ Selecciona sección y categoría');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', imagen);
     formData.append('nombre', nombre);
     formData.append('descripcion', descripcion);
-    formData.append('precio', precio);
-    formData.append('stock', stock);
+    formData.append('precio', Number(precio).toString());
+    formData.append('stock', Number(stock).toString());
     formData.append('categoriaId', categoriaIdSeleccionada);
-    formData.append('tipoPrendaId', tipoPrendaIdSeleccionada);
     formData.append('seccionId', seccionIdSeleccionada);
 
     try {
@@ -105,8 +120,7 @@ export default function FormProducto() {
       await publicarProducto(productoCreado.id);
       toast('🚀 Producto publicado');
 
-      resetForm(); // ✅ Vaciar el formulario
-
+      resetForm();
     } catch (error) {
       toast.error('❌ Error al crear producto');
       console.error(error);
@@ -158,36 +172,30 @@ export default function FormProducto() {
       >
         <option value="">Selecciona una sección</option>
         {secciones.map((sec) => (
-          <option key={sec.id} value={sec.id}>{sec.nombre}</option>
+          <option key={sec.id} value={sec.id}>
+            {sec.nombre}
+          </option>
         ))}
       </select>
 
-      <label>Categoría</label>
-      <select
-        value={categoriaIdSeleccionada}
-        onChange={(e) => setCategoriaIdSeleccionada(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-        disabled={!seccionIdSeleccionada}
-      >
-        <option value="">Selecciona una categoría</option>
-        {categorias.map((cat) => (
-          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-        ))}
-      </select>
-
-      <label>Tipo de prenda</label>
-      <select
-        value={tipoPrendaIdSeleccionada}
-        onChange={(e) => setTipoPrendaIdSeleccionada(e.target.value)}
-        className="w-full border px-3 py-2 rounded"
-        required
-      >
-        <option value="">Selecciona un tipo</option>
-        {tiposPrenda.map((tipo) => (
-          <option key={tipo.id} value={tipo.id}>{tipo.nombre}</option>
-        ))}
-      </select>
+      {categorias.length > 0 && (
+        <>
+          <label>Categoría</label>
+          <select
+            value={categoriaIdSeleccionada}
+            onChange={(e) => setCategoriaIdSeleccionada(e.target.value)}
+            className="w-full border px-3 py-2 rounded"
+            required
+          >
+            <option value="">Selecciona una categoría</option>
+            {categorias.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.nombre}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
 
       <label>Imagen</label>
       <input

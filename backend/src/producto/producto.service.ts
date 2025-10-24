@@ -1,4 +1,3 @@
-// src/producto/producto.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
@@ -14,7 +13,7 @@ export class ProductoService {
       data: {
         ...data,
         categoriaId: data.categoriaId!,
-        tipoPrendaId: data.tipoPrendaId!,
+        seccionId: data.seccionId!,
         imagenUrl: imagenUrl ?? null,
         stock: data.stock ?? 0,
       },
@@ -26,7 +25,6 @@ export class ProductoService {
     published?: boolean,
     seccionId?: string,
     categoriaId?: string,
-    tipoPrendaId?: string,
   ) {
     const where: Prisma.ProductoWhereInput = {};
 
@@ -35,28 +33,17 @@ export class ProductoService {
     }
 
     if (seccionId) {
-      where.categoria = {
-        seccionId: seccionId,
-      };
+      where.categoria = { seccionId };
     }
 
     if (categoriaId) {
       where.categoriaId = categoriaId;
     }
 
-    if (tipoPrendaId) {
-      where.tipoPrendaId = tipoPrendaId;
-    }
-
     return this.prisma.producto.findMany({
       where,
       include: {
-        categoria: {
-          include: {
-            seccion: true,
-          },
-        },
-        tipoPrenda: true,
+        categoria: { include: { seccion: true } },
       },
     });
   }
@@ -66,44 +53,33 @@ export class ProductoService {
     return this.prisma.producto.findUnique({
       where: { id },
       include: {
-        categoria: {
-          include: {
-            seccion: true,
-          },
-        },
-        tipoPrenda: true,
+        categoria: { include: { seccion: true } },
       },
     });
   }
 
   // Actualizar producto
- async update(id: string, data: CreateProductoDto, imagenUrl?: string) {
-  const updateData: any = {
-    ...data,
-  };
+  async update(id: string, data: CreateProductoDto, imagenUrl?: string) {
+    const updateData: any = { ...data };
+    if (imagenUrl) updateData.imagenUrl = imagenUrl;
 
-  if (imagenUrl) {
-    updateData.imagenUrl = imagenUrl;
+    return this.prisma.producto.update({
+      where: { id },
+      data: updateData,
+    });
   }
-
-  return this.prisma.producto.update({
-    where: { id },
-    data: updateData,
-  });
-}
-
 
   // Eliminar producto
   async remove(id: string) {
     return this.prisma.producto.delete({ where: { id } });
   }
-  async removeImagen(id: string) {
-  return this.prisma.producto.update({
-    where: { id },
-    data: { imagenUrl: null },
-  });
-}
 
+  async removeImagen(id: string) {
+    return this.prisma.producto.update({
+      where: { id },
+      data: { imagenUrl: null },
+    });
+  }
 
   // Publicar producto
   async publicar(id: string) {
@@ -115,135 +91,28 @@ export class ProductoService {
 
   // Obtener secciones
   async getSecciones() {
-    try {
-      console.log('ProductoService.getSecciones ejecutado');
-      const secciones = await this.prisma.seccion.findMany({
-        orderBy: { nombre: 'asc' },
-      });
-      console.log('Secciones obtenidas:', secciones);
-      return secciones;
-    } catch (error) {
-      console.error('Error en getSecciones:', error);
-      throw error;
-    }
+    return this.prisma.seccion.findMany({ orderBy: { nombre: 'asc' } });
   }
 
   // Obtener categorías por sección
- async getCategoriasBySeccion(seccionId: string) {
-  try {
-    const categorias = await this.prisma.categoria.findMany({
-      where: {
-        seccionId,
-        padreId: null, 
-      },
-      orderBy: {
-        nombre: 'asc',
-      },
-      include: {
-        subcategorias: {
-          orderBy: {
-            nombre: 'asc',
-          },
-        },
-      },
+  async getCategoriasBySeccion(seccionId: string) {
+    return this.prisma.categoria.findMany({
+      where: { seccionId, padreId: null },
+      orderBy: { nombre: 'asc' },
+      include: { subcategorias: { orderBy: { nombre: 'asc' } } },
     });
-    return categorias;
-  } catch (error) {
-    console.error('Error en getCategoriasBySeccion:', error);
-    throw error;
-  }
-}
-
-
-// Eliminar categoría
-async eliminarCategoria(id: string) {
-  try {
-    return await this.prisma.categoria.delete({
-      where: { id },
-    });
-  } catch (error) {
-    console.error('Error al eliminar categoría:', error);
-    throw error;
-  }
-}
-
-// Actualizar categoría
-async actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string }) {
-  try {
-    return await this.prisma.categoria.update({
-      where: { id },
-      data,
-    });
-  } catch (error) {
-    console.error('Error al actualizar categoría:', error);
-    throw error;
-  }
-}
-
-
-
-  // Obtener tipos de prenda
-  async getTiposPrenda() {
-    try {
-      console.log('ProductoService.getTiposPrenda ejecutado');
-      const tipos = await this.prisma.tipoPrenda.findMany({
-        orderBy: { nombre: 'asc' },
-      });
-      console.log('Tipos de prenda obtenidos:', tipos);
-      return tipos;
-    } catch (error) {
-      console.error('Error en getTiposPrenda:', error);
-      throw error;
-    }
   }
 
-// Eliminar un tipo de prenda
-async eliminarTipoPrenda(id: string) {
-  return this.prisma.tipoPrenda.delete({
-    where: { id },
-  });
+  // Eliminar categoría
+  async eliminarCategoria(id: string) {
+    return this.prisma.categoria.delete({ where: { id } });
+  }
+
+  // Actualizar categoría
+  async actualizarCategoria(
+    id: string,
+    data: { nombre?: string; seccionId?: string },
+  ) {
+    return this.prisma.categoria.update({ where: { id }, data });
+  }
 }
-
-// Actualizar tipo de prenda
-async actualizarTipoPrenda(id: string, data: { nombre?: string }) {
-  return this.prisma.tipoPrenda.update({
-    where: { id },
-    data,
-  });
-}
-
-
-async getTiposPrendaConCategoriasYProductos() {
-  const tipos = await this.prisma.tipoPrenda.findMany({
-    include: {
-      categorias: {
-        include: {
-          productos: true, // Necesario para contar productos por categoría
-        },
-      },
-    },
-  });
-
-  // Mapeamos para devolver solo los datos necesarios
-  return tipos.map(tipo => ({
-    id: tipo.id,
-    nombre: tipo.nombre,
-    categorias: tipo.categorias.map(cat => ({
-      id: cat.id,
-      nombre: cat.nombre,
-    })),
-    productoCount: tipo.categorias.reduce(
-      (acc, cat) => acc + cat.productos.length,
-      0
-    ),
-  }));
-}
-
-
-
-}
-
-
-
-
-
