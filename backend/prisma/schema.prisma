@@ -51,7 +51,7 @@ model Producto {
 
 model Categoria {
   id            String       @id @default(uuid())
-  nombre        String       @unique
+  nombre        String      
   productos     Producto[]
 
   // Jerarquía de categorías

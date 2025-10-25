@@ -24,11 +24,6 @@ async create(data: CreateProductoDto, imagenUrl?: string) {
     } as Prisma.ProductoUncheckedCreateInput,
   });
 }
-
-
-
-
-
   // 📦 Listar productos con filtros opcionales
   async findAll(
     published?: boolean,
@@ -96,11 +91,13 @@ async create(data: CreateProductoDto, imagenUrl?: string) {
 
   // Obtener secciones con productos
 async getSecciones() {
+   console.log('Buscando secciones en DB...');
   return this.prisma.seccion.findMany({
     orderBy: { nombre: 'asc' },
     include: {
       productos: true, // trae los productos de cada sección
     },
+    
   });
 }
 

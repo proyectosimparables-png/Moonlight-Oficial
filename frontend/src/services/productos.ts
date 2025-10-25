@@ -74,10 +74,10 @@ export async function getSecciones() {
 
   if (!res.ok) throw new Error('Error cargando secciones');
 
-  const text = await res.text();  // primero obtén el texto plano
+  const text = await res.text();  
   if (!text) {
     console.error('Respuesta vacía del backend');
-    return [];  // o lo que tenga sentido para tu app
+    return [];  
   }
 
   const data = JSON.parse(text);

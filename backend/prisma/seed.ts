@@ -5,8 +5,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🧹 Limpiando base de datos...');
 
-  // 1️⃣ Borrar primero los registros que dependen de otros
-  await prisma.producto.deleteMany(); // Si tienes productos
+  // 1️⃣ Limpiar tablas en orden correcto
+  await prisma.producto.deleteMany();
   await prisma.categoria.deleteMany();
   await prisma.seccion.deleteMany();
 
@@ -27,24 +27,18 @@ async function main() {
   const secciones: Record<string, any> = {};
 
   for (const nombre of seccionesData) {
-    const seccion = await prisma.seccion.create({
-      data: { nombre },
-    });
+    const seccion = await prisma.seccion.create({ data: { nombre } });
     secciones[nombre] = seccion;
     console.log(`🧩 Sección creada: ${nombre}`);
   }
 
-  // 3️⃣ Crear Categorías (solo en Indumentaria)
+  // 3️⃣ Crear Categorías específicas (solo para Indumentaria)
   const categoriasData = [
-    {
-      nombre: 'Remeras',
-      seccion: secciones['Indumentaria'],
-    },
-    {
-      nombre: 'Abrigos',
-      seccion: secciones['Indumentaria'],
-    },
+    { nombre: 'Remeras', seccion: secciones['Indumentaria'] },
+    { nombre: 'Abrigos', seccion: secciones['Indumentaria'] },
   ];
+
+  const seccionesConCategorias = new Set<string>();
 
   for (const cat of categoriasData) {
     await prisma.categoria.create({
@@ -53,10 +47,24 @@ async function main() {
         seccionId: cat.seccion.id,
       },
     });
-    console.log(`📁 Categoría creada: ${cat.nombre}`);
+    seccionesConCategorias.add(cat.seccion.nombre);
+    console.log(`📁 Categoría creada: ${cat.nombre} (Sección: ${cat.seccion.nombre})`);
   }
 
-  console.log('\n🌱 Seed completado correctamente');
+  // 4️⃣ Crear categoría "Otras" en las secciones sin categorías
+  for (const nombreSeccion of Object.keys(secciones)) {
+    if (!seccionesConCategorias.has(nombreSeccion)) {
+      await prisma.categoria.create({
+        data: {
+          nombre: 'Otras',
+          seccionId: secciones[nombreSeccion].id,
+        },
+      });
+      console.log(`📁 Categoría "Otras" creada en la sección: ${nombreSeccion}`);
+    }
+  }
+
+  console.log('\n🌱 Seed completado correctamente ✅');
 }
 
 main()
@@ -64,6 +72,6 @@ main()
     console.error('❌ Error ejecutando el seed:', e);
     process.exit(1);
   })
-  .finally(() => {
-    prisma.$disconnect();
+  .finally(async () => {
+    await prisma.$disconnect();
   });

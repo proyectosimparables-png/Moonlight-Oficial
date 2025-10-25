@@ -19,7 +19,6 @@ export type Producto = {
     precio: number;
     stock?: number;
     categoriaId: string;
-    tipoPrendaId: string;
     seccionId?: string;
   };    
   

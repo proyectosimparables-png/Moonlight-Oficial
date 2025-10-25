@@ -5,7 +5,7 @@ import { getAuthHeaders } from "@/lib/authHelpers";
 export async function getUserProfile() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/protected`, {
     method: "GET",
-    credentials: "include", // 👈 Importante para enviar cookies
+    credentials: "include", 
   })
 
   if (!res.ok) {
@@ -15,8 +15,6 @@ export async function getUserProfile() {
 
   return res.json()
 }
-
-
 
 //usuarios.ts
 export async function getAllUsers() {
