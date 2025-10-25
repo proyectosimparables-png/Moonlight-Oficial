@@ -26,17 +26,19 @@ export class DashboardService {
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
 
-    return this.prisma.orden.aggregate({
-      _sum: {
-        total: true,
-      },
-      where: {
-        estado: 'entregado', // solo ventas concretadas
-        createdAt: {
-          gte: inicioMes,
+    return this.prisma.orden
+      .aggregate({
+        _sum: {
+          total: true,
         },
-      },
-    }).then(result => result._sum.total ?? 0);
+        where: {
+          estado: 'entregado', // solo ventas concretadas
+          createdAt: {
+            gte: inicioMes,
+          },
+        },
+      })
+      .then((result) => result._sum.total ?? 0);
   }
 
   async getVentasRecientes() {
@@ -67,7 +69,7 @@ export class DashboardService {
       take: 5,
     });
 
-    return populares.map(p => ({
+    return populares.map((p) => ({
       nombre: p.nombre,
       vendidos: p._count.ordenes,
     }));

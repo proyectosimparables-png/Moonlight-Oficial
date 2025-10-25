@@ -74,7 +74,7 @@ export default {
           dark: "#7b5ca2",
         },
         // Nuevos colores personalizados
-        softBeige: "#faf5e5",  // beige claro para fondo
+        softBeige: "#faf5e5", // beige claro para fondo
         pastelLilac: "#d8c4fa", // lila pastel
       },
       borderRadius: {

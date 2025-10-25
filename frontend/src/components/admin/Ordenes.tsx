@@ -1,4 +1,4 @@
-'"use client";'
+'"use client";';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +39,7 @@ const mockOrdenes = [
     cliente: "Carlos López",
     producto: "Polo Bordado Empresarial",
     cantidad: 5,
-    total: 162.50,
+    total: 162.5,
     estado: "pendiente",
     fecha: "2024-01-17",
   },
@@ -49,7 +49,7 @@ const mockOrdenes = [
     cliente: "Ana Martínez",
     producto: "Gorra Snapback Custom",
     cantidad: 10,
-    total: 189.90,
+    total: 189.9,
     estado: "enviado",
     fecha: "2024-01-17",
   },
@@ -59,7 +59,7 @@ const mockOrdenes = [
     cliente: "Luis Rodríguez",
     producto: "Chaqueta Deportiva",
     cantidad: 1,
-    total: 65.00,
+    total: 65.0,
     estado: "pendiente",
     fecha: "2024-01-18",
   },
@@ -114,11 +114,12 @@ const Ordenes = () => {
                 </TableCell>
                 <TableCell>
                   <Badge variant={getEstadoBadge(orden.estado)}>
-                    {orden.estado.charAt(0).toUpperCase() + orden.estado.slice(1)}
+                    {orden.estado.charAt(0).toUpperCase() +
+                      orden.estado.slice(1)}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {new Date(orden.fecha).toLocaleDateString('es-ES')}
+                  {new Date(orden.fecha).toLocaleDateString("es-ES")}
                 </TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon">

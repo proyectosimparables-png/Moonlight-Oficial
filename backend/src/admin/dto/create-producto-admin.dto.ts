@@ -19,8 +19,8 @@ export class CreateProductoAdminDto {
   imagenUrl?: string;
 
   @IsString()
-  tipoPrendaId: string;  // ✅ Usamos el ID directamente
+  tipoPrendaId: string; // ✅ Usamos el ID directamente
 
   @IsString()
-  categoriaId: string;   // ✅ Campo requerido por Prisma
+  categoriaId: string; // ✅ Campo requerido por Prisma
 }

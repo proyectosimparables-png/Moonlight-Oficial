@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Si no hay session, limpiar role también
           setRole(null);
         }
-      }
+      },
     );
 
     return () => {
@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     await supabase.auth.signOut();
     setSession(null);
-    setRole(null);  
+    setRole(null);
 
     try {
       await fetch("http://localhost:3000/auth/logout", {
@@ -113,7 +113,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   if (!authLoaded) {
- 
     return <div className="p-4">Cargando autenticación...</div>;
   }
 

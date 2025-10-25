@@ -48,7 +48,9 @@ async function main() {
       },
     });
     seccionesConCategorias.add(cat.seccion.nombre);
-    console.log(`📁 Categoría creada: ${cat.nombre} (Sección: ${cat.seccion.nombre})`);
+    console.log(
+      `📁 Categoría creada: ${cat.nombre} (Sección: ${cat.seccion.nombre})`
+    );
   }
 
   // 4️⃣ Crear categoría "Otras" en las secciones sin categorías
@@ -60,7 +62,9 @@ async function main() {
           seccionId: secciones[nombreSeccion].id,
         },
       });
-      console.log(`📁 Categoría "Otras" creada en la sección: ${nombreSeccion}`);
+      console.log(
+        `📁 Categoría "Otras" creada en la sección: ${nombreSeccion}`
+      );
     }
   }
 

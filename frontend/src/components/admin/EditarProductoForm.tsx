@@ -1,13 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { updateProducto, updateProductoConImagen, removeImagenProducto } from '@/services/productos';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
+import { useState } from "react";
+import {
+  updateProducto,
+  updateProductoConImagen,
+  removeImagenProducto,
+} from "@/services/productos";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
-export default function EditarProductoForm({ producto, onCancel, onUpdate }: any) {
+export default function EditarProductoForm({
+  producto,
+  onCancel,
+  onUpdate,
+}: any) {
   const [nombre, setNombre] = useState(producto.nombre);
   const [descripcion, setDescripcion] = useState(producto.descripcion);
   const [precio, setPrecio] = useState(producto.precio);
@@ -43,13 +51,13 @@ export default function EditarProductoForm({ producto, onCancel, onUpdate }: any
     try {
       if (imagen) {
         const formData = new FormData();
-        formData.append('file', imagen);
-        formData.append('nombre', nombre);
-        formData.append('descripcion', descripcion);
-        formData.append('precio', String(precio));
-        formData.append('stock', String(producto.stock));
-        formData.append('categoriaId', producto.categoriaId);
-        formData.append('tipoPrendaId', producto.tipoPrendaId);
+        formData.append("file", imagen);
+        formData.append("nombre", nombre);
+        formData.append("descripcion", descripcion);
+        formData.append("precio", String(precio));
+        formData.append("stock", String(producto.stock));
+        formData.append("categoriaId", producto.categoriaId);
+        formData.append("tipoPrendaId", producto.tipoPrendaId);
 
         await updateProductoConImagen(producto.id, formData);
       } else {
@@ -75,24 +83,45 @@ export default function EditarProductoForm({ producto, onCancel, onUpdate }: any
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block mb-1">Nombre</label>
-          <Input value={nombre} onChange={(e) => setNombre(e.target.value)} required />
+          <Input
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+          />
         </div>
         <div>
           <label className="block mb-1">Precio</label>
-          <Input type="number" value={precio} onChange={(e) => setPrecio(parseFloat(e.target.value))} required />
+          <Input
+            type="number"
+            value={precio}
+            onChange={(e) => setPrecio(parseFloat(e.target.value))}
+            required
+          />
         </div>
       </div>
 
       <div>
         <label className="block mb-1">Descripción</label>
-        <Textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+        <Textarea
+          value={descripcion}
+          onChange={(e) => setDescripcion(e.target.value)}
+        />
       </div>
 
       {imagenUrl && (
         <div>
           <label className="block mb-1">Imagen actual</label>
-          <img src={imagenUrl} alt="Imagen actual" className="h-32 object-cover rounded" />
-          <Button type="button" variant="destructive" className="mt-2" onClick={handleRemoveImagen}>
+          <img
+            src={imagenUrl}
+            alt="Imagen actual"
+            className="h-32 object-cover rounded"
+          />
+          <Button
+            type="button"
+            variant="destructive"
+            className="mt-2"
+            onClick={handleRemoveImagen}
+          >
             Eliminar imagen
           </Button>
         </div>
@@ -102,13 +131,21 @@ export default function EditarProductoForm({ producto, onCancel, onUpdate }: any
         <label className="block mb-1">Nueva imagen</label>
         <Input type="file" accept="image/*" onChange={handleImageChange} />
         {previewUrl && (
-          <img src={previewUrl} alt="Vista previa" className="mt-2 h-32 object-cover rounded" />
+          <img
+            src={previewUrl}
+            alt="Vista previa"
+            className="mt-2 h-32 object-cover rounded"
+          />
         )}
       </div>
 
       <div className="flex gap-2">
-        <Button type="submit" className="bg-purple-600 text-white">Guardar cambios</Button>
-        <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
+        <Button type="submit" className="bg-purple-600 text-white">
+          Guardar cambios
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
       </div>
     </form>
   );

@@ -24,7 +24,7 @@ export class AuthController {
   async setAuthCookie(
     @Req() req: Request,
     @Res() res: Response,
-    @Body() body: { token: string },
+    @Body() body: { token: string }
   ) {
     const { token } = body;
 
@@ -127,24 +127,21 @@ export class AuthController {
     }
   }
 
-
   // ✅ Obtener todos los usuarios (solo para admin)
- @UseGuards(SupabaseAuthGuard)
-@Get('usuarios')
-async getAllUsers() {
-  try {
-    const users = await this.authService.findAllUsers();
-    return {
-      message: 'Usuarios obtenidos correctamente',
-      users,
-    };
-  } catch (error) {
-    console.error('Error al obtener usuarios:', error);
-    throw new Error('Error interno del servidor');
+  @UseGuards(SupabaseAuthGuard)
+  @Get('usuarios')
+  async getAllUsers() {
+    try {
+      const users = await this.authService.findAllUsers();
+      return {
+        message: 'Usuarios obtenidos correctamente',
+        users,
+      };
+    } catch (error) {
+      console.error('Error al obtener usuarios:', error);
+      throw new Error('Error interno del servidor');
+    }
   }
-}
-
-
 
   @Post('logout')
   logout(@Res() res: Response) {

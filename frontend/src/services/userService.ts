@@ -5,15 +5,15 @@ import { getAuthHeaders } from "@/lib/authHelpers";
 export async function getUserProfile() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/protected`, {
     method: "GET",
-    credentials: "include", 
-  })
+    credentials: "include",
+  });
 
   if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`Error: ${res.status} ${text}`)
+    const text = await res.text();
+    throw new Error(`Error: ${res.status} ${text}`);
   }
 
-  return res.json()
+  return res.json();
 }
 
 //usuarios.ts
@@ -21,14 +21,17 @@ export async function getAllUsers() {
   try {
     const headers = await getAuthHeaders();
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/usuarios`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...headers, // 🔹 Agrega el token de sesión
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/usuarios`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...headers, // 🔹 Agrega el token de sesión
+        },
+        credentials: "include",
       },
-      credentials: "include",
-    });
+    );
 
     if (!res.ok) {
       const errorText = await res.text();
@@ -41,4 +44,3 @@ export async function getAllUsers() {
     throw error;
   }
 }
-

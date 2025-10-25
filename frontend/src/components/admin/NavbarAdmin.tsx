@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   LayoutDashboard,
   Package,
@@ -14,36 +14,35 @@ import {
   Menu,
   X,
   LogOut,
-} from 'lucide-react'
-import ThemeToggle from './TemeToggle'
-import { useAuth } from '@/hooks/useAuth'
-
+} from "lucide-react";
+import ThemeToggle from "./TemeToggle";
+import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
-  { title: 'Dashboard', url: '/admin', icon: LayoutDashboard },
-  { title: 'Publicar', url: '/admin/nuevo-producto', icon: Tags },
-  { title: 'Productos', url: '/admin/productos', icon: Package },
-  { title: 'Órdenes', url: '/admin/ordenes', icon: ShoppingCart },
-  { title: 'Categorías', url: '/admin/categorias', icon: FolderTree },
-  { title: 'Usuarios', url: '/admin/usuarios', icon: Users },
-  { title: 'Volver a la tienda', url: '/', icon: ShoppingCart },
-]
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Publicar", url: "/admin/nuevo-producto", icon: Tags },
+  { title: "Productos", url: "/admin/productos", icon: Package },
+  { title: "Órdenes", url: "/admin/ordenes", icon: ShoppingCart },
+  { title: "Categorías", url: "/admin/categorias", icon: FolderTree },
+  { title: "Usuarios", url: "/admin/usuarios", icon: Users },
+  { title: "Volver a la tienda", url: "/", icon: ShoppingCart },
+];
 
 export default function AdminNavbar() {
-  const pathname = usePathname()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { logout } = useAuth() // 👈 obtenemos logout y user del contexto
+  const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { logout } = useAuth(); // 👈 obtenemos logout y user del contexto
 
-  const handleLinkClick = () => setIsMobileMenuOpen(false)
+  const handleLinkClick = () => setIsMobileMenuOpen(false);
 
   const handleLogout = async () => {
     try {
-      await logout()
-      console.log('Sesión cerrada correctamente')
+      await logout();
+      console.log("Sesión cerrada correctamente");
     } catch (error) {
-      console.error('Error al cerrar sesión:', error)
+      console.error("Error al cerrar sesión:", error);
     }
-  }
+  };
 
   return (
     <>
@@ -56,14 +55,18 @@ export default function AdminNavbar() {
           className="text-gray-700 focus:outline-none"
           aria-label="Toggle menu"
         >
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isMobileMenuOpen ? (
+            <X className="w-6 h-6" />
+          ) : (
+            <Menu className="w-6 h-6" />
+          )}
         </button>
       </div>
 
       {/* Mobile Menu */}
       <div
         className={`md:hidden bg-white border-b px-4 transition-all duration-300 ease-in-out overflow-hidden ${
-          isMobileMenuOpen ? 'max-h-[600px] py-4' : 'max-h-0'
+          isMobileMenuOpen ? "max-h-[600px] py-4" : "max-h-0"
         }`}
       >
         <ul className="space-y-2">
@@ -75,8 +78,8 @@ export default function AdminNavbar() {
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full
                   ${
                     pathname === item.url
-                      ? 'bg-purple-600 text-white'
-                      : 'text-gray-700 hover:bg-purple-100 dark:text-gray-300 dark:hover:bg-purple-800'
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-700 hover:bg-purple-100 dark:text-gray-300 dark:hover:bg-purple-800"
                   }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -112,8 +115,8 @@ export default function AdminNavbar() {
                 className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors
                   ${
                     pathname === item.url
-                      ? 'bg-purple-600 text-white'
-                      : 'text-gray-700 hover:bg-purple-100 dark:text-gray-300 dark:hover:bg-purple-800'
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-700 hover:bg-purple-100 dark:text-gray-300 dark:hover:bg-purple-800"
                   }`}
               >
                 <item.icon className="h-4 w-4" />
@@ -140,5 +143,5 @@ export default function AdminNavbar() {
         </div>
       </aside>
     </>
-  )
+  );
 }

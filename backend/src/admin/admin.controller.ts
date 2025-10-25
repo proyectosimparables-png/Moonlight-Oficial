@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Post,
-  Put,
-  Param,
-  Body,
-  Get,
-} from '@nestjs/common';
+import { Controller, Post, Put, Param, Body, Get } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CreateProductoAdminDto } from './dto/create-producto-admin.dto';
 import { PublicarProductoDto } from './dto/publicar-producto.dto';
@@ -25,10 +18,7 @@ export class AdminController {
   }
 
   @Put('productos/:id/publicar')
-  publicarProducto(
-    @Param('id') id: string,
-    @Body() dto: PublicarProductoDto,
-  ) {
+  publicarProducto(@Param('id') id: string, @Body() dto: PublicarProductoDto) {
     return this.adminService.publicarProducto(id, dto);
   }
 }

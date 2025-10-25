@@ -1,73 +1,76 @@
-'use client'
+"use client";
 
-import React, { useEffect, useState } from 'react'
-import { getAllUsers } from '@/services/userService'
-import { supabase } from '@/lib/supabaseClient'
+import React, { useEffect, useState } from "react";
+import { getAllUsers } from "@/services/userService";
+import { supabase } from "@/lib/supabaseClient";
 
 interface Usuario {
-  id: string
-  name: string | null
-  email: string
-  role: string
-  createdAt: string
-  image?: string
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+  createdAt: string;
+  image?: string;
 }
 
 const UsuariosPage: React.FC = () => {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const data = await getAllUsers()
+        const data = await getAllUsers();
 
         // ✅ Determina si el backend devuelve { users: [...] } o directamente un array
         const usersArray: Usuario[] = Array.isArray(data)
           ? data
           : Array.isArray(data.users)
-          ? data.users
-          : []
+            ? data.users
+            : [];
 
         // Paso 1: mapeamos los usuarios con una imagen por defecto
         let enrichedUsers: Usuario[] = usersArray.map((user: Usuario) => ({
           ...user,
-          image: '/default-avatar.png',
-        }))
+          image: "/default-avatar.png",
+        }));
 
         // Paso 2: obtenemos el usuario actual autenticado desde Supabase
-        const { data: authData } = await supabase.auth.getUser()
-        const currentUser = authData?.user
+        const { data: authData } = await supabase.auth.getUser();
+        const currentUser = authData?.user;
 
         if (currentUser) {
-          const avatar = currentUser.user_metadata?.avatar_url as string | undefined
-          const email = currentUser.email
+          const avatar = currentUser.user_metadata?.avatar_url as
+            | string
+            | undefined;
+          const email = currentUser.email;
 
           // Si coincide el email, reemplazamos su imagen
           if (avatar && email) {
             enrichedUsers = enrichedUsers.map((user: Usuario) =>
-              user.email === email ? { ...user, image: avatar } : user
-            )
+              user.email === email ? { ...user, image: avatar } : user,
+            );
           }
         }
 
-        setUsuarios(enrichedUsers)
+        setUsuarios(enrichedUsers);
       } catch (error) {
-        console.error('Error obteniendo usuarios:', error)
-        setError('Error al cargar usuarios')
+        console.error("Error obteniendo usuarios:", error);
+        setError("Error al cargar usuarios");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchUsers()
-  }, [])
+    fetchUsers();
+  }, []);
 
   if (loading)
-    return <p className="text-center mt-10 text-gray-500">Cargando usuarios...</p>
-  if (error)
-    return <p className="text-center mt-10 text-red-500">{error}</p>
+    return (
+      <p className="text-center mt-10 text-gray-500">Cargando usuarios...</p>
+    );
+  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
 
   return (
     <div className="p-6 bg-purple-50 min-h-screen">
@@ -98,15 +101,19 @@ const UsuariosPage: React.FC = () => {
               <tr key={u.id} className="border-t hover:bg-purple-50 transition">
                 <td className="px-4 py-3 flex items-center gap-3 text-purple-800 font-medium">
                   <img
-                    src={u.image || '/default-avatar.png'}
+                    src={u.image || "/default-avatar.png"}
                     className="w-10 h-10 rounded-full border border-purple-300 object-cover"
                   />
-                  <span>{u.name || 'Sin nombre'}</span>
+                  <span>{u.name || "Sin nombre"}</span>
                 </td>
-                <td className="px-4 py-3 text-purple-800 font-medium">{u.email}</td>
-                <td className="px-4 py-3 text-purple-800 font-medium">{u.role}</td>
                 <td className="px-4 py-3 text-purple-800 font-medium">
-                  {new Date(u.createdAt).toLocaleDateString('es-ES')}
+                  {u.email}
+                </td>
+                <td className="px-4 py-3 text-purple-800 font-medium">
+                  {u.role}
+                </td>
+                <td className="px-4 py-3 text-purple-800 font-medium">
+                  {new Date(u.createdAt).toLocaleDateString("es-ES")}
                 </td>
               </tr>
             ))}
@@ -114,7 +121,7 @@ const UsuariosPage: React.FC = () => {
         </table>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UsuariosPage
+export default UsuariosPage;

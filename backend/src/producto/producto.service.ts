@@ -10,26 +10,22 @@ export class ProductoService {
   constructor(private prisma: PrismaService) {}
 
   // 🧩 Crear producto (con o sin imagen)
-async create(data: CreateProductoDto, imagenUrl?: string) {
-  return this.prisma.producto.create({
-    data: {
-      nombre: data.nombre,
-      descripcion: data.descripcion,
-      precio: data.precio,
-      stock: data.stock ?? 0,
-      imagenUrl: imagenUrl,
-      categoriaId: data.categoriaId,
-      seccionId: data.seccionId,
-      published: data.published ?? false,
-    } as Prisma.ProductoUncheckedCreateInput,
-  });
-}
+  async create(data: CreateProductoDto, imagenUrl?: string) {
+    return this.prisma.producto.create({
+      data: {
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        precio: data.precio,
+        stock: data.stock ?? 0,
+        imagenUrl: imagenUrl,
+        categoriaId: data.categoriaId,
+        seccionId: data.seccionId,
+        published: data.published ?? false,
+      } as Prisma.ProductoUncheckedCreateInput,
+    });
+  }
   // 📦 Listar productos con filtros opcionales
-  async findAll(
-    published?: boolean,
-    seccionId?: string,
-    categoriaId?: string,
-  ) {
+  async findAll(published?: boolean, seccionId?: string, categoriaId?: string) {
     const where: Prisma.ProductoWhereInput = {};
 
     if (published !== undefined) where.published = published;
@@ -90,17 +86,15 @@ async create(data: CreateProductoDto, imagenUrl?: string) {
   }
 
   // Obtener secciones con productos
-async getSecciones() {
-   console.log('Buscando secciones en DB...');
-  return this.prisma.seccion.findMany({
-    orderBy: { nombre: 'asc' },
-    include: {
-      productos: true, // trae los productos de cada sección
-    },
-    
-  });
-}
-
+  async getSecciones() {
+    console.log('Buscando secciones en DB...');
+    return this.prisma.seccion.findMany({
+      orderBy: { nombre: 'asc' },
+      include: {
+        productos: true, // trae los productos de cada sección
+      },
+    });
+  }
 
   // 📚 Obtener TODAS las categorías (sin filtrar)
   async getTodasLasCategorias() {
@@ -127,13 +121,19 @@ async getSecciones() {
   }
 
   // ➕ Crear nueva categoría
-  async crearCategoria(data: { nombre: string; seccionNombre: string; padreId?: string }) {
+  async crearCategoria(data: {
+    nombre: string;
+    seccionNombre: string;
+    padreId?: string;
+  }) {
     const seccion = await this.prisma.seccion.findUnique({
       where: { nombre: data.seccionNombre },
     });
 
     if (!seccion) {
-      throw new Error(`No se encontró la sección con nombre "${data.seccionNombre}"`);
+      throw new Error(
+        `No se encontró la sección con nombre "${data.seccionNombre}"`
+      );
     }
 
     return this.prisma.categoria.create({
@@ -146,7 +146,10 @@ async getSecciones() {
   }
 
   // ✏️ Actualizar categoría
-  async actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string }) {
+  async actualizarCategoria(
+    id: string,
+    data: { nombre?: string; seccionId?: string }
+  ) {
     const camposActualizables: any = {};
     if (data.nombre) camposActualizables.nombre = data.nombre;
     if (data.seccionId) camposActualizables.seccionId = data.seccionId;

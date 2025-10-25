@@ -1,8 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { createProducto, publicarProducto, getSecciones, getCategorias } from '@/services/productos';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import {
+  createProducto,
+  publicarProducto,
+  getSecciones,
+  getCategorias,
+} from "@/services/productos";
 
 type Seccion = {
   id: string;
@@ -15,18 +20,18 @@ type Categoria = {
 };
 
 export default function FormProducto() {
-  const [nombre, setNombre] = useState('');
-  const [precio, setPrecio] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [stock, setStock] = useState('');
+  const [nombre, setNombre] = useState("");
+  const [precio, setPrecio] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+  const [stock, setStock] = useState("");
   const [imagen, setImagen] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imagenSubidaUrl, setImagenSubidaUrl] = useState<string | null>(null);
 
   const [secciones, setSecciones] = useState<Seccion[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [seccionIdSeleccionada, setSeccionIdSeleccionada] = useState('');
-  const [categoriaIdSeleccionada, setCategoriaIdSeleccionada] = useState('');
+  const [seccionIdSeleccionada, setSeccionIdSeleccionada] = useState("");
+  const [categoriaIdSeleccionada, setCategoriaIdSeleccionada] = useState("");
 
   // 🔁 Cargar secciones al montar el componente
   useEffect(() => {
@@ -35,7 +40,7 @@ export default function FormProducto() {
         const seccionesData = await getSecciones();
         setSecciones(seccionesData);
       } catch (error) {
-        console.error('Error al cargar secciones', error);
+        console.error("Error al cargar secciones", error);
       }
     }
     cargarSecciones();
@@ -45,7 +50,7 @@ export default function FormProducto() {
   useEffect(() => {
     if (!seccionIdSeleccionada) {
       setCategorias([]);
-      setCategoriaIdSeleccionada('');
+      setCategoriaIdSeleccionada("");
       return;
     }
 
@@ -53,9 +58,9 @@ export default function FormProducto() {
       try {
         const categoriasData = await getCategorias(seccionIdSeleccionada);
         setCategorias(categoriasData);
-        setCategoriaIdSeleccionada('');
+        setCategoriaIdSeleccionada("");
       } catch (error) {
-        console.error('Error al cargar categorías', error);
+        console.error("Error al cargar categorías", error);
         setCategorias([]);
       }
     }
@@ -77,15 +82,15 @@ export default function FormProducto() {
   };
 
   const resetForm = () => {
-    setNombre('');
-    setPrecio('');
-    setDescripcion('');
-    setStock('');
+    setNombre("");
+    setPrecio("");
+    setDescripcion("");
+    setStock("");
     setImagen(null);
     setPreviewUrl(null);
     setImagenSubidaUrl(null);
-    setSeccionIdSeleccionada('');
-    setCategoriaIdSeleccionada('');
+    setSeccionIdSeleccionada("");
+    setCategoriaIdSeleccionada("");
     setCategorias([]);
   };
 
@@ -93,35 +98,35 @@ export default function FormProducto() {
     e.preventDefault();
 
     if (!imagen) {
-      toast.warning('⚠️ Selecciona una imagen');
+      toast.warning("⚠️ Selecciona una imagen");
       return;
     }
 
     if (!seccionIdSeleccionada || !categoriaIdSeleccionada) {
-      toast.warning('⚠️ Selecciona sección y categoría');
+      toast.warning("⚠️ Selecciona sección y categoría");
       return;
     }
 
     const formData = new FormData();
-    formData.append('file', imagen);
-    formData.append('nombre', nombre);
-    formData.append('descripcion', descripcion);
-    formData.append('precio', Number(precio).toString());
-    formData.append('stock', Number(stock).toString());
-    formData.append('categoriaId', categoriaIdSeleccionada);
-    formData.append('seccionId', seccionIdSeleccionada);
+    formData.append("file", imagen);
+    formData.append("nombre", nombre);
+    formData.append("descripcion", descripcion);
+    formData.append("precio", Number(precio).toString());
+    formData.append("stock", Number(stock).toString());
+    formData.append("categoriaId", categoriaIdSeleccionada);
+    formData.append("seccionId", seccionIdSeleccionada);
 
     try {
       const productoCreado = await createProducto(formData);
-      toast.success('✅ Producto creado correctamente');
+      toast.success("✅ Producto creado correctamente");
       setImagenSubidaUrl(productoCreado.imagenUrl);
 
       await publicarProducto(productoCreado.id);
-      toast('🚀 Producto publicado');
+      toast("🚀 Producto publicado");
 
       resetForm();
     } catch (error) {
-      toast.error('❌ Error al crear producto');
+      toast.error("❌ Error al crear producto");
       console.error(error);
     }
   };
@@ -174,7 +179,9 @@ export default function FormProducto() {
       >
         <option value="">Selecciona una sección</option>
         {secciones.map((sec) => (
-          <option key={sec.id} value={sec.id}>{sec.nombre}</option>
+          <option key={sec.id} value={sec.id}>
+            {sec.nombre}
+          </option>
         ))}
       </select>
 
@@ -188,7 +195,9 @@ export default function FormProducto() {
       >
         <option value="">Selecciona una categoría</option>
         {categorias.map((cat) => (
-          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+          <option key={cat.id} value={cat.id}>
+            {cat.nombre}
+          </option>
         ))}
       </select>
 

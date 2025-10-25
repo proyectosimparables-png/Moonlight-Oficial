@@ -124,17 +124,20 @@ const Navbar = () => {
 
                 {/* Login Button */}
                 <Button
-  variant="ghost"
-  onClick={isAuthenticated ? logout : login}
-  className="hover:bg-[#e6dff1] flex items-center gap-1 mr-6 px-3 py-1 rounded"
-  title={isAuthenticated ? `Cerrar sesión (${user?.email})` : "Iniciar sesión con Google"}
->
-  <User className="h-7 w-7 text-[#7b5ca2]" />
-  <span className="text-[#7b5ca2] select-none text-sm">
-    {isAuthenticated ? "Cerrar sesión" : "Ingresá"}
-  </span>
-</Button>
-
+                  variant="ghost"
+                  onClick={isAuthenticated ? logout : login}
+                  className="hover:bg-[#e6dff1] flex items-center gap-1 mr-6 px-3 py-1 rounded"
+                  title={
+                    isAuthenticated
+                      ? `Cerrar sesión (${user?.email})`
+                      : "Iniciar sesión con Google"
+                  }
+                >
+                  <User className="h-7 w-7 text-[#7b5ca2]" />
+                  <span className="text-[#7b5ca2] select-none text-sm">
+                    {isAuthenticated ? "Cerrar sesión" : "Ingresá"}
+                  </span>
+                </Button>
 
                 {/* Cart Button */}
                 <Button
@@ -142,7 +145,9 @@ const Navbar = () => {
                   size="icon"
                   className="relative hover:bg-[#e6dff1]"
                   onClick={handleCartClick}
-                  title={isAuthenticated ? "Ver carrito" : "Ingresá para ver carrito"}
+                  title={
+                    isAuthenticated ? "Ver carrito" : "Ingresá para ver carrito"
+                  }
                 >
                   <ShoppingCart className="h-5 w-5 text-[#7b5ca2]" />
                   {cartCount > 0 && (

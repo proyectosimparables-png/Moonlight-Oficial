@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import {
   getCategoriasBySeccion,
   crearCategoria,
 } from "@/services/productos";
-
 
 type Subcategoria = {
   id: string;
@@ -48,17 +47,19 @@ const Categorias = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
-  const [categoriaEditando, setCategoriaEditando] = useState<CategoriaConProductos | null>(null);
+  const [categoriaEditando, setCategoriaEditando] =
+    useState<CategoriaConProductos | null>(null);
   const [nuevoNombre, setNuevoNombre] = useState("");
 
   const [nuevaCategoriaNombre, setNuevaCategoriaNombre] = useState("");
-  const [nuevaCategoriaSeccionNombre, setNuevaCategoriaSeccionNombre] = useState("");
+  const [nuevaCategoriaSeccionNombre, setNuevaCategoriaSeccionNombre] =
+    useState("");
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [categoriaAEliminar, setCategoriaAEliminar] = useState<string | null>(null);
+  const [categoriaAEliminar, setCategoriaAEliminar] = useState<string | null>(
+    null,
+  );
   const [isUpdating, setIsUpdating] = useState(false);
-
-
 
   useEffect(() => {
     setLoading(true);
@@ -71,7 +72,8 @@ const Categorias = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-center mt-8">Cargando categorías...</p>;
+  if (loading)
+    return <p className="text-center mt-8">Cargando categorías...</p>;
   if (error) return <p className="text-center mt-8 text-red-600">{error}</p>;
 
   const handleEliminarCategoria = async (id: string) => {
@@ -85,7 +87,6 @@ const Categorias = () => {
     }
   };
 
-
   const abrirModalEdicion = (categoria: CategoriaConProductos) => {
     setCategoriaEditando(categoria);
     setNuevoNombre(categoria.nombre);
@@ -97,14 +98,17 @@ const Categorias = () => {
     setIsUpdating(true);
 
     try {
-      const categoriaActualizada = await actualizarCategoria(categoriaEditando.id, {
-        nombre: nuevoNombre,
-      });
+      const categoriaActualizada = await actualizarCategoria(
+        categoriaEditando.id,
+        {
+          nombre: nuevoNombre,
+        },
+      );
 
       setCategorias((prev) =>
         prev.map((cat) =>
-          cat.id === categoriaActualizada.id ? categoriaActualizada : cat
-        )
+          cat.id === categoriaActualizada.id ? categoriaActualizada : cat,
+        ),
       );
 
       toast.success("Categoría actualizada");
@@ -146,7 +150,6 @@ const Categorias = () => {
     }
   };
 
-
   return (
     <div className="space-y-6 px-4">
       {/* 🔹 Encabezado */}
@@ -166,7 +169,6 @@ const Categorias = () => {
           <Plus className="h-4 w-4" />
           Nueva Categoría
         </Button>
-
       </div>
 
       {/* 🔹 Listado */}
@@ -203,7 +205,6 @@ const Categorias = () => {
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-
               </div>
 
               <div className="flex items-center gap-3 pt-6">
@@ -272,7 +273,8 @@ const Categorias = () => {
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">
-            ¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar esta categoría? Esta acción no
+            se puede deshacer.
           </p>
           <DialogFooter className="mt-6 flex justify-end space-x-2">
             <Button
@@ -379,7 +381,6 @@ const Categorias = () => {
             >
               {isUpdating ? "Guardando..." : "Guardar"}
             </Button>
-
           </DialogFooter>
         </DialogContent>
       </Dialog>

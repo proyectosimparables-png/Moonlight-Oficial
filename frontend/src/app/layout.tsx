@@ -16,13 +16,19 @@ import Provaiders from "@/components/Provaiders";
 import clsx from "clsx";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 const loveStory = Love_Ya_Like_A_Sister({
   variable: "--font-love-story",
   weight: ["400"],
   subsets: ["latin"],
 });
-const montserrat = Montserrat({ variable: "--font-montserrat", subsets: ["latin"] });
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+});
 const dancingScript = Dancing_Script({
   variable: "--font-dancing-script",
   weight: ["400", "500", "700"],
@@ -45,23 +51,17 @@ export default function RootLayout({
     geistMono.variable || "",
     loveStory.variable || "",
     montserrat.variable || "",
-    dancingScript.variable || ""
+    dancingScript.variable || "",
   );
 
   return (
     <html lang="es" className={htmlClassName}>
       <body className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans">
-    
-       
-            <AuthProvider>
-              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <Provaiders>
-                {children}
-                </Provaiders>     
-              </ThemeProvider>
-              </AuthProvider>
-        
-        
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <Provaiders>{children}</Provaiders>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

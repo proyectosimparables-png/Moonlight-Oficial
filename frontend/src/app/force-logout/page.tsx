@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 export default function ForceLogoutPage() {
   const { logout } = useAuth();
@@ -9,7 +9,7 @@ export default function ForceLogoutPage() {
 
   const handleLogout = async () => {
     await logout(); // limpia sesión
-    router.push('/'); // te redirige al home
+    router.push("/"); // te redirige al home
   };
 
   return (

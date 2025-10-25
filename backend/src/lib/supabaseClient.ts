@@ -10,5 +10,5 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY!;
 
 export const supabase: SupabaseClient = createClient(
   SUPABASE_URL,
-  SUPABASE_KEY,
+  SUPABASE_KEY
 );

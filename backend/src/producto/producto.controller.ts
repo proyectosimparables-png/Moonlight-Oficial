@@ -154,7 +154,7 @@ export class ProductoController {
 export class ProductoController {
   constructor(
     private readonly productoService: ProductoService,
-    private readonly cloudinaryService: CloudinaryService,
+    private readonly cloudinaryService: CloudinaryService
   ) {}
 
   // =======================
@@ -164,7 +164,6 @@ export class ProductoController {
   // Obtener secciones
   @Get('secciones')
   getSecciones() {
-    
     return this.productoService.getSecciones();
   }
 
@@ -180,7 +179,7 @@ export class ProductoController {
   findAll(
     @Query('published') published?: string,
     @Query('seccionId') seccionId?: string,
-    @Query('categoriaId') categoriaId?: string,
+    @Query('categoriaId') categoriaId?: string
   ) {
     const isPublished =
       published === 'true' ? true : published === 'false' ? false : undefined;
@@ -209,7 +208,7 @@ export class ProductoController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async uploadProducto(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: CreateProductoDto,
+    @Body() body: CreateProductoDto
   ) {
     if (!file) throw new BadRequestException('No se subió ninguna imagen');
 
@@ -221,14 +220,14 @@ export class ProductoController {
         seccionId: body.seccionId ? String(body.seccionId) : undefined,
         categoriaId: String(body.categoriaId),
       },
-      imagenUrl,
+      imagenUrl
     );
   }
 
   // Crear categoría
   @Post('categorias')
   crearCategoria(
-    @Body() data: { nombre: string; seccionNombre: string; padreId?: string },
+    @Body() data: { nombre: string; seccionNombre: string; padreId?: string }
   ) {
     return this.productoService.crearCategoria(data);
   }
@@ -250,9 +249,11 @@ export class ProductoController {
   async updateProductoWithImage(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: CreateProductoDto,
+    @Body() body: CreateProductoDto
   ) {
-    const imagenUrl = file ? await this.cloudinaryService.uploadImage(file) : undefined;
+    const imagenUrl = file
+      ? await this.cloudinaryService.uploadImage(file)
+      : undefined;
     return this.productoService.update(id, body, imagenUrl);
   }
 
@@ -276,7 +277,7 @@ export class ProductoController {
   @Patch('categorias/:id')
   actualizarCategoria(
     @Param('id') id: string,
-    @Body() data: { nombre?: string; seccionId?: string },
+    @Body() data: { nombre?: string; seccionId?: string }
   ) {
     return this.productoService.actualizarCategoria(id, data);
   }
@@ -297,10 +298,3 @@ export class ProductoController {
     return this.productoService.eliminarCategoria(id);
   }
 }
-
-
-  
-
-
-
-

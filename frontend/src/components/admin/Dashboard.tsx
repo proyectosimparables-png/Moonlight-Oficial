@@ -1,41 +1,52 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, ShoppingCart, Users, TrendingUp } from "lucide-react";
-import { fetchOrdenesActivas, fetchProductosPopulares, fetchTotalProductos, fetchUsuariosRegistrados, fetchVentasDelMes, fetchVentasRecientes } from '@/services/dashboardAdmin';
+import {
+  fetchOrdenesActivas,
+  fetchProductosPopulares,
+  fetchTotalProductos,
+  fetchUsuariosRegistrados,
+  fetchVentasDelMes,
+  fetchVentasRecientes,
+} from "@/services/dashboardAdmin";
 
 const Dashboard = () => {
   const { data: totalProductos, isLoading: loadingTotalProductos } = useQuery({
-    queryKey: ['totalProductos'],
+    queryKey: ["totalProductos"],
     queryFn: fetchTotalProductos,
   });
 
   const { data: ordenesActivas, isLoading: loadingOrdenesActivas } = useQuery({
-    queryKey: ['ordenesActivas'],
+    queryKey: ["ordenesActivas"],
     queryFn: fetchOrdenesActivas,
   });
 
-  const { data: usuariosRegistrados, isLoading: loadingUsuariosRegistrados } = useQuery({
-    queryKey: ['usuariosRegistrados'],
-    queryFn: fetchUsuariosRegistrados,
-  });
+  const { data: usuariosRegistrados, isLoading: loadingUsuariosRegistrados } =
+    useQuery({
+      queryKey: ["usuariosRegistrados"],
+      queryFn: fetchUsuariosRegistrados,
+    });
 
   const { data: ventasDelMes, isLoading: loadingVentasDelMes } = useQuery({
-    queryKey: ['ventasDelMes'],
+    queryKey: ["ventasDelMes"],
     queryFn: fetchVentasDelMes,
   });
 
-  const { data: ventasRecientes, isLoading: loadingVentasRecientes } = useQuery({
-    queryKey: ['ventasRecientes'],
-    queryFn: fetchVentasRecientes,
-  });
+  const { data: ventasRecientes, isLoading: loadingVentasRecientes } = useQuery(
+    {
+      queryKey: ["ventasRecientes"],
+      queryFn: fetchVentasRecientes,
+    },
+  );
 
-  const { data: productosPopulares, isLoading: loadingProductosPopulares } = useQuery({
-    queryKey: ['productosPopulares'],
-    queryFn: fetchProductosPopulares,
-  });
+  const { data: productosPopulares, isLoading: loadingProductosPopulares } =
+    useQuery({
+      queryKey: ["productosPopulares"],
+      queryFn: fetchProductosPopulares,
+    });
 
   if (
     loadingTotalProductos ||
@@ -51,25 +62,25 @@ const Dashboard = () => {
   const statsCards = [
     {
       title: "Total Productos",
-      value: totalProductos ?? 'N/A',
-      change: "+12% desde el mes pasado", 
+      value: totalProductos ?? "N/A",
+      change: "+12% desde el mes pasado",
       icon: Package,
     },
     {
       title: "Órdenes Activas",
-      value: ordenesActivas ?? 'N/A',
+      value: ordenesActivas ?? "N/A",
       change: "+8% desde la semana pasada",
       icon: ShoppingCart,
     },
     {
       title: "Usuarios Registrados",
-      value: usuariosRegistrados ?? 'N/A',
+      value: usuariosRegistrados ?? "N/A",
       change: "+23% desde el mes pasado",
       icon: Users,
     },
     {
       title: "Ventas del Mes",
-      value: ventasDelMes ? `$${ventasDelMes.toLocaleString()}` : 'N/A',
+      value: ventasDelMes ? `$${ventasDelMes.toLocaleString()}` : "N/A",
       change: "+19% desde el mes pasado",
       icon: TrendingUp,
     },
@@ -89,8 +100,8 @@ const Dashboard = () => {
       {/* Estadísticas principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat) => (
-          <Card 
-            key={stat.title} 
+          <Card
+            key={stat.title}
             className="overflow-hidden transition-all hover:shadow-lg border border-[var(--color-purple)] bg-[var(--color-cream)]"
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -100,8 +111,12 @@ const Dashboard = () => {
               <stat.icon className="h-4 w-4 text-[var(--color-purple)]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[var(--text-heading)]">{stat.value}</div>
-              <p className="text-xs text-[var(--color-dark-gray)]">{stat.change}</p>
+              <div className="text-2xl font-bold text-[var(--text-heading)]">
+                {stat.value}
+              </div>
+              <p className="text-xs text-[var(--color-dark-gray)]">
+                {stat.change}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -111,7 +126,9 @@ const Dashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4 border border-[var(--color-purple)] bg-[var(--color-cream)]">
           <CardHeader>
-            <CardTitle className="text-[var(--text-heading)]">Ventas Recientes</CardTitle>
+            <CardTitle className="text-[var(--text-heading)]">
+              Ventas Recientes
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -125,7 +142,12 @@ const Dashboard = () => {
                       Orden #{orden.id.slice(0, 6).toUpperCase()}
                     </p>
                     <p className="text-sm text-[var(--color-dark-gray)]">
-                      Cliente {orden.user.name || orden.user.email} - Hace {Math.floor((Date.now() - new Date(orden.createdAt).getTime()) / 3600000)} horas
+                      Cliente {orden.user.name || orden.user.email} - Hace{" "}
+                      {Math.floor(
+                        (Date.now() - new Date(orden.createdAt).getTime()) /
+                          3600000,
+                      )}{" "}
+                      horas
                     </p>
                   </div>
                   <div className="text-sm font-medium text-[var(--text-heading)]">
@@ -139,7 +161,9 @@ const Dashboard = () => {
 
         <Card className="col-span-3 border border-[var(--color-purple)] bg-[var(--color-cream)]">
           <CardHeader>
-            <CardTitle className="text-[var(--text-heading)]">Productos Populares</CardTitle>
+            <CardTitle className="text-[var(--text-heading)]">
+              Productos Populares
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

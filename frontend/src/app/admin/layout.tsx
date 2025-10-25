@@ -1,5 +1,5 @@
 // app/admin/layout.tsx (o donde tengas AdminLayout)
-'use client';
+"use client";
 import { useRouter } from "next/navigation";
 import { useUserRole } from "@/hooks/useUserRole";
 import AdminNavbar from "@/components/admin/NavbarAdmin";

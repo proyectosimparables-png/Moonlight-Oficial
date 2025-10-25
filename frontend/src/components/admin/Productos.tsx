@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,29 +14,33 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
 import { deleteProducto, getProductos } from "@/services/productos";
-import EditarProductoForm from './EditarProductoForm';
+import EditarProductoForm from "./EditarProductoForm";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const Productos = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [productos, setProductos] = useState<Array<{
-    imagenUrl: string | null;
-    id: number;
-    nombre: string;
-    descripcion: string;
-    categoria: {
+  const [productos, setProductos] = useState<
+    Array<{
+      imagenUrl: string | null;
       id: number;
       nombre: string;
-    };
-    categoriaId: string;
-    tipoPrendaId: string;
-    precio: number;
-    stock: number;
-    published: boolean;
-  }>>([]);
+      descripcion: string;
+      categoria: {
+        id: number;
+        nombre: string;
+      };
+      categoriaId: string;
+      tipoPrendaId: string;
+      precio: number;
+      stock: number;
+      published: boolean;
+    }>
+  >([]);
 
-  const [productoEditandoId, setProductoEditandoId] = useState<string | null>(null);
+  const [productoEditandoId, setProductoEditandoId] = useState<string | null>(
+    null,
+  );
   const router = useRouter();
 
   const fetchProductos = async () => {
@@ -65,27 +69,35 @@ const Productos = () => {
     }
   };
 
-  const filteredProductos = productos.filter((producto) =>
-    producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    producto.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    producto.categoria?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProductos = productos.filter(
+    (producto) =>
+      producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      producto.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      producto.categoria?.nombre
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()),
   );
 
   return (
     <div className="flex justify-center px-4">
-      <div className="space-y-6 w-full max-w-7xl"> {/* ⬅️ ancho máximo centrado */}
+      <div className="space-y-6 w-full max-w-7xl">
+        {" "}
+        {/* ⬅️ ancho máximo centrado */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Productos</h1>
-            <p className="text-muted-foreground">Gestiona el catálogo de tu tienda</p>
+            <p className="text-muted-foreground">
+              Gestiona el catálogo de tu tienda
+            </p>
           </div>
-          <Button className="gap-2 bg-[var(--color-lilac)] hover:bg-[var( --color-dark)] text-white transition-all"
-           onClick={() => router.push("/admin/nuevo-producto")}>
+          <Button
+            className="gap-2 bg-[var(--color-lilac)] hover:bg-[var( --color-dark)] text-white transition-all"
+            onClick={() => router.push("/admin/nuevo-producto")}
+          >
             <Plus className="h-4 w-4" />
             Nuevo Producto
           </Button>
         </div>
-
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -97,7 +109,6 @@ const Productos = () => {
             />
           </div>
         </div>
-
         <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
@@ -118,7 +129,9 @@ const Productos = () => {
                     <TableCell>
                       <div className="space-y-1">
                         <p className="font-medium">{producto.nombre}</p>
-                        <p className="text-sm text-muted-foreground">{producto.descripcion}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {producto.descripcion}
+                        </p>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -132,15 +145,23 @@ const Productos = () => {
                         "Sin imagen"
                       )}
                     </TableCell>
-                    <TableCell>{producto.categoria?.nombre ?? "Sin categoría"}</TableCell>
+                    <TableCell>
+                      {producto.categoria?.nombre ?? "Sin categoría"}
+                    </TableCell>
                     <TableCell>${producto.precio.toFixed(2)}</TableCell>
                     <TableCell>
-                      <Badge variant={producto.stock > 50 ? "default" : "destructive"}>
+                      <Badge
+                        variant={
+                          producto.stock > 50 ? "default" : "destructive"
+                        }
+                      >
                         {producto.stock} unidades
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={producto.published ? "default" : "secondary"}>
+                      <Badge
+                        variant={producto.published ? "default" : "secondary"}
+                      >
                         {producto.published ? "Publicado" : "Borrador"}
                       </Badge>
                     </TableCell>
@@ -149,7 +170,9 @@ const Productos = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => setProductoEditandoId(producto.id.toString())}
+                          onClick={() =>
+                            setProductoEditandoId(producto.id.toString())
+                          }
                         >
                           <Edit className="h-4 w-4" />
                         </Button>

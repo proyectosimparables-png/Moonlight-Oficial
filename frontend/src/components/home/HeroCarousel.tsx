@@ -5,11 +5,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const slides = [
-  "/hero-1.png",
-  "/hero-2.png",
-  "/hero-3.png",
-];
+const slides = ["/hero-1.png", "/hero-2.png", "/hero-3.png"];
 
 const HeroCarousel = () => {
   const [currentSlide, setCurrentSlide] = useState(0);

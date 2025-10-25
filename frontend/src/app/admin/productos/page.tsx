@@ -1,17 +1,11 @@
-
-import Productos from "@/components/admin/Productos"
-
+import Productos from "@/components/admin/Productos";
 
 const ProductosPage = () => {
-    return (
-        <>
-      
-            <Productos />
-             
-        
-       
-        </>
-    )
-}
+  return (
+    <>
+      <Productos />
+    </>
+  );
+};
 
-export default ProductosPage
+export default ProductosPage;
