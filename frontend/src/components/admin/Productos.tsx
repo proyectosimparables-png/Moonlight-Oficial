@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +18,7 @@ import { deleteProducto, getProductos } from "@/services/productos";
 import EditarProductoForm from "./EditarProductoForm";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import React from "react";
 
 const Productos = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +41,7 @@ const Productos = () => {
   >([]);
 
   const [productoEditandoId, setProductoEditandoId] = useState<string | null>(
-    null,
+    null
   );
   const router = useRouter();
 
@@ -75,13 +77,12 @@ const Productos = () => {
       producto.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
       producto.categoria?.nombre
         .toLowerCase()
-        .includes(searchTerm.toLowerCase()),
+        .includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="flex justify-center px-4">
       <div className="space-y-6 w-full max-w-7xl">
-        {" "}
         {/* ⬅️ ancho máximo centrado */}
         <div className="flex items-center justify-between">
           <div>
@@ -98,6 +99,7 @@ const Productos = () => {
             Nuevo Producto
           </Button>
         </div>
+
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -109,6 +111,7 @@ const Productos = () => {
             />
           </div>
         </div>
+
         <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
@@ -122,10 +125,11 @@ const Productos = () => {
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {filteredProductos.map((producto) => (
-                <>
-                  <TableRow key={producto.id}>
+                <React.Fragment key={producto.id}>
+                  <TableRow>
                     <TableCell>
                       <div className="space-y-1">
                         <p className="font-medium">{producto.nombre}</p>
@@ -134,21 +138,27 @@ const Productos = () => {
                         </p>
                       </div>
                     </TableCell>
+
                     <TableCell>
                       {producto.imagenUrl ? (
-                        <img
+                        <Image
                           src={producto.imagenUrl}
                           alt={producto.nombre}
-                          className="h-16 w-16 object-cover rounded"
+                          width={64}
+                          height={64}
+                          className="object-cover rounded"
                         />
                       ) : (
                         "Sin imagen"
                       )}
                     </TableCell>
+
                     <TableCell>
                       {producto.categoria?.nombre ?? "Sin categoría"}
                     </TableCell>
+
                     <TableCell>${producto.precio.toFixed(2)}</TableCell>
+
                     <TableCell>
                       <Badge
                         variant={
@@ -158,6 +168,7 @@ const Productos = () => {
                         {producto.stock} unidades
                       </Badge>
                     </TableCell>
+
                     <TableCell>
                       <Badge
                         variant={producto.published ? "default" : "secondary"}
@@ -165,6 +176,7 @@ const Productos = () => {
                         {producto.published ? "Publicado" : "Borrador"}
                       </Badge>
                     </TableCell>
+
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -176,6 +188,7 @@ const Productos = () => {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -201,7 +214,7 @@ const Productos = () => {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </React.Fragment>
               ))}
             </TableBody>
           </Table>
