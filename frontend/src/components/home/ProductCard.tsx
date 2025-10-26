@@ -6,10 +6,19 @@ import { Card, CardContent } from "@/components/ui/card";
 interface ProductCardProps {
   image: string;
   name: string;
-  price: number;
+  price: string; // Formateado desde backend, ej: "$ 22.000"
 }
 
 const ProductCard = ({ image, name, price }: ProductCardProps) => {
+  // 💰 Convertimos price a número para cálculos
+  const numericPrice = Number(price.replace(/[^0-9]+/g, "")); // quita todo menos números
+  const discountPrice = numericPrice * 0.9; // 10% OFF por transferencia
+  const installmentPrice = numericPrice / 3; // 3 cuotas sin interés
+
+  // Función para formatear cualquier número a ARS
+  const formatARS = (value: number) =>
+    value.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
   return (
     <Card className="group overflow-hidden bg-white border border-[#ddd] hover:shadow-md transition-shadow rounded-lg">
       <CardContent className="p-0">
@@ -23,22 +32,40 @@ const ProductCard = ({ image, name, price }: ProductCardProps) => {
             sizes="(max-width: 768px) 100vw, 25vw"
           />
 
-          {/* Botón flotante */}
+          {/* 🛒 Botón del carrito */}
           <Button
             size="icon"
-            className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity bg-[#7b5ca2] hover:bg-[#665ca2] text-white shadow"
+            className="absolute bottom-3 right-3 bg-[#7b5ca2] hover:bg-[#665ca2] text-white shadow-lg"
           >
-            <ShoppingCart className="h-4 w-4" />
+            <ShoppingCart className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Info del producto */}
         <div className="p-4">
-          <h3 className="text-[#6c5b7b] font-medium mb-2 text-sm md:text-base">
+          <h3 className="text-[#6c5b7b] font-medium mb-2 text-sm md:text-base line-clamp-2 min-h-[40px]">
             {name}
           </h3>
-          <p className="text-[#7b5ca2] font-serif text-lg font-semibold">
-            ${price.toLocaleString()}
+
+          {/* 💲 Precio principal */}
+          <p className="text-[#7b5ca2] font-serif text-xl font-semibold">
+            ${formatARS(numericPrice)}
+          </p>
+
+          {/* 💸 Precio con descuento */}
+          <p className="text-sm text-gray-600 mt-1">
+            <span className="font-medium text-[#4b3f68]">
+              ${formatARS(discountPrice)}
+            </span>{" "}
+            Con Transferencia o depósito
+          </p>
+
+          {/* 💳 Cuotas */}
+          <p className="text-sm text-gray-600 mt-1">
+            3 cuotas sin interés de{" "}
+            <span className="font-medium text-[#4b3f68]">
+              ${formatARS(installmentPrice)}
+            </span>
           </p>
         </div>
       </CardContent>

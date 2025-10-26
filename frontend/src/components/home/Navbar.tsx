@@ -3,10 +3,11 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ShoppingCart, User } from "lucide-react";
+import { Search, ShoppingCart, User, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 
 const TopBanner = () => {
@@ -43,23 +44,10 @@ const Navbar = () => {
   const [cartCount] = useState(3);
   const { isAuthenticated, login, logout, user } = useAuth();
 
-  const bottomLinks = [
-    { label: "Inicio" },
-    { label: "Productos ▼" },
-    { label: "Contacto" },
-    { label: "Políticas de Cambio" },
-    { label: "Tabla de talles" },
-    { label: "¿Quiénes somos?" },
-    { label: "Instagram" },
-  ];
-
-  // Función para manejar click en carrito
   const handleCartClick = () => {
     if (isAuthenticated) {
-      // Aquí podés redirigir al carrito si existe ruta o funcionalidad
-      router.push("/cart"); // ejemplo
+      router.push("/cart");
     } else {
-      // Si no está autenticado, lo enviamos a login o a la página que uses
       router.push("/auth/login");
     }
   };
@@ -68,7 +56,6 @@ const Navbar = () => {
     <>
       <TopBanner />
 
-      {/* Contenedor de ambas barras fijas */}
       <div className="sticky top-0 z-50">
         {/* Navbar superior */}
         <nav className="bg-[#FAFCEF] backdrop-blur-sm">
@@ -86,7 +73,7 @@ const Navbar = () => {
                 </div>
               </div>
 
-              {/* Center: Logo */}
+              {/* Logo */}
               <div className="absolute left-1/2 transform -translate-x-1/2">
                 <Image
                   src="/moonlight.png"
@@ -122,7 +109,7 @@ const Navbar = () => {
                   </SheetContent>
                 </Sheet>
 
-                {/* Login Button */}
+                {/* Login */}
                 <Button
                   variant="ghost"
                   onClick={isAuthenticated ? logout : login}
@@ -139,7 +126,7 @@ const Navbar = () => {
                   </span>
                 </Button>
 
-                {/* Cart Button */}
+                {/* Cart */}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -161,16 +148,83 @@ const Navbar = () => {
           </div>
         </nav>
 
-        {/* Barra inferior (mismo estilo que los títulos) */}
+        {/* Barra inferior con dropdowns */}
         <div className="bg-[#FAFCEF] flex justify-center items-center gap-8 py-3 text-[17px] text-[#7b5ca2] font-[var(--font-love-story)] tracking-wide">
-          {bottomLinks.map((link) => (
-            <button
-              key={link.label}
-              className="transition-all duration-200 transform hover:scale-105 hover:text-[#4e3f73] cursor-pointer"
-            >
-              {link.label}
-            </button>
-          ))}
+          {/* Inicio */}
+          <button
+            onClick={() => router.push("/")}
+            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
+          >
+            Inicio
+          </button>
+
+          {/* Productos */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-105">
+                Productos <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2]">
+              <DropdownMenu.Item className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer">
+                Guía de Talles
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator className="h-px bg-gray-200 my-1" />
+              {[
+                "Bangtan Bags",
+                "Bangtan Home",
+                "Bangtan Limited Edition",
+                "Indumentaria",
+                "Lo más nuevo",
+                "Los más elegidos",
+                "Accesorios",
+                "Outlet",
+              ].map((section) => (
+                <DropdownMenu.Item
+                  key={section}
+                  className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                >
+                  {section}
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+
+          {/* Quienes Somos */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-105">
+                ¿Quiénes Somos? <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2]">
+              <DropdownMenu.Item className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer">
+                Contacto
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+
+          {/* Políticas de compra */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-105">
+                Políticas de Compra <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2]">
+              <DropdownMenu.Item className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer">
+                Cómo Comprar
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+
+          <button className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105">
+            Preguntas Frecuentes
+          </button>
+
+          <button className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105">
+            Mayoristas
+          </button>
         </div>
       </div>
     </>

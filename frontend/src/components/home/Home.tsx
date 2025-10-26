@@ -21,6 +21,18 @@ interface Section {
 const Home = () => {
   const [sections, setSections] = useState<Section[]>([]);
 
+  // 🟣 Orden deseado de las secciones
+  const order = [
+    "Los más elegidos",
+    "Lo más nuevo",
+    "Indumentaria",
+    "Bangtan Limited Edition",
+    "Bangtan Bags",
+    "Bangtan Home",
+    "Accesorios",
+    "Outlet",
+  ];
+
   useEffect(() => {
     const fetchSections = async () => {
       try {
@@ -30,7 +42,17 @@ const Home = () => {
         if (!res.ok) throw new Error("Error al obtener secciones");
 
         const data: Section[] = await res.json();
-        setSections(data);
+
+        // 🟣 Ordenamos según el orden definido arriba
+        const sorted = [...data].sort((a, b) => {
+          const indexA = order.indexOf(a.nombre);
+          const indexB = order.indexOf(b.nombre);
+          return (
+            (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB)
+          );
+        });
+
+        setSections(sorted);
       } catch (err) {
         console.error("Error cargando secciones:", err);
       }
@@ -59,7 +81,7 @@ const Home = () => {
         ))}
       </main>
 
-      {/* <Footer /> lo agregás cuando esté listo */}
+      {/* <Footer /> */}
     </div>
   );
 };
