@@ -45,6 +45,20 @@ const Productos = () => {
   );
   const router = useRouter();
 
+  const formatPrecio = (precio: unknown) => {
+  if (precio === null || precio === undefined) return "$0.00";
+
+  // Si es string, limpiamos símbolos, espacios, puntos de miles, etc.
+  let clean = typeof precio === "string"
+    ? precio.replace(/[^\d.,-]/g, "").replace(",", ".")
+    : precio;
+
+  const num = Number(clean);
+  return isNaN(num) ? "$0.00" : `$${num.toFixed(2)}`;
+};
+
+
+
   const fetchProductos = async () => {
     try {
       const data = await getProductos();
@@ -129,6 +143,7 @@ const Productos = () => {
             <TableBody>
               {filteredProductos.map((producto) => (
                 <React.Fragment key={producto.id}>
+                
                   <TableRow>
                     <TableCell>
                       <div className="space-y-1">
@@ -157,7 +172,8 @@ const Productos = () => {
                       {producto.categoria?.nombre ?? "Sin categoría"}
                     </TableCell>
 
-                    <TableCell>${producto.precio.toFixed(2)}</TableCell>
+                  <TableCell>{formatPrecio(producto.precio)}</TableCell>
+
 
                     <TableCell>
                       <Badge
