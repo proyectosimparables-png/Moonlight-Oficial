@@ -9,7 +9,7 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id // viene de Supabase Auth
   email     String   @unique
   name      String?
   password  String
@@ -22,6 +22,7 @@ model User {
   ordenes     Orden[]
   favoritos   Favorito[]
   historial   Historial[]
+  cart        Cart? // relación 1:1 con carrito
 }
 
 model Producto {
@@ -125,7 +126,8 @@ enum Role {
 
 model Cart {
   id        String     @id @default(uuid())
-  userId    String     @unique // viene de Supabase Auth
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -140,6 +142,5 @@ model CartItem {
   cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   producto    Producto @relation(fields: [productoId], references: [id])
 
-  @@unique([cartId, productoId]) // evita duplicados del mismo producto en el carrito
+  @@unique([cartId, productoId]) // evita duplicar el mismo producto en el carrito
 }
-
