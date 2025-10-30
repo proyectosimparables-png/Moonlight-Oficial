@@ -1,15 +1,24 @@
+"use client";
+
 import Image from "next/image";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/hooks/useAuth";
+import toast from "react-hot-toast";
 
 interface ProductCardProps {
+  id: string;
   image: string;
   name: string;
   price: string; // Formateado desde backend, ej: "$ 22.000"
 }
 
-const ProductCard = ({ image, name, price }: ProductCardProps) => {
+const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
+  const { addItem } = useCart();
+  const { isAuthenticated, login } = useAuth();
+
   // 💰 Convertimos price a número para cálculos
   const numericPrice = Number(price.replace(/[^0-9]+/g, "")); // quita todo menos números
   const discountPrice = numericPrice * 0.9; // 10% OFF por transferencia
@@ -18,6 +27,20 @@ const ProductCard = ({ image, name, price }: ProductCardProps) => {
   // Función para formatear cualquier número a ARS
   const formatARS = (value: number) =>
     value.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
+  // Función para requerir login antes de agregar al carrito
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast.error("Debes iniciar sesión para agregar productos al carrito", {
+        position: "top-center",
+      });
+      login(); // redirige al login con Google
+      return;
+    }
+
+    addItem(id, 1);
+    toast.success("Producto agregado al carrito", { position: "top-center" });
+  };
 
   return (
     <Card className="group overflow-hidden bg-white border border-[#ddd] hover:shadow-md transition-shadow rounded-lg">
@@ -36,6 +59,8 @@ const ProductCard = ({ image, name, price }: ProductCardProps) => {
           <Button
             size="icon"
             className="absolute bottom-3 right-3 bg-[#7b5ca2] hover:bg-[#665ca2] text-white shadow-lg"
+            onClick={handleAddToCart}
+            aria-label={`Agregar ${name} al carrito`}
           >
             <ShoppingCart className="h-5 w-5" />
           </Button>

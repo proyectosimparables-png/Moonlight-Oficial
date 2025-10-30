@@ -27,36 +27,38 @@ const HeroCarousel = () => {
   };
 
   return (
-    <div
-      className="relative w-full overflow-hidden group"
-      style={{ height: "90vh" }}
-    >
-      {/* Images */}
-      {slides.map((slide, index) => (
-        <div
-          key={index}
-          className={`absolute inset-0 transition-opacity duration-1000 ${
-            index === currentSlide ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <Image
-            src={slide}
-            alt={`Slide ${index + 1}`}
-            fill
-            style={{ objectFit: "cover" }}
-            priority={index === 0}
-          />
+    <div className="relative w-full group overflow-hidden">
+      {/* Contenedor responsive */}
+      <div className="w-full aspect-[16/9] md:aspect-[16/6] relative">
+        {slides.map((slide, index) => (
           <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(to top, rgba(206,187,245,0.2), transparent)",
-            }}
-          />
-        </div>
-      ))}
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              index === currentSlide ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <Image
+              src={slide}
+              alt={`Slide ${index + 1}`}
+              fill
+              style={{
+                objectFit: "contain", // 📌 Móvil: ver toda la imagen
+              }}
+              className="md:object-cover" // 📌 Desktop: ocupa todo
+              priority={index === 0}
+            />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(to top, rgba(206,187,245,0.2), transparent)",
+              }}
+            />
+          </div>
+        ))}
+      </div>
 
-      {/* Navigation Buttons */}
+      {/* Botones de navegación */}
       <Button
         variant="ghost"
         size="icon"

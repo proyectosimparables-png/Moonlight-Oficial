@@ -1,4 +1,5 @@
 // app/layout.tsx
+
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -11,9 +12,12 @@ import {
 
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/context/AuthContext";
+import { CartProvider } from "@/context/CartContext";
 import Provaiders from "@/components/Provaiders";
 
+import { Toaster } from "react-hot-toast";
 import clsx from "clsx";
+import { AddedToCartModal } from "@/components/cart/AddedToCartModal";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -45,21 +49,28 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Formar las clases de forma segura
   const htmlClassName = clsx(
-    geistSans.variable || "",
-    geistMono.variable || "",
-    loveStory.variable || "",
-    montserrat.variable || "",
-    dancingScript.variable || "",
+    geistSans.variable,
+    geistMono.variable,
+    loveStory.variable,
+    montserrat.variable,
+    dancingScript.variable
   );
 
   return (
     <html lang="es" className={htmlClassName}>
-      <body className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans">
+      <body
+        suppressHydrationWarning
+        className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans"
+      >
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <Provaiders>{children}</Provaiders>
+            <CartProvider>
+              {/* Todo lo que usa useCart debe estar dentro del CartProvider */}
+              <Provaiders>{children}</Provaiders>
+              <AddedToCartModal /> {/* Modal de agregado al carrito */}
+              <Toaster position="top-right" />
+            </CartProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

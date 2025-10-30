@@ -9,13 +9,13 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  email       String       @unique
-  name        String?
-  password    String
-  role        Role         @default(CLIENTE)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      Role     @default(CLIENTE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones
   comentarios Comentario[]
@@ -25,99 +25,121 @@ model User {
 }
 
 model Producto {
-  id          String       @id @default(uuid())
+  id          String   @id @default(uuid())
   nombre      String
   descripcion String?
   precio      Float
   stock       Int
   imagenUrl   String?
-  createdAt   DateTime     @default(now())
-  published   Boolean      @default(false)
+  createdAt   DateTime @default(now())
+  published   Boolean  @default(false)
 
   // Relaciones
   comentarios Comentario[]
   favoritos   Favorito[]
   ordenes     Orden[]
   historial   Historial[]
+  cartItems   CartItem[]
 
   // Relación con categoría (puede quedar null si se borra la categoría)
-  categoria   Categoria?   @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  categoria   Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
   categoriaId String?
 
   // Relación con sección (también opcional)
-  seccion     Seccion?     @relation(fields: [seccionId], references: [id], onDelete: SetNull)
-  seccionId   String?
+  seccion   Seccion? @relation(fields: [seccionId], references: [id], onDelete: SetNull)
+  seccionId String?
 }
 
 model Categoria {
-  id            String       @id @default(uuid())
-  nombre        String      
-  productos     Producto[]
+  id        String     @id @default(uuid())
+  nombre    String
+  productos Producto[]
 
   // Jerarquía de categorías
-  padre         Categoria?   @relation("CategoriaPadre", fields: [padreId], references: [id])
+  padre         Categoria?  @relation("CategoriaPadre", fields: [padreId], references: [id])
   padreId       String?
-  subcategorias Categoria[]  @relation("CategoriaPadre")
+  subcategorias Categoria[] @relation("CategoriaPadre")
 
   // Relación con sección
-  seccion       Seccion?     @relation(fields: [seccionId], references: [id], onDelete: SetNull)
-  seccionId     String?
+  seccion   Seccion? @relation(fields: [seccionId], references: [id], onDelete: SetNull)
+  seccionId String?
 }
 
 model Seccion {
-  id          String       @id @default(uuid())
-  nombre      String       @unique
-  categorias  Categoria[]
-  productos   Producto[]
+  id         String      @id @default(uuid())
+  nombre     String      @unique
+  categorias Categoria[]
+  productos  Producto[]
 }
 
 model Comentario {
-  id          String    @id @default(uuid())
-  contenido   String
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(uuid())
+  contenido String
+  createdAt DateTime @default(now())
 
   // Relaciones
-  userId      String
-  productoId  String
-  user        User      @relation(fields: [userId], references: [id])
-  producto    Producto  @relation(fields: [productoId], references: [id])
+  userId     String
+  productoId String
+  user       User     @relation(fields: [userId], references: [id])
+  producto   Producto @relation(fields: [productoId], references: [id])
 }
 
 model Orden {
-  id          String    @id @default(uuid())
-  userId      String
-  productoId  String
-  cantidad    Int
-  total       Float
-  estado      String    // Ej: "pendiente", "enviado", "entregado"
-  createdAt   DateTime  @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  productoId String
+  cantidad   Int
+  total      Float
+  estado     String // Ej: "pendiente", "enviado", "entregado"
+  createdAt  DateTime @default(now())
 
-  user        User      @relation(fields: [userId], references: [id])
-  producto    Producto  @relation(fields: [productoId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
 }
 
 model Historial {
-  id          String    @id @default(uuid())
-  userId      String
-  productoId  String
-  accion      String    // Ej: "visto", "comprado", etc.
-  fecha       DateTime  @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  productoId String
+  accion     String // Ej: "visto", "comprado", etc.
+  fecha      DateTime @default(now())
 
-  user        User      @relation(fields: [userId], references: [id])
-  producto    Producto  @relation(fields: [productoId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
 }
 
 model Favorito {
-  id          String    @id @default(uuid())
-  userId      String
-  productoId  String
-  createdAt   DateTime  @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  productoId String
+  createdAt  DateTime @default(now())
 
-  user        User      @relation(fields: [userId], references: [id])
-  producto    Producto  @relation(fields: [productoId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  producto Producto @relation(fields: [productoId], references: [id])
 }
 
 enum Role {
   ADMIN
   CLIENTE
 }
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique // viene de Supabase Auth
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id          String   @id @default(uuid())
+  cartId      String
+  productoId  String
+  quantity    Int      @default(1)
+
+  cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  producto    Producto @relation(fields: [productoId], references: [id])
+
+  @@unique([cartId, productoId]) // evita duplicados del mismo producto en el carrito
+}
+

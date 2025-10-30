@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/home/Navbar";
+import Navbar from "@/components/navbar/Navbar";
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ProductSection from "@/components/home/ProductSection";
 
@@ -73,6 +73,7 @@ const Home = () => {
             key={section.id}
             title={section.nombre}
             products={section.productos.map((p) => ({
+              id: p.id,
               name: p.nombre,
               price: p.precio,
               image: p.imagenUrl ?? "/placeholder.jpg", // fallback si no hay imagen

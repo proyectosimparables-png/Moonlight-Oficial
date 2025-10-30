@@ -64,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Si no hay session, limpiar role también
           setRole(null);
         }
-      },
+      }
     );
 
     return () => {

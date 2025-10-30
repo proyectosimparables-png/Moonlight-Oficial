@@ -5,6 +5,7 @@ import ProductCard from "./ProductCard";
 interface ProductSectionProps {
   title: string;
   products: Array<{
+    id: string;
     image: string;
     name: string;
     price: number; // vienen como número del backend
@@ -37,6 +38,7 @@ const ProductSection = ({ title, products }: ProductSectionProps) => {
           {products.map((product, index) => (
             <ProductCard
               key={index}
+              id={product.id}
               image={product.image}
               name={product.name}
               price={`$ ${product.price.toLocaleString("es-AR")}`} // ✅ convertimos número a string

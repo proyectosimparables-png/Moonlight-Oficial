@@ -1,0 +1,44 @@
+"use client";
+import { Button } from "@/components/ui/button";
+import { ShoppingCart } from "lucide-react";
+import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+
+export const CartButton = () => {
+  const { cart = [] } = useCart();
+  const { isAuthenticated, login } = useAuth();
+  const router = useRouter();
+
+  const cartCount = cart.reduce((acc, item) => acc + (item.quantity ?? 0), 0);
+
+  const handleClick = () => {
+    if (!isAuthenticated) {
+      toast.error("Debes iniciar sesión para ver el carrito", {
+        position: "top-center",
+      });
+      login(); // redirige al login de Google
+      return;
+    }
+
+    router.push("/cart");
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="relative hover:bg-[#e6dff1]"
+      onClick={handleClick}
+      aria-label="Carrito de compras"
+    >
+      <ShoppingCart className="h-5 w-5 text-[#7b5ca2]" />
+      {cartCount > 0 && (
+        <span className="absolute -top-1 -right-1 bg-[#665ca2] text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+          {cartCount}
+        </span>
+      )}
+    </Button>
+  );
+};

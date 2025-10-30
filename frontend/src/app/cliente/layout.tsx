@@ -1,5 +1,5 @@
 "use client";
-import Navbar from "@/components/home/Navbar";
+import Navbar from "@/components/navbar/Navbar";
 import { Toaster } from "sonner";
 
 export default function ClientLayout({

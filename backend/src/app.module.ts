@@ -6,6 +6,8 @@ import { AdminModule } from './admin/admin.module'; // ✅ de la rama maca
 import { CloudinaryModule } from './claudinary/cloudinary.module'; // ✅ de la rama maca
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TestModule } from './test/test.module';
+import { CartModule } from './cart/cart.module';
+
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { TestModule } from './test/test.module';
     CloudinaryModule,
     DashboardModule,
     TestModule,
+    CartModule,
+
   ],
 })
-export class AppModule {}
+export class AppModule { }
