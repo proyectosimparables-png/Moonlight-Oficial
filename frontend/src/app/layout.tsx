@@ -10,7 +10,6 @@ import {
   Dancing_Script,
 } from "next/font/google";
 
-import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import Provaiders from "@/components/Provaiders";
@@ -64,14 +63,13 @@ export default function RootLayout({
         className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans"
       >
         <AuthProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+         
             <CartProvider>
               {/* Todo lo que usa useCart debe estar dentro del CartProvider */}
               <Provaiders>{children}</Provaiders>
               <AddedToCartModal /> {/* Modal de agregado al carrito */}
               <Toaster position="top-right" />
             </CartProvider>
-          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

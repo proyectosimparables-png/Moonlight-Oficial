@@ -15,7 +15,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
-import ThemeToggle from "./TemeToggle";
+
 import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
@@ -23,7 +23,7 @@ const menuItems = [
   { title: "Publicar", url: "/admin/nuevo-producto", icon: Tags },
   { title: "Productos", url: "/admin/productos", icon: Package },
   { title: "Órdenes", url: "/admin/ordenes", icon: ShoppingCart },
-  { title: "Categorías", url: "/admin/categorias", icon: FolderTree },
+  { title: "Secciones", url: "/admin/secciones", icon: FolderTree },
   { title: "Usuarios", url: "/admin/usuarios", icon: Users },
   { title: "Volver a la tienda", url: "/", icon: ShoppingCart },
 ];
@@ -139,7 +139,7 @@ export default function AdminNavbar() {
 
         {/* Tema */}
         <div className="mt-6">
-          <ThemeToggle />
+         
         </div>
       </aside>
     </>

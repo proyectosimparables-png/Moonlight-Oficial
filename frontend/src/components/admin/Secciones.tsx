@@ -17,136 +17,136 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 import {
-  eliminarCategoria,
-  actualizarCategoria,
-  getCategoriasBySeccion,
-  crearCategoria,
+  eliminarSeccion,
+  actualizarSeccion,
+  getSecciones,
+  crearSeccion,
+  getCategorias, // 👈 importamos la función para traer categorías
 } from "@/services/productos";
 
-type Subcategoria = {
+type Categoria = {
   id: string;
   nombre: string;
 };
 
-type CategoriaConProductos = {
+type SeccionConCategorias = {
   id: string;
   nombre: string;
-  seccion: {
-    id: string;
-    nombre: string;
-  };
   productoCount: number;
-  subcategorias: Subcategoria[];
+  categorias: Categoria[];
 };
 
-const Categorias = () => {
-  const [categorias, setCategorias] = useState<CategoriaConProductos[]>([]);
+const Secciones = () => {
+  const [secciones, setSecciones] = useState<SeccionConCategorias[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
-  const [categoriaEditando, setCategoriaEditando] =
-    useState<CategoriaConProductos | null>(null);
+  const [seccionEditando, setSeccionEditando] = useState<SeccionConCategorias | null>(null);
   const [nuevoNombre, setNuevoNombre] = useState("");
 
-  const [nuevaCategoriaNombre, setNuevaCategoriaNombre] = useState("");
-  const [nuevaCategoriaSeccionNombre, setNuevaCategoriaSeccionNombre] =
-    useState("");
+  const [nuevaSeccionNombre, setNuevaSeccionNombre] = useState("");
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [categoriaAEliminar, setCategoriaAEliminar] = useState<string | null>(
-    null,
-  );
+  const [seccionAEliminar, setSeccionAEliminar] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // 🔹 Cargar secciones junto con sus categorías
   useEffect(() => {
-    setLoading(true);
-    getCategoriasBySeccion()
-      .then((data) => {
-        setCategorias(data);
+    const cargarSeccionesConCategorias = async () => {
+      try {
+        setLoading(true);
+        const seccionesData = await getSecciones();
+
+        const seccionesConCategorias = await Promise.all(
+          seccionesData.map(async (sec: SeccionConCategorias) => {
+            try {
+              const categorias = await getCategorias(sec.id);
+              return { ...sec, categorias };
+            } catch {
+              return { ...sec, categorias: [] };
+            }
+          })
+        );
+
+        setSecciones(seccionesConCategorias);
         setError(null);
-      })
-      .catch(() => setError("Error cargando categorías"))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error(err);
+        setError("Error cargando secciones y categorías");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarSeccionesConCategorias();
   }, []);
 
-  if (loading)
-    return <p className="text-center mt-8">Cargando categorías...</p>;
+  if (loading) return <p className="text-center mt-8">Cargando secciones...</p>;
   if (error) return <p className="text-center mt-8 text-red-600">{error}</p>;
 
-  const handleEliminarCategoria = async (id: string) => {
+  const handleEliminarSeccion = async (id: string) => {
     try {
-      await eliminarCategoria(id);
-      setCategorias((prev) => prev.filter((cat) => cat.id !== id));
-      toast.success("Categoría eliminada");
+      await eliminarSeccion(id);
+      setSecciones((prev) => prev.filter((sec) => sec.id !== id));
+      toast.success("Sección eliminada");
     } catch (error) {
-      console.error("Error al eliminar categoría:", error);
-      toast.error("No se pudo eliminar la categoría.");
+      console.error("Error al eliminar sección:", error);
+      toast.error("No se pudo eliminar la sección.");
     }
   };
 
-  const abrirModalEdicion = (categoria: CategoriaConProductos) => {
-    setCategoriaEditando(categoria);
-    setNuevoNombre(categoria.nombre);
+  const abrirModalEdicion = (seccion: SeccionConCategorias) => {
+    setSeccionEditando(seccion);
+    setNuevoNombre(seccion.nombre);
     setIsEditModalOpen(true);
   };
 
   const guardarEdicion = async () => {
-    if (!categoriaEditando) return;
+    if (!seccionEditando) return;
     setIsUpdating(true);
 
     try {
-      const categoriaActualizada = await actualizarCategoria(
-        categoriaEditando.id,
-        {
-          nombre: nuevoNombre,
-        },
+      const seccionActualizada = await actualizarSeccion(seccionEditando.id, {
+        nombre: nuevoNombre,
+      });
+
+      setSecciones((prev) =>
+        prev.map((sec) =>
+          sec.id === seccionActualizada.id ? { ...seccionActualizada, categorias: sec.categorias } : sec
+        )
       );
 
-      setCategorias((prev) =>
-        prev.map((cat) =>
-          cat.id === categoriaActualizada.id ? categoriaActualizada : cat,
-        ),
-      );
-
-      toast.success("Categoría actualizada");
+      toast.success("Sección actualizada");
       setIsEditModalOpen(false);
     } catch (error) {
-      console.error("Error al actualizar categoría:", error);
-      toast.error("No se pudo actualizar la categoría.");
+      console.error("Error al actualizar sección:", error);
+      toast.error("No se pudo actualizar la sección.");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleCrearCategoria = async () => {
-    if (!nuevaCategoriaNombre.trim()) {
-      toast.error("El nombre de la categoría es obligatorio");
-      return;
-    }
-
-    if (!nuevaCategoriaSeccionNombre.trim()) {
+  const handleCrearSeccion = async () => {
+    if (!nuevaSeccionNombre.trim()) {
       toast.error("El nombre de la sección es obligatorio");
       return;
     }
 
     try {
-      const nueva = await crearCategoria({
-        nombre: nuevaCategoriaNombre,
-        seccionNombre: nuevaCategoriaSeccionNombre,
-      });
+      const nueva = await crearSeccion({ nombre: nuevaSeccionNombre });
 
-      setCategorias((prev) => [...prev, nueva]);
-      toast.success("Categoría creada correctamente");
+      // Cargar las categorías (vacías por defecto)
+      setSecciones((prev) => [...prev, { ...nueva, categorias: [] }]);
+      toast.success("Sección creada correctamente");
 
-      setNuevaCategoriaNombre("");
-      setNuevaCategoriaSeccionNombre("");
+      setNuevaSeccionNombre("");
       setIsNewModalOpen(false);
     } catch (error) {
-      console.error("Error al crear categoría:", error);
-      toast.error("No se pudo crear la categoría.");
+      console.error("Error al crear sección:", error);
+      toast.error("No se pudo crear la sección.");
     }
   };
 
@@ -156,10 +156,10 @@ const Categorias = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[var(--text-heading)]">
-            Categorías
+            Secciones
           </h1>
           <p className="text-[var(--color-dark-gray)]">
-            Organiza tus productos por categorías
+            Organiza tus productos por secciones
           </p>
         </div>
         <Button
@@ -167,29 +167,25 @@ const Categorias = () => {
           onClick={() => setIsNewModalOpen(true)}
         >
           <Plus className="h-4 w-4" />
-          Nueva Categoría
+          Nueva Sección
         </Button>
       </div>
 
       {/* 🔹 Listado */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {categorias.map((categoria) => (
+        {secciones.map((seccion) => (
           <Card
-            key={categoria.id}
+            key={seccion.id}
             className="relative hover:shadow-lg transition-all border min-w-[220px]"
           >
             <CardHeader>
-              {/* Botones fijos arriba */}
               <div className="absolute top-2 right-2 flex gap-2 z-10">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  style={{
-                    backgroundColor: "var(--color-dark)",
-                    color: "white",
-                  }}
-                  onClick={() => abrirModalEdicion(categoria)}
+                  style={{ backgroundColor: "var(--color-dark)", color: "white" }}
+                  onClick={() => abrirModalEdicion(seccion)}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -199,7 +195,7 @@ const Categorias = () => {
                   className="h-8 w-8"
                   style={{ backgroundColor: "#e74c3c", color: "white" }}
                   onClick={() => {
-                    setCategoriaAEliminar(categoria.id);
+                    setSeccionAEliminar(seccion.id);
                     setIsConfirmModalOpen(true);
                   }}
                 >
@@ -219,11 +215,8 @@ const Categorias = () => {
                 </div>
                 <div>
                   <CardTitle className="text-lg text-[var(--text-heading)] break-words">
-                    {categoria.nombre}
+                    {seccion.nombre}
                   </CardTitle>
-                  <p className="text-sm text-[var(--color-dark-gray)]">
-                    {categoria.seccion?.nombre ?? "Sin sección"}
-                  </p>
                 </div>
               </div>
             </CardHeader>
@@ -234,29 +227,29 @@ const Categorias = () => {
                   <span className="text-sm text-[var(--color-dark-gray)]">
                     Productos
                   </span>
-                  <Badge variant="secondary">{categoria.productoCount}</Badge>
+                  <Badge variant="secondary">{seccion.productoCount}</Badge>
                 </div>
+
+                {/* 🔹 Categorías */}
                 <div>
                   <p className="text-sm font-medium mb-2 text-[var(--text-heading)]">
-                    Subcategorías:
+                    Categorías:
                   </p>
-                  <div className="flex flex-wrap gap-1">
-                    {(categoria.subcategorias?.length ?? 0) > 0 ? (
-                      categoria.subcategorias.map((sub) => (
+                  {seccion.categorias && seccion.categorias.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {seccion.categorias.map((cat) => (
                         <Badge
-                          key={sub.id}
+                          key={cat.id}
                           variant="outline"
                           className="text-xs text-[var(--text-heading)] border-[var(--color-purple)]"
                         >
-                          {sub.nombre}
+                          {cat.nombre}
                         </Badge>
-                      ))
-                    ) : (
-                      <p className="italic text-sm text-muted-foreground">
-                        Sin subcategorías
-                      </p>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 italic">Sin categorías</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -273,8 +266,7 @@ const Categorias = () => {
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">
-            ¿Estás seguro de que deseas eliminar esta categoría? Esta acción no
-            se puede deshacer.
+            ¿Estás seguro de que deseas eliminar esta sección? Esta acción no se puede deshacer.
           </p>
           <DialogFooter className="mt-6 flex justify-end space-x-2">
             <Button
@@ -287,11 +279,9 @@ const Categorias = () => {
             <Button
               className="bg-red-600 hover:bg-red-700 text-white transition-all"
               onClick={async () => {
-                if (categoriaAEliminar) {
-                  await handleEliminarCategoria(categoriaAEliminar);
-                }
+                if (seccionAEliminar) await handleEliminarSeccion(seccionAEliminar);
                 setIsConfirmModalOpen(false);
-                setCategoriaAEliminar(null);
+                setSeccionAEliminar(null);
               }}
             >
               Eliminar
@@ -300,34 +290,21 @@ const Categorias = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 🟣 MODAL CREAR NUEVA CATEGORÍA */}
+      {/* 🟣 MODAL CREAR NUEVA SECCIÓN */}
       <Dialog open={isNewModalOpen} onOpenChange={setIsNewModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              Nueva Categoría
-            </DialogTitle>
+            <DialogTitle className="text-lg font-semibold">Nueva Sección</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 pt-2">
             <div className="space-y-2">
               <Label htmlFor="nombre" className="text-sm font-medium">
-                Nombre de la categoría
-              </Label>
-              <Input
-                id="nombre"
-                value={nuevaCategoriaNombre}
-                onChange={(e) => setNuevaCategoriaNombre(e.target.value)}
-                placeholder="Ej. Camisas"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="seccion" className="text-sm font-medium">
                 Nombre de la sección
               </Label>
               <Input
-                id="seccion"
-                value={nuevaCategoriaSeccionNombre}
-                onChange={(e) => setNuevaCategoriaSeccionNombre(e.target.value)}
+                id="nombre"
+                value={nuevaSeccionNombre}
+                onChange={(e) => setNuevaSeccionNombre(e.target.value)}
                 placeholder="Ej. Indumentaria"
               />
             </div>
@@ -342,7 +319,7 @@ const Categorias = () => {
             </Button>
             <Button
               className="bg-[var(--color-dark)] hover:bg-[var(--color-lilac)] text-white transition-all"
-              onClick={handleCrearCategoria}
+              onClick={handleCrearSeccion}
             >
               Crear
             </Button>
@@ -350,11 +327,11 @@ const Categorias = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 🟣 MODAL EDITAR CATEGORÍA */}
+      {/* 🟣 MODAL EDITAR SECCIÓN */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Categoría</DialogTitle>
+            <DialogTitle>Editar Sección</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 pt-2">
             <div className="space-y-2">
@@ -388,4 +365,4 @@ const Categorias = () => {
   );
 };
 
-export default Categorias;
+export default Secciones;
