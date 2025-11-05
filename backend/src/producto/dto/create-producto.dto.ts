@@ -1,11 +1,10 @@
 import { Type } from 'class-transformer';
-
 import {
   IsString,
   IsNumber,
   IsOptional,
-  IsUrl,
   IsBoolean,
+  IsArray,
 } from 'class-validator';
 
 export class CreateProductoDto {
@@ -24,17 +23,31 @@ export class CreateProductoDto {
   @IsNumber()
   stock: number;
 
+  // 👇 Array de URLs de imágenes
   @IsOptional()
-  @IsUrl()
+  @IsArray()
+  @IsString({ each: true })
+  imagenes?: string[];
+
+  // 👇 Campo para la imagen principal
+  @IsOptional()
+  @IsString()
   imagenUrl?: string;
 
+  // 👇 Relación con categoría - puedes quitarla si no la necesitas
   @IsOptional()
   @IsString()
   categoriaId?: string;
 
+  // 👇 Relación con la sección
   @IsOptional()
   @IsString()
   seccionId?: string;
+
+  // 👇 Nombre de la sección
+  @IsOptional()
+  @IsString()
+  seccionNombre?: string;
 
   @IsOptional()
   @IsBoolean()

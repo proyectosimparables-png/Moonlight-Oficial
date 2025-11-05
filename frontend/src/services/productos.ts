@@ -1,6 +1,72 @@
 "use server";
 import { revalidatePath } from "next/cache";
 
+
+// ✅ Actualizar producto flexible (con o sin imagen)
+export async function updateProductoFlexible(
+  id: string,
+  data: {
+    nombre: string;
+    descripcion: string;
+    precio: number;
+    stock: number;
+    categoriaId: string;
+    imagenes?: File[];
+  }
+) {
+  // Si hay imágenes, usamos FormData (como en createProducto)
+  if (data.imagenes && data.imagenes.length > 0) {
+    const formData = new FormData();
+
+    // Agregar imágenes al FormData
+    data.imagenes.forEach((img) => formData.append("files", img));
+
+    // Agregar el resto de los campos
+    formData.append("nombre", data.nombre);
+    formData.append("descripcion", data.descripcion);
+    formData.append("precio", String(data.precio)); 
+formData.append("stock", String(data.stock));    
+  
+
+    // Hacer la petición PUT al endpoint /upload
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/productos/${id}/upload`,
+      {
+        method: "PUT",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Error actualizando producto con imagen: ${errText}`);
+    }
+
+    return res.json();
+  }
+
+  // Si no hay imágenes, usamos JSON como antes
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nombre: data.nombre,
+      descripcion: data.descripcion,
+      precio: data.precio,
+      stock: data.stock,
+      categoriaId: data.categoriaId,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Error actualizando producto: ${errText}`);
+  }
+
+  return res.json();
+}
+
+
 export async function createProducto(formData: FormData) {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/productos/upload-producto`,
@@ -10,10 +76,13 @@ export async function createProducto(formData: FormData) {
     },
   );
 
-  if (!res.ok) throw new Error("Error creando producto");
+  const text = await res.text();
+  console.log("RESPUESTA BACKEND:", res.status, text);
+
+  if (!res.ok) throw new Error(`Error creando producto: ${text}`);
 
   revalidatePath("/admin/productos");
-  return await res.json();
+  return JSON.parse(text);
 }
 
 export async function publicarProducto(id: string) {
@@ -29,16 +98,18 @@ export async function publicarProducto(id: string) {
 }
 
 export async function deleteProducto(id: string) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/productos/${id}`,
-    {
-      method: "DELETE",
-    },
-  );
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/${id}`, {
+    method: "DELETE",
+  });
 
-  if (!res.ok) throw new Error("Error al eliminar el producto");
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Error al eliminar el producto: ${text}`);
+  }
+
   return res.json();
 }
+
 
 export async function removeImagenProducto(id: string) {
   const res = await fetch(
@@ -52,35 +123,7 @@ export async function removeImagenProducto(id: string) {
   return res.json();
 }
 
-// Actualizar producto sin imagen
-export async function updateProducto(id: string, data: string) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/productos/${id}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    },
-  );
 
-  if (!res.ok) throw new Error("Error actualizando producto");
-  return res.json();
-}
-
-export async function updateProductoConImagen(id: string, formData: FormData) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/productos/${id}/upload`,
-    {
-      method: "PUT",
-      body: formData,
-    },
-  );
-
-  if (!res.ok) throw new Error("Error actualizando producto con imagen");
-  return res.json();
-}
 
 //Todos los gets
 export async function getSecciones() {
@@ -185,4 +228,59 @@ export async function crearCategoria(data: {
 
   if (!res.ok) throw new Error("Error al crear categoría");
   return res.json();
+}
+
+
+
+
+
+
+// Crear una sección
+export async function crearSeccion(data: { nombre: string }) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`, {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Error creando sección: ${errorText}`);
+  }
+
+  return await res.json();
+}
+
+// Actualizar una sección
+export async function actualizarSeccion(id: string, data: { nombre: string }) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/secciones/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Error actualizando sección: ${errorText}`);
+  }
+
+  return await res.json();
+}
+
+// Eliminar una sección
+export async function eliminarSeccion(id: string) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/secciones/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Error eliminando sección: ${errorText}`);
+  }
+
+  return await res.json();
 }
