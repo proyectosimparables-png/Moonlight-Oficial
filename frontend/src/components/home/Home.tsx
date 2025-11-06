@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/navbar/Navbar";
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ProductSection from "@/components/home/ProductSection";
+import ComentariosSection from "../ComentariosSeccion";
 
 interface Product {
   id: string;
@@ -81,7 +82,7 @@ const Home = () => {
           />
         ))}
       </main>
-
+     <ComentariosSection />
       {/* <Footer /> */}
     </div>
   );

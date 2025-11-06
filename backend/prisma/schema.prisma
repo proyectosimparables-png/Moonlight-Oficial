@@ -38,7 +38,6 @@ model Producto {
    imagenes    Imagen[]   // 👈 Relación con las imágenes
 
   // Relaciones
-  comentarios Comentario[]
   favoritos   Favorito[]
   ordenes     Orden[]
   historial   Historial[]
@@ -78,6 +77,8 @@ model Categoria {
   seccionId String?
 }
 
+
+
 model Seccion {
   id         String      @id @default(uuid())
   nombre     String      @unique
@@ -85,17 +86,20 @@ model Seccion {
   productos  Producto[]
 }
 
+
+
 model Comentario {
   id        String   @id @default(uuid())
   contenido String
   createdAt DateTime @default(now())
 
-  // Relaciones
-  userId     String
-  productoId String
-  user       User     @relation(fields: [userId], references: [id])
-  producto   Producto @relation(fields: [productoId], references: [id])
+  userId String
+  user   User @relation(fields: [userId], references: [id])
 }
+
+
+
+
 
 model Orden {
   id         String   @id @default(uuid())
@@ -110,6 +114,9 @@ model Orden {
   producto Producto @relation(fields: [productoId], references: [id])
 }
 
+
+
+
 model Historial {
   id         String   @id @default(uuid())
   userId     String
@@ -120,6 +127,8 @@ model Historial {
   user     User     @relation(fields: [userId], references: [id])
   producto Producto @relation(fields: [productoId], references: [id])
 }
+
+
 
 model Favorito {
   id         String   @id @default(uuid())
@@ -135,6 +144,8 @@ enum Role {
   ADMIN
   CLIENTE
 }
+
+
 
 model Cart {
   id        String     @id @default(uuid())

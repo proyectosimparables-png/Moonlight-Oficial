@@ -20,6 +20,9 @@ const productSections = [
 
 export const NavbarDesktop = () => {
   const router = useRouter();
+  const irAComentar = () => {
+    router.push("/cliente/comentar"); 
+  };
 
   return (
     <>
@@ -88,6 +91,12 @@ export const NavbarDesktop = () => {
           </button>
           <button className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105">
             Mayoristas
+          </button>
+          <button
+            onClick={irAComentar}
+            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
+          >
+            Cuentanos tu experiencia Moonglight
           </button>
         </div>
       </div>

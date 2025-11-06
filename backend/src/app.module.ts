@@ -7,6 +7,7 @@ import { CloudinaryModule } from './claudinary/cloudinary.module'; // ✅ de la 
 import { DashboardModule } from './dashboard/dashboard.module';
 import { TestModule } from './test/test.module';
 import { CartModule } from './cart/cart.module';
+import { ComentariosModule } from './comentarios/comentarios.module';
 
 
 @Module({
@@ -19,6 +20,7 @@ import { CartModule } from './cart/cart.module';
     DashboardModule,
     TestModule,
     CartModule,
+    ComentariosModule,
 
   ],
 })

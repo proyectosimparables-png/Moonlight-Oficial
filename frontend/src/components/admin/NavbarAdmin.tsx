@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   LogOut,
+  Cloud,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +26,7 @@ const menuItems = [
   { title: "Órdenes", url: "/admin/ordenes", icon: ShoppingCart },
   { title: "Secciones", url: "/admin/secciones", icon: FolderTree },
   { title: "Usuarios", url: "/admin/usuarios", icon: Users },
+  { title: "Comentarios", url: "/admin/comentarios", icon: Cloud },
   { title: "Volver a la tienda", url: "/", icon: ShoppingCart },
 ];
 
