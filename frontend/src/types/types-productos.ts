@@ -20,3 +20,15 @@ export type CreateProductoDto = {
   categoriaId: string;
   seccionId?: string;
 };
+export interface Favorito {
+  id: string;
+  productoId: string;
+  userId: string;
+  createdAt: string;
+  producto?: {
+    id: string;
+    nombre: string;
+    precio: number;
+    imagenUrl?: string;
+  };
+}

@@ -138,6 +138,8 @@ model Favorito {
 
   user     User     @relation(fields: [userId], references: [id])
   producto Producto @relation(fields: [productoId], references: [id])
+
+  @@unique([userId, productoId]) // evita duplicados en favoritos
 }
 
 enum Role {

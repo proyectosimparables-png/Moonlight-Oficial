@@ -8,6 +8,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { TestModule } from './test/test.module';
 import { CartModule } from './cart/cart.module';
 import { ComentariosModule } from './comentarios/comentarios.module';
+import { FavoritoModule } from './favorito/favorito.module';
 
 
 @Module({
@@ -21,6 +22,7 @@ import { ComentariosModule } from './comentarios/comentarios.module';
     TestModule,
     CartModule,
     ComentariosModule,
+    FavoritoModule,
 
   ],
 })
