@@ -35,12 +35,10 @@ model Producto {
   imagenUrl   String?
   createdAt   DateTime @default(now())
   published   Boolean  @default(false)
-   imagenes    Imagen[]   // 👈 Relación con las imágenes
+  imagenes    Imagen[]   // 👈 Relación con las imágenes
 
   // Relaciones
   favoritos   Favorito[]
-  ordenes     Orden[]
-  historial   Historial[]
   cartItems   CartItem[]
 
   // Relación con categoría (puede quedar null si se borra la categoría)
@@ -102,16 +100,28 @@ model Comentario {
 
 
 model Orden {
-  id         String   @id @default(uuid())
+  id         String      @id @default(uuid())
   userId     String
-  productoId String
-  cantidad   Int
-  total      Float
-  estado     String // Ej: "pendiente", "enviado", "entregado"
-  createdAt  DateTime @default(now())
+  estado     String      // Ej: "pendiente", "enviado", "entregado"
+  total      Float       // total de la orden
+  createdAt  DateTime    @default(now())
 
-  user     User     @relation(fields: [userId], references: [id])
-  producto Producto @relation(fields: [productoId], references: [id])
+  user       User        @relation(fields: [userId], references: [id])
+  items      OrdenItem[] // detalles de cada producto
+
+  @@index([userId])
+}
+
+model OrdenItem {
+  id          String   @id @default(uuid())
+  ordenId     String
+  nombre      String
+  precio      Float
+  cantidad    Int
+  productoId  String?    // opcional, solo para referencia si quieres saber cuál producto era
+  imagenUrl   String?
+
+  orden       Orden     @relation(fields: [ordenId], references: [id])
 }
 
 
@@ -120,13 +130,18 @@ model Orden {
 model Historial {
   id         String   @id @default(uuid())
   userId     String
-  productoId String
-  accion     String // Ej: "visto", "comprado", etc.
+  accion     String   // "visto", "comprado", etc.
   fecha      DateTime @default(now())
+  
+  // Snapshot opcional del producto
+  productoId String?  
+  nombre     String?
+  precio     Float?
+  imagenUrl  String?
 
-  user     User     @relation(fields: [userId], references: [id])
-  producto Producto @relation(fields: [productoId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }
+
 
 
 
