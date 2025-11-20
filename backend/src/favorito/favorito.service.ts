@@ -1,17 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-
 @Injectable()
 export class FavoritoService {
   constructor(private prisma: PrismaService) {}
 
   async agregarFavorito(userId: string, productoId: string) {
-    return this.prisma.favorito.upsert({
+    // 🔹 Crea o actualiza el favorito
+    const favorito = await this.prisma.favorito.upsert({
       where: { userId_productoId: { userId, productoId } },
       update: {},
       create: { userId, productoId },
+      include: {
+        producto: true, // ✅ Incluye el producto relacionado al devolverlo
+      },
     });
+
+    return favorito;
   }
 
   async eliminarFavorito(userId: string, productoId: string) {
@@ -24,7 +29,7 @@ export class FavoritoService {
     return this.prisma.favorito.findMany({
       where: { userId },
       include: {
-        producto: true,
+        producto: true, // ✅ Esto ya estaba bien
       },
     });
   }

@@ -15,6 +15,7 @@ import {
   ValidationPipe,
   UsePipes,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ProductoService } from './producto.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
@@ -40,6 +41,14 @@ export class ProductoController {
     return this.productoService.getSecciones();
   }
 
+ @Get('seccion/:slug')
+  async getSeccionPorSlug(@Param('slug') slug: string) {
+    const seccion = await this.productoService.getSeccionConProductos(slug);
+    if (!seccion) {
+      throw new NotFoundException(`No se encontró la sección con slug "${slug}"`);
+    }
+    return seccion;
+  }
   // Obtener categorías (todas o por sección)
   @Get('categorias')
   getCategorias(@Query('seccionId') seccionId?: string) {
@@ -58,6 +67,12 @@ export class ProductoController {
       published === 'true' ? true : published === 'false' ? false : undefined;
     return this.productoService.findAll(isPublished, seccionId, categoriaId);
   }
+
+@Get('search')
+findByName(@Query('q') q: string) {
+  return this.productoService.search(q);
+}
+
 
   // Obtener producto por ID
   @Get(':id')
@@ -113,7 +128,7 @@ export class ProductoController {
   // Crear categoría
   @Post('categorias')
   crearCategoria(
-    @Body() data: { nombre: string; seccionNombre: string; padreId?: string },
+    @Body() data: { nombre: string; seccionSlug: string; padreId?: string },
   ) {
     return this.productoService.crearCategoria(data);
   }

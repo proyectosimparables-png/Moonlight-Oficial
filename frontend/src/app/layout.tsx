@@ -70,6 +70,7 @@ export default function RootLayout({
                  <CartProvider>
               {/* Todo lo que usa useCart debe estar dentro del CartProvider */}
               <Provaiders>{children}</Provaiders>
+             
               <WhatsAppFloat />
               <CookieConsent />
               <AddedToCartModal /> {/* Modal de agregado al carrito */}

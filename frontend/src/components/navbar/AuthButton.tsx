@@ -9,6 +9,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { User, Heart, Clock, LogOut, UserCircle } from "lucide-react";
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
@@ -42,17 +43,39 @@ export const AuthButton = () => {
     toast.success("Sesión cerrada correctamente 👋", { position: "top-center" });
   };
 
+   const name =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    "Usuario";
+
+  const image =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=7b5ca2&color=fff&size=128`;
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="hover:bg-[#e6dff1] flex items-center gap-2 px-3 py-1 rounded"
+            className="hover:bg-[#e6dff1] flex items-center gap-2 px-3 py-1 rounded transition-colors"
           >
-            <User className="h-7 w-7 text-[#7b5ca2]" />
+            <div className="relative">
+              <Image
+                src={image}
+                alt={name}
+                width={36}
+                height={36}
+                className="rounded-full border-2 border-[#d8c4fa] object-cover shadow-sm hover:scale-105 transition-transform duration-200"
+              />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#d8c4fa] via-[#e6dff1] to-[#7b5ca2] opacity-0 hover:opacity-60 blur-[4px] transition-opacity duration-500"></div>
+            </div>
             <span className="text-[#7b5ca2] select-none text-sm hidden sm:inline">
-              Hola, {user?.user_metadata?.name || user?.email?.split("@")[0]} 👋
+              Hola, {name.split(" ")[0]} 👋
             </span>
           </Button>
         </DropdownMenuTrigger>
@@ -78,7 +101,7 @@ export const AuthButton = () => {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => router.push("/perfil")}
+            onClick={() => router.push("/cliente/perfil")}
             className="cursor-pointer text-[#6c5b7b]"
           >
             <UserCircle className="h-4 w-4 mr-2 text-[#6c5b7b]" /> Mi perfil
@@ -104,7 +127,7 @@ export const AuthButton = () => {
             >
               ✕
             </button>
-            <FavoritosList userId={user?.id || ""} />
+            <FavoritosList/>
           </div>
         </div>
       )}

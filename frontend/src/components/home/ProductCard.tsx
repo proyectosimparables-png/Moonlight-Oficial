@@ -18,13 +18,13 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
   const { addItem } = useCart();
-  const { isAuthenticated, login , user } = useAuth();
+  const { isAuthenticated, login, user } = useAuth();
 
   // 💰 Convertimos price a número para cálculos
-  const numericPrice = Number(price.replace(/[^0-9]+/g, "")); // quita todo menos números
+  const numericPrice = Number((price ?? "0").replace(/[^0-9]+/g, "")); // quita todo menos números
   const discountPrice = numericPrice * 0.9; // 10% OFF por transferencia
   const installmentPrice = numericPrice / 3; // 3 cuotas sin interés
-     const { isFavorite, toggleFavorite } = useFavorites();
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   // Función para formatear cualquier número a ARS
   const formatARS = (value: number) =>
@@ -52,21 +52,21 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
         <div className="relative aspect-square overflow-hidden">
           <Image
             src={image}
-            alt={name}
+            alt={name || "Imagen del producto"} 
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 25vw"
           />
-           {/* ❤️ Corazoncito */}
-           <button
+
+          {/* ❤️ Corazoncito */}
+          <button
             onClick={() => toggleFavorite(id)}
             className="absolute top-3 right-3 z-10"
             aria-label="Agregar a favoritos"
           >
             <Heart
-              className={`h-6 w-6 transition-colors duration-200 ${
-                isFavorite(id) ? "fill-[#6c5b7b] text-[#6c5b7b]" : "text-[#6c5b7b]"
-              }`}
+              className={`h-6 w-6 transition-colors duration-200 ${isFavorite(id) ? "fill-[#6c5b7b] text-[#6c5b7b]" : "text-[#6c5b7b]"
+                }`}
             />
           </button>
 

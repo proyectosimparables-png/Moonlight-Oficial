@@ -16,8 +16,10 @@ interface Product {
 interface Section {
   id: string;
   nombre: string;
+  slug: string;
   productos: Product[];
 }
+
 
 const Home = () => {
   const [sections, setSections] = useState<Section[]>([]);
@@ -73,16 +75,17 @@ const Home = () => {
           <ProductSection
             key={section.id}
             title={section.nombre}
+            slug={section.slug} 
             products={section.productos.map((p) => ({
               id: p.id,
               name: p.nombre,
               price: p.precio,
-              image: p.imagenUrl ?? "/placeholder.jpg", // fallback si no hay imagen
+              image: p.imagenUrl ?? "/placeholder.jpg",
             }))}
           />
         ))}
       </main>
-     <ComentariosSection />
+      <ComentariosSection />
       {/* <Footer /> */}
     </div>
   );

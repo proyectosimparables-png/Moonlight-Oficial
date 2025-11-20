@@ -78,12 +78,14 @@ model Categoria {
 
 
 model Seccion {
-  id         String      @id @default(uuid())
-  nombre     String      @unique
-  categorias Categoria[]
+  id         String       @id @default(uuid())
+  nombre     String
+  slug       String?      @unique   // 👈 OPCIONAL por ahora
   productos  Producto[]
+  categorias Categoria[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime?    @updatedAt // 👈 también opcional temporalmente
 }
-
 
 
 model Comentario {
@@ -100,14 +102,15 @@ model Comentario {
 
 
 model Orden {
-  id         String      @id @default(uuid())
-  userId     String
-  estado     String      // Ej: "pendiente", "enviado", "entregado"
-  total      Float       // total de la orden
-  createdAt  DateTime    @default(now())
+  id             String      @id @default(uuid())
+  userId         String
+  estado         String      // Ej: "pendiente", "enviado", "entregado"
+  total          Float       // total de la orden
+  correoEnviado  Boolean     @default(false) // <-- nuevo campo para tracking de mail
+  createdAt      DateTime    @default(now())
 
-  user       User        @relation(fields: [userId], references: [id])
-  items      OrdenItem[] // detalles de cada producto
+  user           User        @relation(fields: [userId], references: [id])
+  items          OrdenItem[] // detalles de cada producto
 
   @@index([userId])
 }

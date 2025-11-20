@@ -1,12 +1,13 @@
 "use client";
 import Image from "next/image";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AuthButton } from "./AuthButton";
 import { CartButton } from "./CartButton";
-import { SearchInput } from "./SearchInput";
+import { SearchInput } from "../search/SearchInput";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { ChevronDown } from "lucide-react";
 
 const productSections = [
   "Bangtan Bags",
@@ -17,6 +18,16 @@ const productSections = [
   "Los más elegidos",
   "Accesorios",
   "Outlet",
+];
+
+const bottomSections = [
+  { label: "¿Quiénes Somos?", path: "/cliente/quienes-somos" },
+  { label: "Políticas de Compra", path: "/cliente/politicas-de-compras" },
+  { label: "Preguntas Frecuentes", path: "/cliente/preguntas-frecuentes" },
+  { label: "Cómo Comprar", path: "/cliente/como-comprar" },
+  { label: "Mayoristas", path: "/cliente/mayoristas" },
+  { label: "Guía de Talles", path: "/cliente/guia-de-talles" },
+   { label: "Cuentanos tu experiencia Moonglight", path: "/cliente/comentar" },
 ];
 
 export const NavbarMobile = () => {
@@ -35,56 +46,66 @@ export const NavbarMobile = () => {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </Button>
           </SheetTrigger>
+
           <SheetContent side="left" className="w-64">
+            <SheetHeader>
+              <SheetTitle className="text-xl font-bold text-[#7b5ca2]">Menú</SheetTitle>
+            </SheetHeader>
+
+            {/* Buscador */}
             <SearchInput placeholder="Buscar productos..." />
-            <div className="mt-4 flex flex-col gap-3">
-              <button
-                onClick={() => router.push("/")}
-                className="text-[#7b5ca2] text-lg font-medium"
-              >
-                Inicio
-              </button>
-              {productSections.map((section) => (
-                <button
-                  key={section}
-                  className="text-[#7b5ca2] text-lg font-medium"
+
+            {/* Productos Dropdown */}
+            <div className="mt-4">
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <Button className="w-full justify-between bg-[#7b5ca2] text-white py-2 px-4 rounded-md shadow-md hover:scale-105 transition-transform">
+                    Productos <ChevronDown className="ml-1 h-4 w-4" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] mt-2">
+                  {productSections.map((section) => {
+                    const slug = section
+                      .toLowerCase()
+                      .normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/\s+/g, "-");
+
+                    return (
+                      <DropdownMenu.Item
+                        key={section}
+                        className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                        onClick={() => router.push(`/seccion/${slug}`)}
+                      >
+                        {section}
+                      </DropdownMenu.Item>
+                    );
+                  })}
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
+            </div>
+
+            {/* Bottom sections (botones 3D violetas) */}
+            <div className="mt-6 flex flex-col gap-3">
+              {bottomSections.map((section) => (
+                <Button
+                  key={section.label}
+                  onClick={() => router.push(section.path)}
+                  className="bg-[#4e3f73] text-white font-semibold py-2 rounded-lg shadow-md hover:shadow-xl hover:scale-105 transition-all"
                 >
-                  {section}
-                </button>
+                  {section.label}
+                </Button>
               ))}
-              <button className="text-[#7b5ca2] text-lg font-medium">
-                ¿Quiénes Somos?
-              </button>
-              <button className="text-[#7b5ca2] text-lg font-medium">
-                Políticas de Compra
-              </button>
-              <button className="text-[#7b5ca2] text-lg font-medium">
-                Preguntas Frecuentes
-              </button>
-              <button className="text-[#7b5ca2] text-lg font-medium">
-                Mayoristas
-              </button>
             </div>
           </SheetContent>
         </Sheet>
 
         {/* Logo */}
-        <Image
-          src="/moonlight.png"
-          alt="Moonlight Logo"
-          width={120}
-          height={30}
-          priority
-        />
+        <Image src="/moonlight.png" alt="Moonlight Logo" width={120} height={30} priority />
 
         {/* Right: Auth & Cart */}
         <div className="flex items-center gap-2">

@@ -62,7 +62,7 @@ export default function CookieConsent() {
           aceptar solo las necesarias o todas las cookies.  
           Consulta nuestras{" "}
           <a
-            href="/politicas-de-compra"
+            href="/cliente/politicas-de-compras"
             target="_blank"
             rel="noopener noreferrer"
             style={{

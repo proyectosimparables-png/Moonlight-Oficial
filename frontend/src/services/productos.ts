@@ -10,7 +10,7 @@ export async function updateProductoFlexible(
     descripcion: string;
     precio: number;
     stock: number;
-    categoriaId: string;
+    categoriaId?: string;
     imagenes?: File[];
   }
 ) {
@@ -284,3 +284,6 @@ export async function eliminarSeccion(id: string) {
 
   return await res.json();
 }
+
+
+

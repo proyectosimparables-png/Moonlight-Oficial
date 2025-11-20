@@ -1,18 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import ProductCard from "./ProductCard";
+import Link from "next/link";
 
-interface ProductSectionProps {
+ export interface ProductSectionProps {
   title: string;
+  slug: string;
   products: Array<{
     id: string;
     image: string;
     name: string;
-    price: number; // vienen como número del backend
+    price: number;
   }>;
 }
 
-const ProductSection = ({ title, products }: ProductSectionProps) => {
+const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
   return (
     <section className="py-12 bg-[#FAFCEF] text-[#6c5b7b]">
       <div className="container mx-auto px-4">
@@ -24,26 +26,30 @@ const ProductSection = ({ title, products }: ProductSectionProps) => {
 
           <div className="w-16 h-[2px] bg-[#7b5ca2]/40 mb-3"></div>
 
-          <Button
-            variant="ghost"
-            className="text-[#7b5ca2] hover:text-white hover:bg-[#7b5ca2]/80 transition-colors flex items-center"
-          >
-            Ver todo
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
+          <Link href={`/seccion/${slug}`}>
+            <Button
+              variant="ghost"
+              className="text-[#7b5ca2] hover:text-white hover:bg-[#7b5ca2]/80 transition-colors flex items-center"
+            >
+              Ver todo
+              <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          </Link>
         </div>
 
         {/* Grilla de productos */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {products.map((product, index) => (
-            <ProductCard
-              key={index}
-              id={product.id}
-              image={product.image}
-              name={product.name}
-              price={`$ ${product.price.toLocaleString("es-AR")}`} // ✅ convertimos número a string
-            />
-          ))}
+          {products
+            .slice(-4) // 👈 solo los últimos 4
+            .map((product, index) => (
+              <ProductCard
+                key={index}
+                id={product.id}
+                image={product.image}
+                name={product.name}
+                price={`$ ${product.price.toLocaleString("es-AR")}`}
+              />
+            ))}
         </div>
       </div>
     </section>
