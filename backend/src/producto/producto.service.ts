@@ -11,8 +11,8 @@ import { CloudinaryService } from 'src/claudinary/cloudinary.service';
 export class ProductoService {
   constructor(
     private prisma: PrismaService,
-    private cloudinaryService: CloudinaryService, // 👈 Inyectamos CloudinaryService
-  ) {}
+    private cloudinaryService: CloudinaryService,
+  ) { }
 
   // 🔹 Formatear precio
   private formatearPrecio(precio: number): string {
@@ -35,7 +35,7 @@ export class ProductoService {
     return productos.map((p) => this.formatearProducto(p));
   }
 
-  // 🧩 Crear producto (una o varias imágenes)
+  // 🧩 Crear producto
   async create(data: CreateProductoDto, imagenesUrls?: string[]) {
     const producto = await this.prisma.producto.create({
       data: {
@@ -46,9 +46,7 @@ export class ProductoService {
         categoriaId: data.categoriaId,
         seccionId: data.seccionId,
         published: data.published ?? false,
-
-        imagenUrl: imagenesUrls?.[0] ?? null, // la primera imagen principal
-
+        imagenUrl: imagenesUrls?.[0] ?? null,
         imagenes: imagenesUrls?.length
           ? { create: imagenesUrls.map((url) => ({ url })) }
           : undefined,
@@ -70,7 +68,6 @@ export class ProductoService {
   // 📦 Listar productos
   async findAll(published?: boolean, seccionId?: string, categoriaId?: string) {
     const where: Prisma.ProductoWhereInput = {};
-
     if (published !== undefined) where.published = published;
     if (categoriaId) where.categoriaId = categoriaId;
     if (seccionId) where.seccionId = seccionId;
@@ -98,7 +95,6 @@ export class ProductoService {
         imagenes: true,
       },
     });
-
     if (!producto) return null;
     return this.formatearProducto(producto);
   }
@@ -110,8 +106,6 @@ export class ProductoService {
     file?: Express.Multer.File,
   ) {
     let imagenUrl: string | undefined;
-
-    // Si hay imagen, subimos a Cloudinary
     if (file) {
       imagenUrl = await this.cloudinaryService.uploadImage(file);
     }
@@ -170,10 +164,7 @@ export class ProductoService {
     return this.prisma.categoria.findMany({
       where: { padreId: null },
       orderBy: { nombre: 'asc' },
-      include: {
-        subcategorias: { orderBy: { nombre: 'asc' } },
-        seccion: true,
-      },
+      include: { subcategorias: { orderBy: { nombre: 'asc' } }, seccion: true },
     });
   }
 
@@ -181,10 +172,7 @@ export class ProductoService {
     return this.prisma.categoria.findMany({
       where: { seccionId, padreId: null },
       orderBy: { nombre: 'asc' },
-      include: {
-        subcategorias: { orderBy: { nombre: 'asc' } },
-        seccion: true,
-      },
+      include: { subcategorias: { orderBy: { nombre: 'asc' } }, seccion: true },
     });
   }
 
@@ -194,9 +182,7 @@ export class ProductoService {
       where: { nombre: data.seccionNombre },
     });
 
-    if (!seccion) {
-      throw new Error(`No se encontró la sección con nombre "${data.seccionNombre}"`);
-    }
+    if (!seccion) throw new Error(`No se encontró la sección con nombre "${data.seccionNombre}"`);
 
     return this.prisma.categoria.create({
       data: {
@@ -213,9 +199,8 @@ export class ProductoService {
     if (data.nombre) camposActualizables.nombre = data.nombre;
     if (data.seccionId) camposActualizables.seccionId = data.seccionId;
 
-    if (Object.keys(camposActualizables).length === 0) {
+    if (Object.keys(camposActualizables).length === 0)
       throw new Error('No se enviaron datos válidos para actualizar');
-    }
 
     return this.prisma.categoria.update({
       where: { id },
@@ -242,43 +227,56 @@ export class ProductoService {
     return this.prisma.seccion.delete({ where: { id } });
   }
 
-async updateMultipleImages(
-  id: string,
-  data: CreateProductoDto,
-  imagenUrls: string[]
-) {
-  try {
-    console.log('🧾 ID recibido:', id);
-    console.log('🧾 ImagenUrls:', imagenUrls);
-    console.log('🧾 Data:', data);
+  // 🔄 Actualizar múltiples imágenes
+  async updateMultipleImages(
+    id: string,
+    data: CreateProductoDto,
+    imagenUrls: string[],
+  ) {
+    try {
+      const updateData: any = { ...data };
 
-    const updateData: any = { ...data };
+      if (typeof updateData.precio === 'string') updateData.precio = parseFloat(updateData.precio);
+      if (typeof updateData.stock === 'string') updateData.stock = parseInt(updateData.stock);
 
-    // ✅ Conversión segura
-    if (typeof updateData.precio === 'string')
-      updateData.precio = parseFloat(updateData.precio);
-    if (typeof updateData.stock === 'string')
-      updateData.stock = parseInt(updateData.stock);
+      if (imagenUrls.length > 0) {
+        updateData.imagenUrl = imagenUrls[0];
+        updateData.imagenes = { create: imagenUrls.map((url) => ({ url })) };
+      }
 
-    if (imagenUrls.length > 0) {
-      updateData.imagenUrl = imagenUrls[0]; // la principal
-      updateData.imagenes = {
-        create: imagenUrls.map((url) => ({ url })),
-      };
+      const producto = await this.prisma.producto.update({
+        where: { id },
+        data: updateData,
+        include: { imagenes: true },
+      });
+
+      return this.formatearProducto(producto);
+    } catch (error) {
+      console.error('❌ Error en updateMultipleImages:', error);
+      throw error;
     }
+  }
 
-    const producto = await this.prisma.producto.update({
-      where: { id },
-      data: updateData,
-      include: { imagenes: true },
+  // 🔍 Buscar productos por nombre o descripción
+  async searchProducts(query: string) {
+    if (!query) return [];
+
+    const productos = await this.prisma.producto.findMany({
+      where: {
+        OR: [
+          { nombre: { contains: query, mode: 'insensitive' } },
+          { descripcion: { contains: query, mode: 'insensitive' } },
+        ],
+        published: true,
+      },
+      include: {
+        categoria: { include: { seccion: true } },
+        seccion: true,
+        imagenes: true,
+      },
+      take: 10,
     });
 
-    return this.formatearProducto(producto);
-  } catch (error) {
-    console.error('❌ Error en updateMultipleImages:', error);
-    throw error;
+    return this.formatearProductos(productos);
   }
-}
-
-
 }

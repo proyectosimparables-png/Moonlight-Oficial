@@ -28,7 +28,7 @@ export class ProductoController {
   constructor(
     private readonly productoService: ProductoService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
   // =======================
   // 🔍 GET
@@ -59,12 +59,19 @@ export class ProductoController {
     return this.productoService.findAll(isPublished, seccionId, categoriaId);
   }
 
+
+
+  // GET /productos/search?q=palabra
+  @Get('search')
+  async search(@Query('q') query: string) {
+    if (!query || query.trim() === '') return [];
+    return this.productoService.searchProducts(query.trim());
+  }
   // Obtener producto por ID
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productoService.findOne(id);
   }
-
   // =======================
   // ➕ POST
   // =======================
@@ -138,21 +145,21 @@ export class ProductoController {
   }
 
   // 📸 Actualizar producto (con una nueva imagen)
- @Put(':id/upload')
-@UseInterceptors(FilesInterceptor('files'))
-async updateProductoWithImages(
-  @Param('id') id: string,
-  @UploadedFiles() files: Express.Multer.File[],
-  @Body() body: CreateProductoDto
-) {
-  const imagenUrls: string[] = [];
-  if (files && files.length) {
-    for (const file of files) {
-      imagenUrls.push(await this.cloudinaryService.uploadImage(file));
+  @Put(':id/upload')
+  @UseInterceptors(FilesInterceptor('files'))
+  async updateProductoWithImages(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() body: CreateProductoDto
+  ) {
+    const imagenUrls: string[] = [];
+    if (files && files.length) {
+      for (const file of files) {
+        imagenUrls.push(await this.cloudinaryService.uploadImage(file));
+      }
     }
+    return this.productoService.updateMultipleImages(id, body, imagenUrls);
   }
-  return this.productoService.updateMultipleImages(id, body, imagenUrls);
-}
 
 
   // 🖼 Eliminar imagen principal del producto

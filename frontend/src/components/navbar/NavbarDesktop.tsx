@@ -24,28 +24,31 @@ export const NavbarDesktop = () => {
   return (
     <>
       <div className="hidden md:block">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20 relative">
-            {/* Search */}
-            <div className="hidden md:flex items-center gap-2">
-              <SearchInput placeholder="Buscar productos..." />
-            </div>
+        {/* Parte superior con fondo crema */}
+        <div className="bg-[#FAFCEF]">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between h-20 relative">
+              {/* Search */}
+              <div className="hidden md:flex items-center gap-2">
+                <SearchInput placeholder="Buscar productos..." />
+              </div>
 
-            {/* Logo */}
-            <div className="absolute left-1/2 transform -translate-x-1/2">
-              <Image
-                src="/moonlight.png"
-                alt="Moonlight Logo"
-                width={140}
-                height={40}
-                priority
-              />
-            </div>
+              {/* Logo */}
+              <div className="absolute left-1/2 transform -translate-x-1/2">
+                <Image
+                  src="/moonlight.png"
+                  alt="Moonlight Logo"
+                  width={140}
+                  height={40}
+                  priority
+                />
+              </div>
 
-            {/* Right: Auth & Cart */}
-            <div className="flex items-center gap-2">
-              <AuthButton />
-              <CartButton />
+              {/* Right: Auth & Cart */}
+              <div className="flex items-center gap-2">
+                <AuthButton />
+                <CartButton />
+              </div>
             </div>
           </div>
         </div>
