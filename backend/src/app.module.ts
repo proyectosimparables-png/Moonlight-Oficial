@@ -11,6 +11,7 @@ import { ComentariosModule } from './comentarios/comentarios.module';
 import { FavoritoModule } from './favorito/favorito.module';
 import { MailModule } from './mail/mail.module';
 import { PurchaseModule } from './purchase/purchase.module';
+import { HistorialModule } from './historial/historial.module';
 
 
 @Module({
@@ -27,6 +28,7 @@ import { PurchaseModule } from './purchase/purchase.module';
     FavoritoModule,
     MailModule,
     PurchaseModule,
+     HistorialModule, 
 
   ],
 })

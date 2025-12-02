@@ -25,22 +25,23 @@ export default function PreguntasFrecuentes() {
 
                     {/* 💳 Logos de medios de pago */}
                     <div className="flex flex-wrap gap-4 items-center justify-start mt-2">
-                        <Image src="/Visa.png" alt="Visa" width={60} height={40} />
-                        <Image src="/Matercard.png" alt="MaterCard" width={60} height={40} />
-                        <Image src="/American.png" alt="American Express" width={60} height={40} />
-                        <Image src="/Mercadopago.png" alt="Mercado Pago" width={90} height={40} />
-                        <Image src="/Naranja.png" alt="Naranja" width={70} height={40} />
-                        <Image src="/Nativa.png" alt="Nativa" width={90} height={40} />
-                        <Image src="/PagoFacil.png" alt="Pago Fácil" width={50} height={40} />
-                        <Image src="/Paypal.png" alt="PayPal" width={50} height={40} />
-                        <Image src="/Rapipago.png" alt="Rapipago" width={50} height={40} />
-                        <Image src="/Shopping.png" alt="Shopping" width={50} height={40} />
-                        <Image src="/Farabella.png" alt="Farabella" width={50} height={40} />
-                        <Image src="/DinersClub.png" alt="Diners Club" width={50} height={40} />
-                        <Image src="/Cencosod.png" alt="Cencosod" width={50} height={40} />
-                        <Image src="/CabalDbito.png" alt="CabalDbito" width={50} height={40} />
-                        <Image src="/ArgenCard.png" alt="Transferencia Bancaria" width={50} height={40} />
-                         <Image src="/Banelco.png" alt="Banelco" width={50} height={40} />
+                        <Image src="/visa.png" alt="Visa" width={40} height={40} />
+                        <Image src="/mastercard.png" alt="MasterCard" width={40} height={40} />
+                        <Image src="/American.png" alt="American Express" width={40} height={40} />
+                        <Image src="/mercado-pago.png" alt="Mercado Pago" width={40} height={40} />
+                        <Image src="/tarjeta-naranja.png" alt="Naranja" width={40} height={40} />
+                        <Image src="/tarjeta-nativa.png" alt="Nativa" width={40} height={40} />
+                        <Image src="/pago-facil.png" alt="Pago Fácil" width={40} height={40} />
+                        <Image src="/paypal-logo.png" alt="PayPal" width={40} height={40} />
+                        <Image src="/Rapipago.png" alt="Rapipago" width={40} height={40} />
+                        <Image src="/tarjeta-shopping.png" alt="Shopping" width={40} height={40} />
+                        <Image src="/cmr-falabella.png" alt="Farabella" width={40} height={40} />
+                        <Image src="/diners-club.png" alt="Diners Club" width={40} height={40} />
+                        <Image src="/cencosud.png" alt="Cencosod" width={40} height={40} />
+                        <Image src="/cabal Debito.png" alt="Cabal Debito" width={40} height={40} />
+                        <Image src="/Cabal.png" alt="Cabal" width={40} height={40} />
+                        <Image src="/tarjeta-argencard.png" alt="Transferencia Bancaria" width={40} height={40} />
+                        <Image src="/red-banelco.png" alt="Banelco" width={40} height={40} />
                     </div>
                 </div>
 
