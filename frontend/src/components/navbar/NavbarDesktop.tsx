@@ -58,7 +58,7 @@ export const NavbarDesktop = () => {
         </div>
 
         {/* Barra inferior */}
-        <div className="bg-[#FAFCEF] justify-center items-center gap-8 py-3 text-[17px] text-[#7b5ca2] font-[var(--font-love-story)] tracking-wide flex">
+        <div className="bg-[#FAFCEF] justify-center items-center gap-6 py-3 text-[17px] text-[#7b5ca2] font-[var(--font-love-story)] tracking-wide flex">
           <button
             onClick={() => router.push("/")}
             className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
@@ -76,12 +76,11 @@ export const NavbarDesktop = () => {
 
             <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2]">
               {productSections.map((section) => {
-                // Convertimos el nombre en un slug (ej: "Bangtan Bags" → "bangtan-bags")
                 const slug = section
                   .toLowerCase()
-                  .normalize("NFD") // elimina acentos
+                  .normalize("NFD")
                   .replace(/[\u0300-\u036f]/g, "")
-                  .replace(/\s+/g, "-"); // reemplaza espacios por guiones
+                  .replace(/\s+/g, "-");
 
                 return (
                   <DropdownMenu.Item
@@ -96,35 +95,31 @@ export const NavbarDesktop = () => {
             </DropdownMenu.Content>
           </DropdownMenu.Root>
 
-          {/* Otras secciones */}
-          <button
-            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-            onClick={() => router.push("/cliente/quienes-somos")}
-          >
-            ¿Quiénes Somos?
-          </button>
+          {/* Dropdown Compras */}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-105">
+                Compras <ChevronDown className="ml-1 h-4 w-4" />
+              </button>
+            </DropdownMenu.Trigger>
 
-          <button
-            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-            onClick={() => router.push("/cliente/politicas-de-compras")}
-          >
-            Políticas de Compra
-          </button>
+            <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2]">
+              <DropdownMenu.Item
+                className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                onClick={() => router.push("/cliente/como-comprar")}
+              >
+                Cómo Comprar
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                onClick={() => router.push("/cliente/politicas-de-compras")}
+              >
+                Políticas de Compra
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
 
-          <button
-            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-            onClick={() => router.push("/cliente/preguntas-frecuentes")}
-          >
-            Preguntas Frecuentes
-          </button>
-
-          <button
-            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-            onClick={() => router.push("/cliente/como-comprar")}
-          >
-            Como Comprar
-          </button>
-
+          {/* Botón Mayoristas */}
           <button
             className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
             onClick={() => router.push("/cliente/mayoristas")}
@@ -143,7 +138,7 @@ export const NavbarDesktop = () => {
             onClick={irAComentar}
             className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
           >
-            Cuentanos tu experiencia Moonglight
+            Experiencia Moonglight
           </button>
         </div>
       </div>
