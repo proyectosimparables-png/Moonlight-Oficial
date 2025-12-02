@@ -2,17 +2,31 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// 👉 Función para generar slugs sin librerías externas
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // quitar acentos
+    .replace(/\s+/g, "-")             // espacios a guiones
+    .replace(/[^\w-]+/g, "")          // eliminar caracteres no alfanuméricos
+    .replace(/--+/g, "-")             // múltiples guiones a uno solo
+    .replace(/^-+/, "")                // quitar guiones al inicio
+    .replace(/-+$/, "");               // quitar guiones al final
+}
+
 async function main() {
   console.log('🧹 Limpiando base de datos...');
 
-  // 1️⃣ Limpiar tablas en orden correcto
+  // 1️⃣ Limpiar tablas respetando dependencias
+  await prisma.cartItem.deleteMany();
   await prisma.producto.deleteMany();
   await prisma.categoria.deleteMany();
   await prisma.seccion.deleteMany();
 
   console.log('✅ Base limpia, iniciando seed...');
 
-  // 2️⃣ Crear Secciones
+  // 2️⃣ Crear Secciones con slugs generados con nuestra función
   const seccionesData = [
     'Los más elegidos',
     'Bangtan Home',
@@ -27,12 +41,15 @@ async function main() {
   const secciones: Record<string, any> = {};
 
   for (const nombre of seccionesData) {
-    const seccion = await prisma.seccion.create({ data: { nombre } });
+    const slug = slugify(nombre);
+    const seccion = await prisma.seccion.create({
+      data: { nombre, slug },
+    });
     secciones[nombre] = seccion;
-    console.log(`🧩 Sección creada: ${nombre}`);
+    console.log(`🧩 Sección creada: ${nombre} → slug: ${slug}`);
   }
 
-  // 3️⃣ Crear Categorías específicas (solo para Indumentaria)
+  // 3️⃣ Crear Categorías específicas para "Indumentaria"
   const categoriasData = [
     { nombre: 'Remeras', seccion: secciones['Indumentaria'] },
     { nombre: 'Abrigos', seccion: secciones['Indumentaria'] },
@@ -48,12 +65,10 @@ async function main() {
       },
     });
     seccionesConCategorias.add(cat.seccion.nombre);
-    console.log(
-      `📁 Categoría creada: ${cat.nombre} (Sección: ${cat.seccion.nombre})`
-    );
+    console.log(`📁 Categoría creada: ${cat.nombre} (Sección: ${cat.seccion.nombre})`);
   }
 
-  // 4️⃣ Crear categoría "Otras" en las secciones sin categorías
+  // 4️⃣ Crear categoría "Otras" para secciones sin categorías
   for (const nombreSeccion of Object.keys(secciones)) {
     if (!seccionesConCategorias.has(nombreSeccion)) {
       await prisma.categoria.create({
@@ -62,9 +77,7 @@ async function main() {
           seccionId: secciones[nombreSeccion].id,
         },
       });
-      console.log(
-        `📁 Categoría "Otras" creada en la sección: ${nombreSeccion}`
-      );
+      console.log(`📁 Categoría "Otras" creada en la sección: ${nombreSeccion}`);
     }
   }
 

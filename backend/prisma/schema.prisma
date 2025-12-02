@@ -32,17 +32,21 @@ model Producto {
   stock       Int
   imagenUrl   String?
   createdAt   DateTime     @default(now())
-  categoriaId String?
   published   Boolean      @default(false)
-  seccionId   String?
-  cartItems   CartItem[]
-  comentarios Comentario[]
-  favoritos   Favorito[]
-  historial   Historial[]
   imagenes    Imagen[]
+
+  favoritos   Favorito[]
+  cartItems   CartItem[]
+
+  categoriaId String?
+  categoria   Categoria?   @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+
+  seccionId   String?
+  seccion     Seccion?     @relation(fields: [seccionId], references: [id], onDelete: SetNull)
+
+  comentarios Comentario[]
+  historial   Historial[]
   ordenes     Orden[]
-  categoria   Categoria?   @relation(fields: [categoriaId], references: [id])
-  seccion     Seccion?     @relation(fields: [seccionId], references: [id])
 }
 
 model Imagen {
@@ -64,41 +68,64 @@ model Categoria {
 }
 
 model Seccion {
-  id         String      @id @default(uuid())
-  nombre     String      @unique
-  categorias Categoria[]
+  id         String       @id @default(uuid())
+  nombre     String
+  slug       String?      @unique
   productos  Producto[]
+  categorias Categoria[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime?    @updatedAt
 }
 
 model Comentario {
   id         String   @id @default(uuid())
   contenido  String
   createdAt  DateTime @default(now())
+
   userId     String
-  productoId String
-  producto   Producto @relation(fields: [productoId], references: [id])
   user       User     @relation(fields: [userId], references: [id])
+
+  productoId String?
+  producto   Producto? @relation(fields: [productoId], references: [id])
 }
 
 model Orden {
-  id         String   @id @default(uuid())
-  userId     String
-  productoId String
-  cantidad   Int
-  total      Float
-  estado     String
-  createdAt  DateTime @default(now())
-  producto   Producto @relation(fields: [productoId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  id             String      @id @default(uuid())
+  userId         String
+  estado         String
+  total          Float
+  correoEnviado  Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+
+  user           User        @relation(fields: [userId], references: [id])
+  items          OrdenItem[]
+
+  @@index([userId])
+}
+
+model OrdenItem {
+  id          String   @id @default(uuid())
+  ordenId     String
+  nombre      String
+  precio      Float
+  cantidad    Int
+  productoId  String?
+  imagenUrl   String?
+
+  orden       Orden     @relation(fields: [ordenId], references: [id])
 }
 
 model Historial {
   id         String   @id @default(uuid())
   userId     String
-  productoId String
   accion     String
   fecha      DateTime @default(now())
-  producto   Producto @relation(fields: [productoId], references: [id])
+
+  productoId String?
+  nombre     String?
+  precio     Float?
+  imagenUrl  String?
+
   user       User     @relation(fields: [userId], references: [id])
 }
 
@@ -107,26 +134,30 @@ model Favorito {
   userId     String
   productoId String
   createdAt  DateTime @default(now())
-  producto   Producto @relation(fields: [productoId], references: [id])
+
   user       User     @relation(fields: [userId], references: [id])
+  producto   Producto @relation(fields: [productoId], references: [id])
+
+  @@unique([userId, productoId])
 }
 
 model Cart {
   id        String     @id @default(uuid())
   userId    String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model CartItem {
-  id         String   @id @default(uuid())
-  cartId     String
-  productoId String
-  quantity   Int      @default(1)
-  cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  producto   Producto @relation(fields: [productoId], references: [id])
+  id          String   @id @default(uuid())
+  cartId      String
+  productoId  String
+  quantity    Int      @default(1)
+
+  cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  producto    Producto @relation(fields: [productoId], references: [id])
 
   @@unique([cartId, productoId])
 }

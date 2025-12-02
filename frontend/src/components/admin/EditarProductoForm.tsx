@@ -15,7 +15,7 @@ interface Producto {
   descripcion: string;
   precio: number;
   stock: number;
-  categoriaId: string;
+  categoriaNombre: string; // Mostramos nombre en lugar de ID
   imagenUrl?: string | null;
 }
 
@@ -31,7 +31,6 @@ interface ProductoUpdateData {
   descripcion: string;
   precio: number;
   stock: number;
-  categoriaId: string;
   imagenes?: File[];
 }
 
@@ -80,13 +79,12 @@ export default function EditarProductoForm({
     e.preventDefault();
 
     try {
-      // Construimos los datos con tipo ProductoUpdateData
+      // Construimos los datos para actualizar sin enviar categoriaId
       const data: ProductoUpdateData = {
         nombre,
         descripcion,
         precio,
         stock: producto.stock,
-        categoriaId: producto.categoriaId,
       };
 
       if (imagenes.length > 0) {
@@ -129,6 +127,11 @@ export default function EditarProductoForm({
       <div>
         <label className="block mb-1">Descripción</label>
         <Textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+      </div>
+
+      <div>
+        <label className="block mb-1">Categoría</label>
+        <Input value={producto.categoriaNombre} disabled className="bg-gray-200" />
       </div>
 
       {imagenUrl && (

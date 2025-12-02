@@ -1,12 +1,14 @@
 "use client";
 import { createContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import type { Session, User } from "@supabase/supabase-js";
+import type { AuthUser, Session} from "@supabase/supabase-js";
 import { getUserProfile } from "@/services/userService";
+  
+
 
 type AuthContextType = {
   session: Session | null;
-  user: User | null;
+  user:  AuthUser | null;
   isAuthenticated: boolean;
   role: string | null;
   authLoaded: boolean;

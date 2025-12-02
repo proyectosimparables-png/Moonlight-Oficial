@@ -4,9 +4,13 @@ import { ProductoModule } from './producto/producto.module';
 import { AuthModule } from './auth/auth.module'; // ✅ de tu rama
 import { AdminModule } from './admin/admin.module'; // ✅ de la rama maca
 import { CloudinaryModule } from './claudinary/cloudinary.module'; // ✅ de la rama maca
-import { DashboardModule } from './dashboard/dashboard.module';
+//import { DashboardModule } from './dashboard/dashboard.module';
 import { TestModule } from './test/test.module';
 import { CartModule } from './cart/cart.module';
+import { ComentariosModule } from './comentarios/comentarios.module';
+import { FavoritoModule } from './favorito/favorito.module';
+import { MailModule } from './mail/mail.module';
+import { PurchaseModule } from './purchase/purchase.module';
 
 
 @Module({
@@ -16,9 +20,13 @@ import { CartModule } from './cart/cart.module';
     AuthModule,
     AdminModule,
     CloudinaryModule,
-    DashboardModule,
+   // DashboardModule,
     TestModule,
     CartModule,
+    ComentariosModule,
+    FavoritoModule,
+    MailModule,
+    PurchaseModule,
 
   ],
 })

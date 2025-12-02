@@ -17,6 +17,9 @@ import Provaiders from "@/components/Provaiders";
 import { Toaster } from "react-hot-toast";
 import clsx from "clsx";
 import { AddedToCartModal } from "@/components/cart/AddedToCartModal";
+import { FavoritesProvider } from "@/context/FavoritesContext";
+import WhatsAppFloat from "@/components/home/Whatsapp";
+import CookieConsent from "@/components/home/Cookies";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -63,13 +66,18 @@ export default function RootLayout({
         className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans"
       >
         <AuthProvider>
-         
-            <CartProvider>
+         <FavoritesProvider>     
+                 <CartProvider>
               {/* Todo lo que usa useCart debe estar dentro del CartProvider */}
               <Provaiders>{children}</Provaiders>
+             
+              <WhatsAppFloat />
+              <CookieConsent />
               <AddedToCartModal /> {/* Modal de agregado al carrito */}
               <Toaster position="top-right" />
             </CartProvider>
+            </FavoritesProvider>
+
         </AuthProvider>
       </body>
     </html>
