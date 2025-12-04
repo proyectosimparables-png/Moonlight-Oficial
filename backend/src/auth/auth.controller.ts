@@ -155,6 +155,51 @@ export class AuthController {
 
     return res.status(HttpStatus.OK).json({ message: 'Sesión cerrada' });
   }
+@UseGuards(SupabaseAuthGuard)
+@Post('update-address')
+async updateAddress(
+  @Req() req: Request,
+  @Body() body: { address: string }
+) {
+  const supabaseUser = req['supabaseUser'];
+
+  if (!body.address) {
+    return { message: 'La dirección es requerida' };
+  }
+
+  const updated = await this.authService.updateAddress(
+    supabaseUser.id,
+    body.address
+  );
+
+  return {
+    message: 'Dirección actualizada correctamente',
+    user: updated,
+  };
+}
+@UseGuards(SupabaseAuthGuard)
+@Post('edit-address')
+async editAddress(
+  @Req() req: Request,
+  @Body() body: { address: string }
+) {
+  const supabaseUser = req['supabaseUser'];
+
+  if (!body.address) {
+    return { message: 'La dirección es requerida' };
+  }
+
+  const updated = await this.authService.updateAddress(
+    supabaseUser.id,
+    body.address
+  );
+
+  return {
+    message: 'Dirección editada correctamente',
+    user: updated,
+  };
+}
+
 
   // Endpoint solo para admins
   @UseGuards(SupabaseAuthGuard, RolesGuard)

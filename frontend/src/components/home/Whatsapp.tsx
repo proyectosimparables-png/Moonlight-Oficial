@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 
 
 const WhatsAppFloat = () => {
-  const whatsappNumber = '+5491140458808';
+  const whatsappNumber = '+542226622903';
   const message = 'Hola! Me interesa obtener mas información!';
 
   const handleWhatsAppClick = () => {

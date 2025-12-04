@@ -1,14 +1,16 @@
 "use client";
+
 import { createContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import type { AuthUser, Session} from "@supabase/supabase-js";
+import type { AuthUser, Session } from "@supabase/supabase-js";
 import { getUserProfile } from "@/services/userService";
-  
+import { ExtendedUser } from "@/types/types-user";
 
 
 type AuthContextType = {
+  setUser(arg0: (prev: any) => any): unknown;
   session: Session | null;
-  user:  AuthUser | null;
+  user: ExtendedUser | null;       
   isAuthenticated: boolean;
   role: string | null;
   authLoaded: boolean;
@@ -20,58 +22,87 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [authLoaded, setAuthLoaded] = useState(false);
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session ?? null);
+  // 🔥 Combina Supabase + Backend en un solo usuario
+  const mergeUser = (supabaseUser: AuthUser, backendUser: any): ExtendedUser => {
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email ?? "",
+      user_metadata: supabaseUser.user_metadata,
 
-      if (data.session) {
-        await sendTokenToBackend(data.session.access_token);
-        try {
-          const response = await getUserProfile();
-          const userProfile = response.user;
-          if (userProfile?.role) {
-            setRole(userProfile.role);
-          }
-        } catch (err) {
-          console.error("❌ Error al sincronizar usuario:", err);
-        }
-      }
-
-      setAuthLoaded(true);
+      // 👇 Datos de tu BD
+      name: backendUser?.name,
+      role: backendUser?.role,
+      image: backendUser?.image,
+      address: backendUser?.address,
+      createdAt: backendUser?.createdAt,
+      updatedAt: backendUser?.updatedAt,
     };
+  };
 
-    getSession();
+  // 🔥 Cargar sesión y usuario
+  const loadSessionAndUser = async () => {
+    const { data } = await supabase.auth.getSession();
+    const currentSession = data.session;
+    setSession(currentSession ?? null);
+
+    if (currentSession) {
+      await sendTokenToBackend(currentSession.access_token);
+
+      try {
+        const response = await getUserProfile(); // /auth/protected
+        const backendUser = response.user;
+
+        const merged = mergeUser(currentSession.user, backendUser);
+        setUser(merged);
+
+        if (merged.role) {
+          setRole(merged.role);
+        }
+      } catch (error) {
+        console.error("❌ Error obteniendo user backend:", error);
+      }
+    }
+
+    setAuthLoaded(true);
+  };
+
+  useEffect(() => {
+    loadSessionAndUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         setSession(session ?? null);
 
-        if (session) {
-          await sendTokenToBackend(session.access_token);
-          try {
-            const response = await getUserProfile();
-            const userProfile = response.user;
-            console.log("User profile:", userProfile);
-            if (userProfile?.role) {
-              setRole(userProfile.role);
-            }
-          } catch (err) {
-            console.error("❌ Error al sincronizar usuario:", err);
-          }
-        } else {
-          // Si no hay session, limpiar role también
+        if (!session) {
+          setUser(null);
           setRole(null);
+          return;
+        }
+
+        await sendTokenToBackend(session.access_token);
+
+        try {
+          const response = await getUserProfile();
+          const backendUser = response.user;
+
+          const merged = mergeUser(session.user, backendUser);
+          setUser(merged);
+
+          if (merged.role) {
+            setRole(merged.role);
+          }
+
+        } catch (error) {
+          console.error("❌ Error sincronizando usuario:", error);
         }
       }
     );
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const sendTokenToBackend = async (token: string) => {
@@ -79,13 +110,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await fetch("http://localhost:3000/auth/set-cookie", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
       });
     } catch (error) {
-      console.error("Error al enviar token al backend:", error);
+      console.error("Error enviando token al backend:", error);
     }
   };
 
@@ -93,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: window.location.origin + "/auth/callback", // definí la callback
+        redirectTo: window.location.origin + "/auth/callback",
       },
     });
     if (error) console.error("Error al iniciar sesión:", error);
@@ -102,6 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     await supabase.auth.signOut();
     setSession(null);
+    setUser(null);
     setRole(null);
 
     try {
@@ -110,24 +140,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         credentials: "include",
       });
     } catch (error) {
-      console.error("Error al hacer logout en backend:", error);
+      console.error("Error al hacer logout:", error);
     }
   };
 
-  if (!authLoaded) {
-    return <div className="p-4">Cargando autenticación...</div>;
-  }
+  if (!authLoaded) return <div className="p-4">Cargando autenticación...</div>;
 
   return (
     <AuthContext.Provider
       value={{
         session,
-        user: session?.user ?? null,
+        user,
         isAuthenticated: !!session,
-        login,
         role,
+        login,
         logout,
         authLoaded,
+        setUser,
       }}
     >
       {children}

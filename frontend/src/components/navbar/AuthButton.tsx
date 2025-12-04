@@ -94,7 +94,7 @@ export const AuthButton = () => {
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => router.push("/historial")}
+            onClick={() => router.push("/cliente/historial")}
             className="cursor-pointer text-[#6c5b7b]"
           >
             <Clock className="h-4 w-4 mr-2 text-[#6c5b7b]" /> Historial

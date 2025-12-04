@@ -71,4 +71,13 @@ export class AuthService {
       },
     });
   }
+
+async updateAddress(userId: string, address: string) {
+  return this.prisma.user.update({
+    where: { id: userId },
+    data: { address },
+  });
+}
+
+
 }
