@@ -24,6 +24,9 @@ model User {
   favoritos   Favorito[]
   historial   Historial[]
   ordenes     Orden[]
+
+  // 🔥 Relación faltante (corregido)
+  carrito     Cart?
 }
 
 model Producto {

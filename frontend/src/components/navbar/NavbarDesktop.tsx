@@ -95,6 +95,13 @@ export const NavbarDesktop = () => {
             </DropdownMenu.Content>
           </DropdownMenu.Root>
 
+          <button
+            onClick={() => router.push("/cliente/quienes-somos")}
+            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
+          >
+            ¿Quiénes Somos?
+          </button>
+
           {/* Dropdown Compras */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -116,8 +123,22 @@ export const NavbarDesktop = () => {
               >
                 Políticas de Compra
               </DropdownMenu.Item>
+
+              <DropdownMenu.Item
+                className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                onClick={() => router.push("/cliente/guia-de-talles")}
+              >
+                Guia de Talles
+              </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Root>
+
+          <button
+            onClick={() => router.push("/cliente/preguntas-frecuentes")}
+            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
+          >
+            Preguntas Frecuentes
+          </button>
 
           {/* Botón Mayoristas */}
           <button
@@ -125,13 +146,6 @@ export const NavbarDesktop = () => {
             onClick={() => router.push("/cliente/mayoristas")}
           >
             Mayoristas
-          </button>
-
-          <button
-            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-            onClick={() => router.push("/cliente/guia-de-talles")}
-          >
-            Guia de Talles
           </button>
 
           <button
