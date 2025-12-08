@@ -1,3 +1,4 @@
+//frontend/src/components/cart/Cart.tsx
 "use client";
 
 import ProtectedRoute from "@/components/ProtectedRoute";

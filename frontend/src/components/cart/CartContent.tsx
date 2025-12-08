@@ -1,3 +1,4 @@
+//frontend/src/components/cart/CartContent.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +9,59 @@ import Navbar from "@/components/navbar/Navbar";
 import { useCart } from "@/context/CartContext";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
+import { AddedToCartModal } from "./AddedToCartModal";
 
+/* ----------------------------------------------------
+   MODAL MODERNO — integrado en este mismo archivo
+------------------------------------------------------*/
+function ModalConfirm({
+  open,
+  title,
+  message,
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md animate-scale-in">
+        <h2 className="text-xl font-bold mb-2 text-gray-800">{title}</h2>
+        <p className="text-gray-600 mb-6">{message}</p>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition"
+          >
+            {cancelText}
+          </button>
+
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------
+   COMPONENTE PRINCIPAL
+------------------------------------------------------*/
 export default function CartContent() {
   const {
     cart,
@@ -20,17 +73,20 @@ export default function CartContent() {
     closeLastAddedModal,
   } = useCart();
   const router = useRouter();
+
   const [processingItems, setProcessingItems] = useState<
     Record<string, boolean>
   >({});
   const [postalCode, setPostalCode] = useState("");
   const [initialCartLoaded, setInitialCartLoaded] = useState(false);
 
+  const [modalDeleteId, setModalDeleteId] = useState<string | null>(null);
+  const [modalClearOpen, setModalClearOpen] = useState(false);
+
   useEffect(() => {
     if (!loading) setInitialCartLoaded(true);
   }, [loading]);
 
-  // Auto-cerrar modal después de 3 segundos
   useEffect(() => {
     if (lastAddedItem) {
       const timer = setTimeout(() => {
@@ -45,7 +101,7 @@ export default function CartContent() {
   };
 
   const requireAuth = async (action: () => Promise<void>) => {
-    await action(); // Ya protegido por ProtectedRoute
+    await action();
   };
 
   const increment = async (id: string) => {
@@ -73,8 +129,7 @@ export default function CartContent() {
       setProcessing(id, true);
       try {
         if (item.quantity <= 1) {
-          await removeItem(id);
-          toast.success("Producto eliminado", { position: "top-center" });
+          setModalDeleteId(id);
         } else {
           await updateItemQuantity(id, item.quantity - 1);
           toast.success("Cantidad actualizada", { position: "top-center" });
@@ -89,32 +144,25 @@ export default function CartContent() {
     });
   };
 
-  const handleRemove = async (id: string) => {
-    await requireAuth(async () => {
-      setProcessing(id, true);
-      try {
-        await removeItem(id);
-        toast.success("Producto eliminado", { position: "top-center" });
-      } catch {
-        toast.error("No se pudo eliminar el producto", {
-          position: "top-center",
-        });
-      } finally {
-        setProcessing(id, false);
-      }
-    });
+  const handleRemoveRequest = (id: string) => {
+    setModalDeleteId(id);
   };
 
-  const handleClearCart = async () => {
-    await requireAuth(async () => {
-      if (!confirm("¿Seguro que deseas vaciar el carrito?")) return;
-      try {
-        await clearCart();
-        toast.success("Carrito vacío", { position: "top-center" });
-      } catch {
-        toast.error("No se pudo vaciar el carrito", { position: "top-center" });
-      }
-    });
+  const confirmRemove = async () => {
+    if (!modalDeleteId) return;
+    await removeItem(modalDeleteId);
+    toast.success("Producto eliminado", { position: "top-center" });
+    setModalDeleteId(null);
+  };
+
+  const openClearCartModal = () => {
+    setModalClearOpen(true);
+  };
+
+  const confirmClearCart = async () => {
+    await clearCart();
+    toast.success("Carrito vacío", { position: "top-center" });
+    setModalClearOpen(false);
   };
 
   const handleCheckout = async () => {
@@ -144,17 +192,21 @@ export default function CartContent() {
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFCEF] text-[#6c5b7b] relative">
       <Navbar />
+
       <div className="p-6 flex-1 max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Tu carrito</h2>
-          {cart.length > 0 && (
-            <button
-              className="border px-3 py-1 rounded hover:bg-gray-200"
-              onClick={handleClearCart}
-            >
-              Vaciar carrito
-            </button>
-          )}
+        {/* Título con cruz al lado */}
+        <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-1">
+          <h2 className="text-2xl font-bold text-center flex-1">
+            CARRITO DE COMPRAS
+          </h2>
+
+          <button
+            onClick={() => router.push("/")}
+            className="text-gray-500 hover:text-gray-800 text-3xl sm:text-4xl font-bold transition ml-4"
+            aria-label="Cerrar carrito"
+          >
+            ×
+          </button>
         </div>
 
         {cart.length === 0 ? (
@@ -171,7 +223,7 @@ export default function CartContent() {
                   processing={processingItems[item.id] || false}
                   increment={increment}
                   decrement={decrement}
-                  remove={handleRemove}
+                  remove={handleRemoveRequest}
                 />
               ))}
             </ul>
@@ -183,33 +235,32 @@ export default function CartContent() {
               setPostalCode={setPostalCode}
               handleCheckout={handleCheckout}
               router={router}
+              openClearCartModal={openClearCartModal}
             />
           </>
         )}
       </div>
 
-      {/* Modal de producto agregado */}
-      {lastAddedItem && (
-        <div className="fixed bottom-5 right-5 bg-white shadow-lg border rounded p-4 flex items-center space-x-4 animate-fade-in">
-          <img
-            src={lastAddedItem.producto.imagenUrl || "/placeholder.png"}
-            alt={lastAddedItem.producto.nombre}
-            className="w-16 h-16 object-cover rounded"
-          />
-          <div>
-            <p className="font-semibold">{lastAddedItem.producto.nombre}</p>
-            <p className="text-sm text-gray-500">
-              Se agregó al carrito ({lastAddedItem.quantity})
-            </p>
-          </div>
-          <button
-            className="ml-auto text-gray-400 hover:text-gray-600"
-            onClick={closeLastAddedModal}
-          >
-            ✕
-          </button>
-        </div>
-      )}
+      {/* Modales */}
+      <ModalConfirm
+        open={Boolean(modalDeleteId)}
+        title="Eliminar producto"
+        message="¿Seguro que deseas eliminar este producto del carrito?"
+        confirmText="Eliminar"
+        onConfirm={confirmRemove}
+        onCancel={() => setModalDeleteId(null)}
+      />
+
+      <ModalConfirm
+        open={modalClearOpen}
+        title="Vaciar carrito"
+        message="¿Seguro que deseas vaciar todo tu carrito?"
+        confirmText="Vaciar"
+        onConfirm={confirmClearCart}
+        onCancel={() => setModalClearOpen(false)}
+      />
+
+      <AddedToCartModal />
     </div>
   );
 }

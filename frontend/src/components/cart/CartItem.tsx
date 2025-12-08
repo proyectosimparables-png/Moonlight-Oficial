@@ -1,3 +1,4 @@
+//frontend/src/components/cart/CartItem.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -49,34 +50,40 @@ export default function CartItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      {/* Contenedor vertical para eliminar y controles */}
+      <div className="flex flex-col items-center gap-3 min-w-[90px]">
+        {/* Botón eliminar */}
         <Button
-          variant="outline"
           size="sm"
-          className="w-8 h-8 flex items-center justify-center rounded-full"
-          onClick={() => decrement(item.id)}
-          disabled={processing}
-        >
-          -
-        </Button>
-        <span className="px-2">{item.quantity}</span>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-8 h-8 flex items-center justify-center rounded-full"
-          onClick={() => increment(item.id)}
-          disabled={processing}
-        >
-          +
-        </Button>
-        <Button
-          variant="destructive"
-          size="sm"
+          className="bg-[#d8c4fa] text-gray-800 hover:bg-[#cbb1f5] whitespace-nowrap"
           onClick={() => remove(item.id)}
           disabled={processing}
         >
           Eliminar
         </Button>
+
+        {/* Controles de cantidad */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-8 h-8 flex items-center justify-center rounded-full"
+            onClick={() => decrement(item.id)}
+            disabled={processing}
+          >
+            -
+          </Button>
+          <span className="px-3 min-w-[20px] text-center">{item.quantity}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-8 h-8 flex items-center justify-center rounded-full"
+            onClick={() => increment(item.id)}
+            disabled={processing}
+          >
+            +
+          </Button>
+        </div>
       </div>
     </li>
   );

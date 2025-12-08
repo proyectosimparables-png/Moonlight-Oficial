@@ -30,6 +30,7 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -58,6 +59,7 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -68,41 +70,59 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+
+        // colores personalizados tuyos
         pastel: {
-          lilac: "#d8c4fa", // lilac pastel que me mostraste
+          lilac: "#d8c4fa",
           hover: "#e6dff1",
           dark: "#7b5ca2",
         },
-        // Nuevos colores personalizados
-        softBeige: "#faf5e5", // beige claro para fondo
-        pastelLilac: "#d8c4fa", // lila pastel
+
+        softBeige: "#faf5e5",
+        pastelLilac: "#d8c4fa",
       },
+
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+
+      /* --------------------------------------
+         ANIMACIONES (incluye tus animaciones + las nuevas)
+      ---------------------------------------*/
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+
+        // 👉 NUEVO — modal que aparece con escala
+        scaleIn: {
+          "0%": { transform: "scale(0.9)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+
+        // 👉 NUEVO — fade + subir suavemente
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
+
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+
+        // 👉 NUEVO — animación del modal
+        "scale-in": "scaleIn 0.25s ease-out",
+
+        // 👉 NUEVO — para avisos (producto agregado)
+        "fade-in-up": "fadeInUp 0.3s ease-out",
       },
     },
   },

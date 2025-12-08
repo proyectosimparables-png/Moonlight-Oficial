@@ -3,9 +3,11 @@
 import DetailsProducts from "@/components/DetailsProducts";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function ProductPage({ params }: PageProps) {
-  return <DetailsProducts productId={params.id} />;
+export default async function ProductPage({ params }: PageProps) {
+  const { id } = await params;
+
+  return <DetailsProducts productId={id} />;
 }
