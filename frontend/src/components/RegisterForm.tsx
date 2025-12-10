@@ -38,7 +38,7 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-[#faf5e5] p-4">
+    <div className="flex justify-center items-center min-h-screen  bg-transparent p-4">
       <div className="w-full max-w-md bg-white border border-[#e6dff1] rounded-2xl shadow-xl p-8 text-center animate-fadeIn">
 
         <h2 className="text-3xl font-semibold text-[#7b5ca2] mb-6">

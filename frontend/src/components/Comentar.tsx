@@ -4,28 +4,29 @@ import { useEffect, useState } from "react";
 import { createComentario } from "@/services/comentarios";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function ComentarSection() {
   const [contenido, setContenido] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const { isAuthenticated, login, user } = useAuth();
-
+  const { isAuthenticated } = useAuth();
+const router = useRouter();
 
 
   useEffect(()=>{
-if (!isAuthenticated) {
+  if (!isAuthenticated) {
       toast.error("Debes iniciar sesión para poder comentar", {
         position: "top-center",
       });
      setTimeout(() => {
-           login()
+        router.push("/login");
          }, 3000);
 
   
       return;
     }
-  },[])
+  },[isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

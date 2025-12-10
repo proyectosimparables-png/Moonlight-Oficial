@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function QuienesSomos() {
   return (
-    <section className="min-h-screen bg-[var(--color-soft-beige)] py-12 px-6 md:px-12 animate-fadeIn">
+    <section className="min-h-screen bg-transparent py-12 px-6 md:px-12 animate-fadeIn">
       {/* 🩵 Encabezado */}
       <div className="text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-bold text-[var(--color-dark)]">

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useNightMode } from "@/context/NightModeContext";
 
 export default function ParticlesStarfieldPremium() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [isNight, setIsNight] = useState(false);
+  const { isNight, setIsNight } = useNightMode();
+
 
   // ⏰ Revisar hora cada 1 minuto (y al iniciar)
   useEffect(() => {

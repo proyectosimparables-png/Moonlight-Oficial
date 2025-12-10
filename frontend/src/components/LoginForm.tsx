@@ -34,7 +34,8 @@ export default function LoginForm() {
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-[#f4effc] p-4">
+       <div className="flex justify-center items-center min-h-screen bg-transparent p-4">
+
             <div className="w-full max-w-md bg-white border border-[#ddd1f2] rounded-2xl shadow-xl p-8 text-center">
 
                 <h2 className="text-3xl font-semibold text-[#6a46a7] mb-6">

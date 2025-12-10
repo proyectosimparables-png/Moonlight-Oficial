@@ -12,6 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 type ProviderType = "supabase" | "local" | null;
 
 interface AuthContextType {
+  role: string | null;  
   user: ExtendedUser | null;
   provider: ProviderType;
   isAuthenticated: boolean;
@@ -29,6 +30,8 @@ interface AuthContextType {
   }) => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<ExtendedUser | null>>;
   logout: () => Promise<void>;
+
+
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -265,6 +268,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         registerLocal,
         logout,
         setUser,
+role: user?.role || null, 
       }}
     >
       {children}

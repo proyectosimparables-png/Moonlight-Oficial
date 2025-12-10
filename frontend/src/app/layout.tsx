@@ -19,6 +19,7 @@ import { FavoritesProvider } from "@/context/FavoritesContext";
 import WhatsAppFloat from "@/components/home/Whatsapp";
 import CookieConsent from "@/components/home/Cookies";
 import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
+import { NightModeProvider } from "@/context/NightModeContext";
 
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -69,10 +70,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             <FavoritesProvider>
               <CartProvider>
+                 <NightModeProvider>  
                 <Provaiders>
                   {children}
                 </Provaiders>
-
+                </NightModeProvider>
                 <WhatsAppFloat />
                 <CookieConsent />
                 <AddedToCartModal />
