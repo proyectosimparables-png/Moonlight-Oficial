@@ -1,5 +1,3 @@
-// app/layout.tsx
-
 import type { Metadata } from "next";
 import "./globals.css";
 
@@ -20,13 +18,15 @@ import { AddedToCartModal } from "@/components/cart/AddedToCartModal";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import WhatsAppFloat from "@/components/home/Whatsapp";
 import CookieConsent from "@/components/home/Cookies";
+import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
+
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-const loveStory = Love_Ya_Like_A_Sister({
+const loveStory =  Love_Ya_Like_A_Sister({
   variable: "--font-love-story",
   weight: ["400"],
   subsets: ["latin"],
@@ -46,11 +46,7 @@ export const metadata: Metadata = {
   description: "Una tienda con alma romántica",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const htmlClassName = clsx(
     geistSans.variable,
     geistMono.variable,
@@ -61,24 +57,43 @@ export default function RootLayout({
 
   return (
     <html lang="es" className={htmlClassName}>
-      <body
-        suppressHydrationWarning
-        className="antialiased bg-[#f5f0fa] text-[#4c3a6d] font-sans"
-      >
-        <AuthProvider>
-         <FavoritesProvider>     
-                 <CartProvider>
-              {/* Todo lo que usa useCart debe estar dentro del CartProvider */}
-              <Provaiders>{children}</Provaiders>
-             
-              <WhatsAppFloat />
-              <CookieConsent />
-              <AddedToCartModal /> {/* Modal de agregado al carrito */}
-              <Toaster position="top-right" />
-            </CartProvider>
-            </FavoritesProvider>
+      {/* Fondo transparente para permitir ver el canvas */}
+      <body suppressHydrationWarning  className="antialiased bg-transparent text-[#4c3a6d] font-sans relative">
 
-        </AuthProvider>
+        {/* Fondo mágico */}
+        <ParticlesStarfieldPremium />
+
+        {/* Contenido siempre por encima del canvas */}
+        <div className="relative z-10">
+
+          <AuthProvider>
+            <FavoritesProvider>
+              <CartProvider>
+                <Provaiders>
+                  {children}
+                </Provaiders>
+
+                <WhatsAppFloat />
+                <CookieConsent />
+                <AddedToCartModal />
+
+                {/* Toast personalizado en color lila */}
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    style: {
+                      background: "#d8c4fa",   // pastel lilac
+                      color: "#4c3a6d",        // texto lila oscuro
+                      borderRadius: "10px",
+                      border: "1px solid #cbb0f5",
+                    },
+                  }}
+                />
+              </CartProvider>
+            </FavoritesProvider>
+          </AuthProvider>
+
+        </div>
       </body>
     </html>
   );

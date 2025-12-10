@@ -1,6 +1,13 @@
 import Home from "@/components/home/Home";
-import React from "react";
+import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
+
 
 export default function Page() {
-  return <Home />;
+  return (
+    <>
+    
+     <ParticlesStarfieldPremium />
+      <Home />
+    </>
+  );
 }

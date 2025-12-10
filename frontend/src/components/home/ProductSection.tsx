@@ -16,7 +16,7 @@ import Link from "next/link";
 
 const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
   return (
-    <section className="py-12 bg-[#FAFCEF] text-[#6c5b7b]">
+    <section className="py-12 bg-transparent text-[#6c5b7b]">
       <div className="container mx-auto px-4">
         {/* Título y botón centrados */}
         <div className="flex flex-col items-center text-center mb-8">
