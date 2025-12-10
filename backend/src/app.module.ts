@@ -12,6 +12,7 @@ import { FavoritoModule } from './favorito/favorito.module';
 import { MailModule } from './mail/mail.module';
 import { PurchaseModule } from './purchase/purchase.module';
 import { HistorialModule } from './historial/historial.module';
+import { LocalAuthModule } from './auth/local/local.module';
 
 
 @Module({
@@ -29,6 +30,7 @@ import { HistorialModule } from './historial/historial.module';
     MailModule,
     PurchaseModule,
      HistorialModule, 
+     LocalAuthModule,
 
   ],
 })

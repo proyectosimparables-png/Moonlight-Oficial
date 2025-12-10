@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import toast from "react-hot-toast";
 import { useFavorites } from "@/context/FavoritesContext";
+import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
   id: string;
@@ -18,13 +19,14 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
   const { addItem } = useCart();
-  const { isAuthenticated, login, user } = useAuth();
+  const { isAuthenticated} = useAuth();
 
   // 💰 Convertimos price a número para cálculos
   const numericPrice = Number((price ?? "0").replace(/[^0-9]+/g, "")); // quita todo menos números
   const discountPrice = numericPrice * 0.9; // 10% OFF por transferencia
   const installmentPrice = numericPrice / 3; // 3 cuotas sin interés
   const { isFavorite, toggleFavorite } = useFavorites();
+  const router = useRouter();
 
   // Función para formatear cualquier número a ARS
   const formatARS = (value: number) =>
@@ -36,7 +38,7 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
       toast.error("Debes iniciar sesión para agregar productos al carrito", {
         position: "top-center",
       });
-      login(); // redirige al login con Google
+      router.push("/login");
       return;
     }
 

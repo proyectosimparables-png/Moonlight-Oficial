@@ -5,6 +5,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import AdminNavbar from "@/components/admin/NavbarAdmin";
 import { ReactNode, useEffect, useState } from "react";
 import {  Toaster } from "react-hot-toast";
+import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
 
 
 
@@ -42,7 +43,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
      
       <AdminNavbar />
      
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 md:p-6">
+            <ParticlesStarfieldPremium />
+          {children}
+          </main>
    
     </div>
   );

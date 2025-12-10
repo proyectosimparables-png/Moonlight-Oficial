@@ -18,7 +18,7 @@ import toast from "react-hot-toast";
 import FavoritosList from "../home/Favoritos";
 
 export const AuthButton = () => {
-  const { isAuthenticated, login, logout, user } = useAuth();
+  const { isAuthenticated,  logout, user } = useAuth();
   const router = useRouter();
   const [showFavoritos, setShowFavoritos] = useState(false);
 
@@ -26,7 +26,7 @@ export const AuthButton = () => {
     return (
       <Button
         variant="ghost"
-        onClick={login}
+       onClick={() => router.push("/login")}
         className="hover:bg-[#e6dff1] flex items-center gap-1 px-3 py-1 rounded"
         title="Iniciar sesión con Google"
       >

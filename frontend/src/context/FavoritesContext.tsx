@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { obtenerFavoritos, agregarFavorito, eliminarFavorito } from "@/services/favoritos";
 import { Favorito } from "@/types/types-productos";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 interface FavoritesContextType {
   favorites: Favorito[];
@@ -16,8 +17,9 @@ interface FavoritesContextType {
 const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
 
 export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
-  const { isAuthenticated, user, login } = useAuth();
+  const { isAuthenticated, user} = useAuth();
   const [favorites, setFavorites] = useState<Favorito[]>([]);
+  const router = useRouter();
 
   // Cargar favoritos del usuario
   const loadFavorites = async () => {
@@ -44,7 +46,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const toggleFavorite = async (productId: string) => {
     if (!isAuthenticated || !user?.id) {
       toast.error("Debes iniciar sesión para favoritos 💜");
-      login();
+      router.push("/login");
       return;
     }
 

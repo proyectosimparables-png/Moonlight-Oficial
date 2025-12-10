@@ -66,7 +66,8 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFCEF] text-[#6c5b7b]">
+    <div className="min-h-screen flex flex-col  text-[#6c5b7b]">
+
       <Navbar />
 
       <main className="flex-1">
