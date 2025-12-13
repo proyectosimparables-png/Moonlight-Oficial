@@ -242,7 +242,7 @@ export class ProductoService {
   // 📚 Categorías
   async getTodasLasCategorias() {
     return this.prisma.categoria.findMany({
-      where: { padreId: null },
+      where: { parentId: null },
       orderBy: { nombre: 'asc' },
       include: {
         subcategorias: { orderBy: { nombre: 'asc' } },
@@ -268,7 +268,7 @@ export class ProductoService {
 
   async getCategoriasPorSeccion(seccionId: string) {
     return this.prisma.categoria.findMany({
-      where: { seccionId, padreId: null },
+      where: { seccionId, parentId: null },
       orderBy: { nombre: 'asc' },
       include: {
         subcategorias: { orderBy: { nombre: 'asc' } },
@@ -291,7 +291,7 @@ export class ProductoService {
       data: {
         nombre: data.nombre,
         seccionId: seccion.id,
-        padreId: data.padreId ?? null,
+        parentId: data.padreId ?? null,
       },
     });
   }

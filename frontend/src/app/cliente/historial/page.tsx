@@ -1,7 +1,14 @@
 import HistorialCompras from "@/components/home/HistorialCompras"
+import ProtectedRoute from "@/components/ProtectedRoute"
 
 const HistorialPage = () => {
-    return <HistorialCompras />
+    return (
+        <>
+        <ProtectedRoute>
+    <HistorialCompras />
+    </ProtectedRoute>
+        </>
+    )
 }
 
 export default HistorialPage

@@ -1,7 +1,16 @@
 import ComentarSection from "@/components/Comentar";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const ComentarPage = () => {
-    return <ComentarSection />;
+
+
+    return (
+        <>
+        <ProtectedRoute>
+            <ComentarSection />
+        </ProtectedRoute>
+        </>
+        );
 };
 
 export default ComentarPage;

@@ -1,18 +1,19 @@
 import { Controller, Get, Req, UseGuards, Res, HttpStatus } from '@nestjs/common';
 import { HistorialService } from './historial.service';
-import { SupabaseAuthGuard } from 'src/auth/guards/supabase-auth.guard';
+
 import type { Response, Request } from 'express';
+import { UnifiedAuthGuard } from 'src/auth/guards/supabase-auth.guard';
 
 @Controller('historial')
 export class HistorialController {
   constructor(private historialService: HistorialService) {}
 
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(UnifiedAuthGuard )
   @Get('mi-historial')
   async getMiHistorial(@Req() req: Request, @Res() res: Response) {
     try {
-      const supabaseUser = req['supabaseUser'];
-      const userId = supabaseUser.id;
+      const user = req['user'];
+      const userId = user.id;
 
       const data = await this.historialService.getUserHistorial(userId);
 

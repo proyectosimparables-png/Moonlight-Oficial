@@ -1,5 +1,3 @@
-//ProtectedRoute.tsx
-
 "use client";
 
 import { ReactNode, useEffect } from "react";
@@ -12,20 +10,24 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, authLoaded } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    if (!authLoaded) return; // Esperamos a que termine la carga inicial
+
     if (!isAuthenticated) {
       toast.error("Debes iniciar sesión para acceder a esta página", {
         position: "top-center",
       });
-      login(); // abre modal de login o redirige
-      // router.push("/auth/login"); // opcional si quieres redirigir a una ruta
+      router.push("/login");
     }
-  }, [isAuthenticated, login, router]);
+  }, [isAuthenticated, authLoaded, router]);
 
-  // Mientras verificamos auth, no renderizamos nada
+  // Mientras no se haya cargado la auth, no renderizamos nada
+  if (!authLoaded) return null;
+
+  // Si cargó y no está autenticado, evitamos parpadeos
   if (!isAuthenticated) return null;
 
   return <>{children}</>;

@@ -45,7 +45,7 @@ export async function getAllUsers() {
   }
 }
 export async function updateUserAddress(address: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/update-address`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/local/update-address`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

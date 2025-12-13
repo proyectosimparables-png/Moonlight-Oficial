@@ -12,9 +12,10 @@ import {
 import type { Request, Response } from 'express';
 import { supabase } from 'src/lib/supabaseClient';
 import { AuthService } from './auth.service';
-import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
+
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
+import { UnifiedAuthGuard } from './guards/supabase-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -91,19 +92,18 @@ export class AuthController {
     }
   }
 
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(UnifiedAuthGuard )
   @Get('me')
   async getMe(@Req() req: Request, @Res() res: Response) {
     try {
-      const supabaseUser = req['supabaseUser'];
-
-      if (!supabaseUser.email) {
+      const user = req['user'];
+      if (!user.email) {
         return res.status(HttpStatus.BAD_REQUEST).json({
           message: 'El usuario no tiene email asociado',
         });
       }
 
-      const dbUser = await this.authService.findUserByEmail(supabaseUser.email);
+      const dbUser = await this.authService.findUserByEmail(user.email);
 
       if (!dbUser) {
         return res.status(HttpStatus.NOT_FOUND).json({
@@ -128,7 +128,7 @@ export class AuthController {
   }
 
   // ✅ Obtener todos los usuarios (solo para admin)
-  @UseGuards(SupabaseAuthGuard)
+  @UseGuards(UnifiedAuthGuard)
   @Get('usuarios')
   async getAllUsers() {
     try {
@@ -155,20 +155,21 @@ export class AuthController {
 
     return res.status(HttpStatus.OK).json({ message: 'Sesión cerrada' });
   }
-@UseGuards(SupabaseAuthGuard)
+
+@UseGuards(UnifiedAuthGuard)
 @Post('update-address')
 async updateAddress(
   @Req() req: Request,
   @Body() body: { address: string }
 ) {
-  const supabaseUser = req['supabaseUser'];
+  const user = req['user'];
 
   if (!body.address) {
     return { message: 'La dirección es requerida' };
   }
 
   const updated = await this.authService.updateAddress(
-    supabaseUser.id,
+    user.id,
     body.address
   );
 
@@ -177,20 +178,22 @@ async updateAddress(
     user: updated,
   };
 }
-@UseGuards(SupabaseAuthGuard)
+
+
+@UseGuards(UnifiedAuthGuard)
 @Post('edit-address')
 async editAddress(
   @Req() req: Request,
   @Body() body: { address: string }
 ) {
-  const supabaseUser = req['supabaseUser'];
+  const user = req['user'];
 
   if (!body.address) {
     return { message: 'La dirección es requerida' };
   }
 
   const updated = await this.authService.updateAddress(
-    supabaseUser.id,
+    user.id,
     body.address
   );
 
@@ -202,7 +205,7 @@ async editAddress(
 
 
   // Endpoint solo para admins
-  @UseGuards(SupabaseAuthGuard, RolesGuard)
+  @UseGuards(UnifiedAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @Get('admin-only')
   getAdminOnlyData(@Req() req: Request, @Res() res: Response) {

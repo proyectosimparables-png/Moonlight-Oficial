@@ -1,12 +1,20 @@
 import { Module } from '@nestjs/common';
-import { AuthController } from './auth.controller';
+import { LocalAuthModule } from './local/local.module';
+
+
+import { PrismaModule } from 'src/prisma/prisma.module';
+import { UnifiedAuthGuard } from './guards/supabase-auth.guard';
 import { AuthService } from './auth.service';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { RolesGuard } from './guards/roles.guard';
-import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
+import { AuthController } from './auth.controller';
+
 
 @Module({
-  controllers: [AuthController],
-  providers: [AuthService, PrismaService, SupabaseAuthGuard, RolesGuard],
+  imports: [
+    PrismaModule,
+    LocalAuthModule,   
+  ],
+   controllers: [AuthController],
+  providers: [ UnifiedAuthGuard,AuthService],
+ 
 })
 export class AuthModule {}
