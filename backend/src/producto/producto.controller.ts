@@ -26,6 +26,8 @@ import { CloudinaryService } from 'src/claudinary/cloudinary.service';
 
 @Controller('productos')
 export class ProductoController {
+  prisma: any;
+  categoriaService: any;
   constructor(
     private readonly productoService: ProductoService,
     private readonly cloudinaryService: CloudinaryService,
@@ -56,6 +58,13 @@ export class ProductoController {
     return this.productoService.getCategoriasPorSeccion(seccionId);
   }
 
+@Get('tree/por-seccion/:seccionId')
+getTreePorSeccion(@Param('seccionId') seccionId: string) {
+  return this.categoriaService.getCategoriasTreePorSeccion(seccionId);
+}
+
+
+
   // Obtener todos los productos
   @Get()
   findAll(
@@ -76,9 +85,27 @@ findByName(@Query('q') q: string) {
 
   // Obtener producto por ID
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productoService.findOne(id);
+ async findOne(id: string) {
+  const producto = await this.prisma.producto.findUnique({
+    where: { id },
+    include: {
+      categoria: true,
+      imagenes: true,
+      secciones: {
+        include: {
+          seccion: true,
+        },
+      },
+    },
+  });
+
+  if (!producto) {
+    throw new NotFoundException('Producto no encontrado');
   }
+
+  return producto;
+}
+
 
   // =======================
   // ➕ POST
@@ -98,32 +125,26 @@ findByName(@Query('q') q: string) {
 
   // 📸 Crear producto con imágenes
   @Post('upload-producto')
-  @UseInterceptors(FilesInterceptor('files'))
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async uploadProducto(
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: CreateProductoDto,
-  ) {
-    if (!files || files.length === 0)
-      throw new BadRequestException('Debes subir al menos una imagen');
-
-    const imagenesUrls: string[] = [];
-    for (const file of files) {
-      const url = await this.cloudinaryService.uploadImage(file);
-      imagenesUrls.push(url);
-    }
-
-    const productoCreado = await this.productoService.create(
-      {
-        ...body,
-        seccionId: body.seccionId ? String(body.seccionId) : undefined,
-        categoriaId: body.categoriaId ? String(body.categoriaId) : undefined,
-      },
-      imagenesUrls,
-    );
-
-    return productoCreado;
+@UseInterceptors(FilesInterceptor('files'))
+@UsePipes(new ValidationPipe({ transform: true }))
+async uploadProducto(
+  @UploadedFiles() files: Express.Multer.File[],
+  @Body() body: CreateProductoDto,
+) {
+  if (!files || files.length === 0) {
+    throw new BadRequestException('Debes subir al menos una imagen');
   }
+
+  const imagenesUrls: string[] = [];
+
+  for (const file of files) {
+    const url = await this.cloudinaryService.uploadImage(file);
+    imagenesUrls.push(url);
+  }
+
+  return this.productoService.create(body, imagenesUrls);
+}
+
 
   // Crear categoría
   @Post('categorias')

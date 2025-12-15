@@ -25,39 +25,66 @@ export class ProductoService {
 
   // 🔹 Formatear un producto
   private formatearProducto(producto: any) {
-    return {
-      ...producto,
-      precio: this.formatearPrecio(producto.precio),
-    };
-  }
+  return {
+    ...producto,
+    precio: this.formatearPrecio(producto.precio),
+    precioPromocional: producto.precioPromocional
+      ? this.formatearPrecio(producto.precioPromocional)
+      : null,
+  };
+}
+
 
   private formatearProductos(productos: any[]) {
     return productos.map((p) => this.formatearProducto(p));
   }
 
   // 🧩 Crear producto (una o varias imágenes)
-  async create(data: CreateProductoDto, imagenesUrls?: string[]) {
-    const producto = await this.prisma.producto.create({
-      data: {
-        nombre: data.nombre,
-        descripcion: data.descripcion,
-        precio: data.precio,
-        stock: data.stock ?? 0,
-        categoriaId: data.categoriaId,
-        seccionId: data.seccionId,
-        published: data.published ?? false,
+ async create(data: CreateProductoDto, imagenesUrls: string[] = []) {
+  const producto = await this.prisma.producto.create({
+    data: {
+      nombre: data.nombre,
+      descripcion: data.descripcion,
+      precio: data.precio,
+      precioPromocional: data.precioPromocional ?? null,
+      stock: data.stock ?? 0,
 
-        imagenUrl: imagenesUrls?.[0] ?? null, // la primera imagen principal
+      // Envíos
+      peso: data.peso ?? null,
+      profundidad: data.profundidad ?? null,
+      ancho: data.ancho ?? null,
+      alto: data.alto ?? null,
 
-        imagenes: imagenesUrls?.length
-          ? { create: imagenesUrls.map((url) => ({ url })) }
-          : undefined,
+      published: data.published ?? false,
+
+      categoriaId: data.categoriaId,
+
+      // 👇 relación MANY TO MANY con secciones
+      secciones: {
+        create: data.seccionesIds.map((seccionId) => ({
+          seccionId,
+        })),
       },
-      include: { imagenes: true },
-    });
 
-    return this.formatearProducto(producto);
-  }
+      imagenUrl: imagenesUrls[0] ?? null,
+
+      imagenes: imagenesUrls.length
+        ? {
+            create: imagenesUrls.map((url) => ({ url })),
+          }
+        : undefined,
+    },
+    include: {
+      imagenes: true,
+      secciones: { include: { seccion: true } },
+      categoria: true,
+    },
+  });
+
+  return this.formatearProducto(producto);
+}
+
+
 
   // 📝 Formatear producto con imágenes
   formatearProductoImd(producto: any) {
@@ -68,40 +95,41 @@ export class ProductoService {
   }
 
   // 📦 Listar productos
-  async findAll(published?: boolean, seccionId?: string, categoriaId?: string) {
-    const where: Prisma.ProductoWhereInput = {};
+ async findAll(
+  published?: boolean,
+  seccionId?: string,
+  categoriaId?: string,
+) {
+  const where: Prisma.ProductoWhereInput = {};
 
-    if (published !== undefined) where.published = published;
-    if (categoriaId) where.categoriaId = categoriaId;
-    if (seccionId) where.seccionId = seccionId;
+  if (published !== undefined) where.published = published;
+  if (categoriaId) where.categoriaId = categoriaId;
 
-    const productos = await this.prisma.producto.findMany({
-      where,
-      include: {
-        categoria: { include: { seccion: true } },
-        seccion: true,
-        imagenes: true,
+  // 👇 FILTRO POR SECCIÓN (many-to-many)
+  if (seccionId) {
+    where.secciones = {
+      some: {
+        seccionId,
       },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return this.formatearProductos(productos);
+    };
   }
 
-  // 🔍 Buscar producto por ID
-  async findOne(id: string) {
-    const producto = await this.prisma.producto.findUnique({
-      where: { id },
-      include: {
-        categoria: { include: { seccion: true } },
-        seccion: true,
-        imagenes: true,
+  const productos = await this.prisma.producto.findMany({
+    where,
+    include: {
+      categoria: true,
+      secciones: {
+        include: {
+          seccion: true,
+        },
       },
-    });
+      imagenes: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
 
-    if (!producto) return null;
-    return this.formatearProducto(producto);
-  }
+  return this.formatearProductos(productos);
+}
 
   async search(q: string) {
     return this.prisma.producto.findMany({
@@ -151,7 +179,25 @@ export class ProductoService {
 
   if (typeof updateData.stock === "string")
     updateData.stock = parseInt(updateData.stock);
+// ------------------------------------
+// 🛠 FIX 2.1 — Convertir promo / peso / dimensiones
+// ------------------------------------
+if (typeof updateData.precioPromocional === "string")
+  updateData.precioPromocional = updateData.precioPromocional === ""
+    ? null
+    : parseFloat(updateData.precioPromocional);
 
+if (typeof updateData.peso === "string")
+  updateData.peso = updateData.peso === "" ? null : parseFloat(updateData.peso);
+
+if (typeof updateData.profundidad === "string")
+  updateData.profundidad = updateData.profundidad === "" ? null : parseInt(updateData.profundidad);
+
+if (typeof updateData.ancho === "string")
+  updateData.ancho = updateData.ancho === "" ? null : parseInt(updateData.ancho);
+
+if (typeof updateData.alto === "string")
+  updateData.alto = updateData.alto === "" ? null : parseInt(updateData.alto);
   // ------------------------------------
   // 🛠 FIX 3 — Validar categoría si existe
   // ------------------------------------
@@ -238,6 +284,38 @@ export class ProductoService {
       productos: this.formatearProductos(s.productos),
     }));
   }
+//Categirias con sus secciones de raiz
+
+async getCategoriasTreePorSeccion(seccionId: string) {
+  return this.prisma.categoria.findMany({
+    where: {
+      seccionId,
+      parentId: null, // 👈 solo raíces (Remeras, Abrigos)
+    },
+    orderBy: { nombre: 'asc' },
+    include: {
+      subcategorias: {
+        orderBy: { nombre: 'asc' },
+        include: {
+          subcategorias: {
+            orderBy: { nombre: 'asc' },
+            include: {
+              subcategorias: true, // 👈 preparado para más niveles
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+
+
+
+
+
+
+
 
   // 📚 Categorías
   async getTodasLasCategorias() {
@@ -402,20 +480,27 @@ export class ProductoService {
   // 🔹 Obtener una sección por slug (con todos sus productos publicados)
 
   async getSeccionConProductos(slug: string) {
-    return this.prisma.seccion.findUnique({
-      where: { slug },
-      include: {
-        productos: {
-          select: {
-            id: true,
-            nombre: true,
-            precio: true,
-            imagenUrl: true,
+  return this.prisma.seccion.findUnique({
+    where: { slug },
+    include: {
+      productos: {
+        include: {
+          producto: {
+            select: {
+              id: true,
+              nombre: true,
+              precio: true,
+              precioPromocional: true,
+              imagenUrl: true,
+              published: true,
+            },
           },
         },
       },
-    });
-  }
+    },
+  });
+}
+
 
 
 

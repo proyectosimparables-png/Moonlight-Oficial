@@ -231,8 +231,17 @@ const Productos = () => {
                       <TableCell colSpan={7}>
                         <EditarProductoForm
                           producto={{
-                            ...producto,
-                            categoriaId: producto.seccion.id.toString()
+                            id: producto.id,
+                            nombre: producto.nombre,
+                            descripcion: producto.descripcion,
+                            precio: producto.precio,
+                            stock: producto.stock,
+                            published: producto.published,
+                            imagenUrl: producto.imagenUrl ?? undefined,
+                            categoria: {
+                              id: producto.seccion.id,
+                              nombre: producto.seccion.nombre,
+                            },
                           }}
                           onCancel={() => setProductoEditandoId(null)}
                           onUpdate={() => {
@@ -240,6 +249,7 @@ const Productos = () => {
                             fetchProductos();
                           }}
                         />
+
                       </TableCell>
                     </TableRow>
                   )}

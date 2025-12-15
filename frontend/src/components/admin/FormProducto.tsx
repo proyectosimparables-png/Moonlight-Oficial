@@ -1,250 +1,262 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   createProducto,
   publicarProducto,
   getSecciones,
   getCategorias,
 } from "@/services/productos";
-import { CameraIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import toast from "react-hot-toast";
+import EditorDescripcion from "./EditorDescripcion";
+import { XMarkIcon, CameraIcon } from "@heroicons/react/24/solid";
+import { CategoriaTreeSelector } from "../CategoriaTreeSelector";
 
 type Seccion = { id: string; nombre: string };
-type Categoria = { id: string; nombre: string };
+type Categoria = {
+  id: string;
+  nombre: string;
+  subcategorias?: Categoria[];
+};
 
 export default function FormProducto() {
+  /* ---------------- STATE ---------------- */
+
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
+  const [precioPromocional, setPrecioPromocional] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [stock, setStock] = useState("");
+
+  const [peso, setPeso] = useState("");
+  const [profundidad, setProfundidad] = useState("");
+  const [ancho, setAncho] = useState("");
+  const [alto, setAlto] = useState("");
+
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [imagenSubidaUrl, setImagenSubidaUrl] = useState<string | null>(null);
 
   const [secciones, setSecciones] = useState<Seccion[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [seccionIdSeleccionada, setSeccionIdSeleccionada] = useState("");
-  const [categoriaIdSeleccionada, setCategoriaIdSeleccionada] = useState("");
 
-  // 🔁 Cargar secciones
+  const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState<string[]>([]);
+  const [categoriaId, setCategoriaId] = useState("");
+
+  /* ---------------- LOAD DATA ---------------- */
+
   useEffect(() => {
-    (async () => {
-      try {
-        const seccionesData = await getSecciones();
-        setSecciones(seccionesData);
-      } catch (err) {
-        console.error(err);
-      }
-    })();
+    getSecciones().then(setSecciones).catch(console.error);
   }, []);
 
-  // 🔁 Cargar categorías
   useEffect(() => {
-    if (!seccionIdSeleccionada) {
+    if (seccionesSeleccionadas.length === 0) {
       setCategorias([]);
-      setCategoriaIdSeleccionada("");
+      setCategoriaId("");
       return;
     }
-    (async () => {
-      try {
-        const categoriasData = await getCategorias(seccionIdSeleccionada);
-        setCategorias(categoriasData);
-      } catch (err) {
-        console.error(err);
-      }
-    })();
-  }, [seccionIdSeleccionada]);
 
-  // 📸 Manejo de imágenes
+    getCategorias(seccionesSeleccionadas[0])
+      .then(setCategorias)
+      .catch(console.error);
+  }, [seccionesSeleccionadas]);
+
+  /* ---------------- IMÁGENES ---------------- */
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const nuevasImagenes = [...imagenes, ...files];
-    setImagenes(nuevasImagenes);
-
-    const nuevasUrls = nuevasImagenes.map((file) => URL.createObjectURL(file));
-    setPreviewUrls(nuevasUrls);
+    setImagenes((prev) => [...prev, ...files]);
+    setPreviewUrls((prev) => [
+      ...prev,
+      ...files.map((f) => URL.createObjectURL(f)),
+    ]);
   };
 
   const eliminarImagen = (index: number) => {
-    const nuevas = [...imagenes];
-    nuevas.splice(index, 1);
-    setImagenes(nuevas);
-
-    const nuevasUrls = [...previewUrls];
-    nuevasUrls.splice(index, 1);
-    setPreviewUrls(nuevasUrls);
+    setImagenes((prev) => prev.filter((_, i) => i !== index));
+    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // 🔁 Reset form
-  const resetForm = () => {
-    setNombre("");
-    setPrecio("");
-    setDescripcion("");
-    setStock("");
-    setImagenes([]);
-    setPreviewUrls([]);
-    setImagenSubidaUrl(null);
-    setSeccionIdSeleccionada("");
-    setCategoriaIdSeleccionada("");
+  /* ---------------- SECCIONES ---------------- */
+
+  const toggleSeccion = (id: string) => {
+    setSeccionesSeleccionadas((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
+    );
   };
 
-  // 🚀 Submit
+  /* ---------------- SUBMIT ---------------- */
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (imagenes.length === 0) {
-      toast("⚠️ Debes agregar al menos una imagen");
-      return;
+    if (!imagenes.length) {
+      return toast.error("Agregá al menos una imagen");
+    }
+
+    if (!seccionesSeleccionadas.length) {
+      return toast.error("Seleccioná al menos una sección");
+    }
+
+    if (!categoriaId) {
+      return toast.error("Seleccioná una categoría");
+    }
+
+    if (
+      precioPromocional &&
+      Number(precioPromocional) >= Number(precio)
+    ) {
+      return toast.error(
+        "El precio promocional debe ser menor al precio",
+      );
     }
 
     const formData = new FormData();
-    imagenes.forEach((img) => formData.append("files", img)); // 👈 múltiples imágenes
+
+    /* imágenes */
+    imagenes.forEach((img) => formData.append("files", img));
+
+    /* datos base */
     formData.append("nombre", nombre);
     formData.append("descripcion", descripcion);
     formData.append("precio", precio);
     formData.append("stock", stock);
-    formData.append("categoriaId", categoriaIdSeleccionada);
-    formData.append("seccionId", seccionIdSeleccionada);
+    formData.append("categoriaId", categoriaId);
+
+    if (precioPromocional) {
+      formData.append("precioPromocional", precioPromocional);
+    }
+
+    /* dimensiones (solo si existen) */
+    if (peso) formData.append("peso", peso);
+    if (profundidad) formData.append("profundidad", profundidad);
+    if (ancho) formData.append("ancho", ancho);
+    if (alto) formData.append("alto", alto);
+
+    /* secciones -> JSON */
+    formData.append(
+      "seccionesIds",
+      JSON.stringify(seccionesSeleccionadas),
+    );
 
     try {
-      const productoCreado = await createProducto(formData);
-      toast.success("✅ Producto creado correctamente");
-      await publicarProducto(productoCreado.id);
-      toast("🚀 Producto publicado");
-      resetForm();
+      const producto = await createProducto(formData);
+      await publicarProducto(producto.id);
+
+      toast.success("Producto creado y publicado");
+      window.location.reload();
     } catch (error) {
-      toast.error("❌ Error al crear producto");
       console.error(error);
+      toast.error("Error creando el producto");
     }
   };
+
+  /* ---------------- UI ---------------- */
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 max-w-lg mx-auto p-6 bg-white/50 backdrop-blur-lg rounded-2xl shadow-xl"
+      className="max-w-3xl mx-auto bg-white/70 backdrop-blur p-6 rounded-2xl shadow-xl space-y-6"
     >
-      <div className="space-y-3">
-        <label className="block font-medium text-gray-700">Nombre</label>
+      <h2 className="text-xl font-semibold">Nuevo producto</h2>
+
+      {/* DATOS */}
+      <section className="grid grid-cols-2 gap-4">
         <input
-          type="text"
+          placeholder="Nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-purple-600"
           required
         />
 
-        <label className="block font-medium text-gray-700">Precio</label>
         <input
-          type="number"
-          value={precio}
-          onChange={(e) => setPrecio(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-purple-600"
-          required
-        />
-
-        <label className="block font-medium text-gray-700">Stock</label>
-        <input
+          placeholder="Stock"
           type="number"
           value={stock}
           onChange={(e) => setStock(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-purple-600"
           required
         />
 
-        <label className="block font-medium text-gray-700">Descripción</label>
-        <textarea
-          value={descripcion}
-          onChange={(e) => setDescripcion(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-purple-600"
+        <input
+          placeholder="Precio"
+          type="number"
+          value={precio}
+          onChange={(e) => setPrecio(e.target.value)}
+          required
         />
 
-        <label className="block font-medium text-gray-700">Sección</label>
-        <select
-          value={seccionIdSeleccionada}
-          onChange={(e) => setSeccionIdSeleccionada(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-purple-600"
-          required
-        >
-          <option value="">Selecciona una sección</option>
-          {secciones.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.nombre}
-            </option>
-          ))}
-        </select>
+        <input
+          placeholder="Precio promocional"
+          type="number"
+          value={precioPromocional}
+          onChange={(e) => setPrecioPromocional(e.target.value)}
+        />
+      </section>
 
-        <label className="block font-medium text-gray-700">Categoría</label>
-        <select
-          value={categoriaIdSeleccionada}
-          onChange={(e) => setCategoriaIdSeleccionada(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-purple-600"
-          required
-        >
-          <option value="">Selecciona una categoría</option>
-          {categorias.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* ENVÍOS */}
+      <section className="grid grid-cols-4 gap-3">
+        <input placeholder="Peso (kg)" value={peso} onChange={(e) => setPeso(e.target.value)} />
+        <input placeholder="Prof. (cm)" value={profundidad} onChange={(e) => setProfundidad(e.target.value)} />
+        <input placeholder="Ancho (cm)" value={ancho} onChange={(e) => setAncho(e.target.value)} />
+        <input placeholder="Alto (cm)" value={alto} onChange={(e) => setAlto(e.target.value)} />
+      </section>
 
-      {/* 📸 Sección de imágenes */}
+      {/* DESCRIPCIÓN */}
+      <EditorDescripcion value={descripcion} onChange={setDescripcion} />
+
+      {/* SECCIONES */}
       <div>
-        <label className="block font-medium text-gray-700 mb-2">
-          Imágenes del producto
-        </label>
-
+        <p className="font-medium mb-2">Secciones</p>
         <div className="flex flex-wrap gap-3">
-          {/* Miniaturas de imágenes cargadas */}
-          {previewUrls.map((url, i) => (
-            <div key={i} className="relative w-24 h-24">
-              <img
-                src={url}
-                alt="preview"
-                className="w-full h-full object-cover rounded-lg border border-gray-300 shadow-sm"
+          {secciones.map((s) => (
+            <label key={s.id} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={seccionesSeleccionadas.includes(s.id)}
+                onChange={() => toggleSeccion(s.id)}
               />
-              <button
-                type="button"
-                onClick={() => eliminarImagen(i)}
-                className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1"
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
-            </div>
+              {s.nombre}
+            </label>
           ))}
-
-          {/* Botón para agregar más imágenes */}
-          <label
-            htmlFor="imagenes"
-            className="w-24 h-24 border-2 border-dashed border-purple-400 rounded-lg flex flex-col items-center justify-center text-purple-600 hover:bg-purple-50 transition cursor-pointer"
-          >
-            {previewUrls.length > 0 ? (
-              <PlusIcon className="w-10 h-10" />
-            ) : (
-              <CameraIcon className="w-10 h-10" />
-            )}
-            <span className="text-xs mt-1">
-              {previewUrls.length > 0 ? "Agregar más" : "Subir"}
-            </span>
-            <input
-              id="imagenes"
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-            />
-          </label>
         </div>
       </div>
 
-      {/* Botón de submit */}
-      <button
-        type="submit"
-        className="w-full bg-purple-700 text-white font-semibold px-4 py-2 rounded-md hover:bg-purple-800 transition-all shadow-md"
-      >
+      {/* CATEGORÍA */}
+      <div>
+        <p className="font-medium mb-2">Categoría</p>
+        <div className="border rounded-lg p-3 max-h-72 overflow-auto bg-white">
+          <CategoriaTreeSelector
+            categorias={categorias}
+            value={categoriaId}
+            onChange={setCategoriaId}
+          />
+        </div>
+      </div>
+
+      {/* IMÁGENES */}
+      <div className="flex gap-3 flex-wrap">
+        {previewUrls.map((url, i) => (
+          <div key={i} className="relative w-24 h-24">
+            <img
+              src={url}
+              className="w-full h-full object-cover rounded-lg"
+            />
+            <button
+              type="button"
+              onClick={() => eliminarImagen(i)}
+              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
+          </div>
+        ))}
+
+        <label className="w-24 h-24 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer">
+          <CameraIcon className="w-6 h-6" />
+          <input type="file" multiple hidden onChange={handleImageChange} />
+        </label>
+      </div>
+
+      <button className="w-full bg-purple-700 text-white py-2 rounded-md">
         Publicar producto
       </button>
     </form>
