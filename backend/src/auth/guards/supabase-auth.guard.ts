@@ -1,36 +1,56 @@
-// src/auth/guards/supabase-auth.guard.ts
 import {
   CanActivate,
   ExecutionContext,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { supabase } from 'src/lib/supabaseClient';
 import { Request } from 'express';
 import * as cookie from 'cookie';
+import { supabase } from 'src/lib/supabaseClient';
+import { LocalAuthService } from '../local/local.service';
 
 @Injectable()
-export class SupabaseAuthGuard implements CanActivate {
+export class UnifiedAuthGuard implements CanActivate {
+  constructor(private localService: LocalAuthService) {}
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
-
-    // Leer cookies del header
     const cookies = cookie.parse(req.headers.cookie || '');
-    const token = cookies['access_token'];
 
-    if (!token) {
-      throw new UnauthorizedException('Token no encontrado en cookies');
+    // 1. Tokens posibles
+    const supabaseToken = cookies['access_token'];
+    const localToken = cookies['auth_token'];
+
+    // 2. Intentar Supabase
+    if (supabaseToken) {
+      const { data, error } = await supabase.auth.getUser(supabaseToken);
+
+      if (!error && data?.user) {
+        req['user'] = {
+          id: data.user.id,
+          email: data.user.email,
+          provider: 'supabase',
+        };
+        return true;
+      }
     }
 
-    const { data, error } = await supabase.auth.getUser(token);
-
-    if (error || !data?.user) {
-      throw new UnauthorizedException('Token inválido');
+    // 3. Intentar autenticación local
+    if (localToken) {
+      try {
+        const user = await this.localService.getUserFromToken(localToken);
+        req['user'] = {
+          id: user.id,
+          email: user.email,
+          provider: 'local',
+        };
+        return true;
+      } catch (e) {
+        throw new UnauthorizedException('Token local inválido');
+      }
     }
 
-    // Guardamos el usuario autenticado en la request
-    req['supabaseUser'] = data.user;
-
-    return true;
+    // 4. Si no hay ningún token válido
+    throw new UnauthorizedException('No autenticado');
   }
 }

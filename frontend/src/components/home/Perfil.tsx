@@ -6,6 +6,17 @@ import { AuthContext } from "@/context/AuthContext";
 import { updateUserAddress } from "@/services/userService";
 import toast from "react-hot-toast";
 
+// Tipo común para ambas respuestas
+type AddressResponse = {
+  message: string;
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+    address: string;
+  };
+};
+
 export default function UserProfile() {
   const auth = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
@@ -31,22 +42,24 @@ export default function UserProfile() {
   // -------------------------------
   // 1) Nombre del usuario (Google o Local)
   // -------------------------------
- const name = String(
-  user?.user_metadata?.full_name ??
-    user?.user_metadata?.name ??
-    user?.name ??
-    user?.email?.split("@")[0] ??
-    "Sin nombre"
-);
+  const name = String(
+    user?.user_metadata?.full_name ??
+      user?.user_metadata?.name ??
+      user?.name ??
+      user?.email?.split("@")[0] ??
+      "Sin nombre"
+  );
 
   // -------------------------------
   // 2) Imagen (Google o Local)
   // -------------------------------
- const image: string =
-  user?.user_metadata?.avatar_url ??
-  user?.user_metadata?.picture ??
-  user?.image ??
-  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=8b5cf6&color=fff&size=128`;
+  const image: string =
+    user?.user_metadata?.avatar_url ??
+    user?.user_metadata?.picture ??
+    user?.image ??
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      name
+    )}&background=8b5cf6&color=fff&size=128`;
 
   // -------------------------------
   // 3) Guardar domicilio (Local o Google)
@@ -57,16 +70,26 @@ export default function UserProfile() {
     try {
       setLoading(true);
 
-      const res = await updateUserAddress(addressInput);
+      let res: AddressResponse;
 
-      // Actualizar contexto
+      // 👉 Si usuario Supabase
+      if (provider === "supabase") {
+        const { editUserAddress } = await import("@/services/userService");
+        res = await editUserAddress(addressInput);
+      }
+      // 👉 Si usuario local
+      else {
+        res = await updateUserAddress(addressInput);
+      }
+
+      // Actualiza el contexto
       setUser((prev) => ({
         ...prev!,
         address: res.user.address,
       }));
 
       setAddressInput("");
-      toast.success("Domicilio actualizado correctamente 🎉");
+      toast.success("Domicilio actualizado correctamente");
     } catch (error) {
       console.error(error);
       toast.error("Error al actualizar el domicilio");
@@ -79,7 +102,7 @@ export default function UserProfile() {
     <div className="flex justify-center items-center min-h-[80vh] bg-transparent">
       <div className="relative w-full max-w-md bg-pastel-lilac text-color-dark rounded-2xl shadow-xl p-8 text-center animate-fadeIn border-2 border-lilac overflow-hidden group">
 
-        {/* 🌟 Imagen */}
+        {/* Imagen */}
         <div className="relative flex justify-center mb-5 z-10">
           <Image
             src={image}
@@ -120,7 +143,7 @@ export default function UserProfile() {
           </p>
         </div>
 
-        {/* 👉 Form de domicilio */}
+        {/* Formulario de domicilio */}
         <div className="space-y-3 mb-4 z-10">
           <h3 className="text-xl font-semibold mb-2">Actualizar Domicilio</h3>
 
@@ -141,7 +164,7 @@ export default function UserProfile() {
           </button>
         </div>
 
-        {/* 🔥 Logout */}
+        {/* Logout */}
         <button
           onClick={logout}
           className="mt-6 w-full bg-[#654a91] text-white px-5 py-2.5 rounded-lg hover:bg-color-dark transition-transform hover:scale-105 shadow-md"

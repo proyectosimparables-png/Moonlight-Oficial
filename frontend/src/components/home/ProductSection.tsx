@@ -11,7 +11,7 @@ export interface ProductSectionProps {
   slug: string;
   products: Array<{
     id: string;
-    image: string;
+     image: string;
     name: string;
     price: number;
   }>;

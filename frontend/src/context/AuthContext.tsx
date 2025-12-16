@@ -63,32 +63,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // 2) Cargar Usuario Local (/auth/local/me)
   const loadLocalUser = async () => {
-    try {
-      const res = await fetch(`${API_URL}/auth/local/me`, {
-        credentials: "include", // Esto enviará la cookie 'auth_token'
-      });
-      
-      if (!res.ok) return false;
+  try {
+    console.log("[Auth] calling /auth/local/me with credentials include");
+    const res = await fetch(`${API_URL}/auth/local/me`, {
+      method: "GET",
+      credentials: "include",
+    });
 
-      const data = await res.json();
-      
-      setUser({
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name,
-        role: data.user.role,
-        image: data.user.image,
-        address: data.user.address,
-        createdAt: data.user.createdAt,
-        updatedAt: data.user.updatedAt,
-      });
+    console.log("[Auth] /auth/local/me status:", res.status);
+    const text = await res.text();
+    try {
+      console.log("[Auth] /auth/local/me body:", JSON.parse(text));
+    } catch {
+      console.log("[Auth] /auth/local/me body (text):", text);
+    }
 
-      setProvider("local");
-      return true;
-    } catch (err) {
-      return false;
-    }
-  };
+    if (!res.ok) return false;
+
+    const data = JSON.parse(text);
+
+    setUser({
+      id: data.user.id,
+      email: data.user.email,
+      name: data.user.name,
+      role: data.user.role,
+      image: data.user.image,
+      address: data.user.address,
+      createdAt: data.user.createdAt,
+      updatedAt: data.user.updatedAt,
+    });
+
+    setProvider("local");
+    return true;
+  } catch (err) {
+    console.error("[Auth] loadLocalUser error:", err);
+    return false;
+  }
+};
+
 
   // 3) Cargar Usuario Supabase/Google (/auth/me)
   const loadSupabaseUser = async (currentSession: Session) => {
@@ -170,7 +182,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [pathname]); // Dependencia 'pathname' para reaccionar mejor al callback
+  }, []); 
 
   // --- Métodos de Autenticación ---
 

@@ -11,42 +11,33 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
-import { SupabaseAuthGuard } from 'src/auth/guards/supabase-auth.guard';
+import { UnifiedAuthGuard } from 'src/auth/guards/supabase-auth.guard';
 import { AddItemDto } from './dto/add-item.dto';
 
 @Controller('cart')
-@UseGuards(SupabaseAuthGuard)
+@UseGuards(UnifiedAuthGuard )
 export class CartController {
     constructor(private readonly cartService: CartService) { }
 
     // 🧾 Obtener carrito del usuario
-    @Get()
-    async getCart(@Req() req: any) {
-        const userId = req.supabaseUser.id; // 🔹 usar supabaseUser
-        return this.cartService.getCartByUser(userId);
-    }
+  @Get()
+async getCart(@Req() req: any) {
+    const userId = req.user.id;
+    return this.cartService.getCartByUser(userId);
+}
+
 
     // ➕ Agregar producto
-    @Post('add')
-    async addItem(@Req() req: any, @Body() body: AddItemDto) {
-        console.log('=== PETICIÓN /cart/add ===');
-        console.log('Body recibido:', body);
-        console.log('Supabase User:', req.supabaseUser);
+   @Post('add')
+async addItem(@Req() req: any, @Body() body: AddItemDto) {
+    const userId = req.user.id;
+    return this.cartService.addItemToCart(
+        userId,
+        body.productoId,
+        body.quantity
+    );
+}
 
-        try {
-            const userId = req.supabaseUser.id;
-            const result = await this.cartService.addItemToCart(
-                userId,
-                body.productoId,
-                body.quantity
-            );
-            console.log('Producto agregado:', result);
-            return result;
-        } catch (error) {
-            console.error('💥 Error agregando item al carrito:', error);
-            throw error; // importante para que el cliente vea el error
-        }
-    }
 
     // 🔁 Actualizar cantidad
     @Patch('update/:id')
@@ -61,9 +52,10 @@ export class CartController {
     }
 
     // 🧹 Vaciar carrito
-    @Delete('clear')
-    async clear(@Req() req: any) {
-        const userId = req.supabaseUser.id; // 🔹 usar supabaseUser
-        return this.cartService.clearCart(userId);
-    }
+  @Delete('clear')
+async clear(@Req() req: any) {
+    const userId = req.user.id;
+    return this.cartService.clearCart(userId);
+}
+
 }

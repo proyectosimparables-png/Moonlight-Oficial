@@ -10,7 +10,6 @@ import {
   Patch,
   Query,
   UseInterceptors,
-  UploadedFile,
   UploadedFiles,
   ValidationPipe,
   UsePipes,
@@ -35,7 +34,6 @@ export class ProductoController {
   // 🔍 GET
   // =======================
 
-  // Obtener secciones
   @Get('secciones')
   getSecciones() {
     return this.productoService.getSecciones();
@@ -49,14 +47,18 @@ export class ProductoController {
     }
     return seccion;
   }
-  // Obtener categorías (todas o por sección)
+
   @Get('categorias')
   getCategorias(@Query('seccionId') seccionId?: string) {
     if (!seccionId) return this.productoService.getTodasLasCategorias();
     return this.productoService.getCategoriasPorSeccion(seccionId);
   }
 
-  // Obtener todos los productos
+  @Get('tree/por-seccion/:seccionId')
+  getTreePorSeccion(@Param('seccionId') seccionId: string) {
+    return this.productoService.getCategoriasTreePorSeccion(seccionId);
+  }
+
   @Get()
   findAll(
     @Query('published') published?: string,
@@ -68,36 +70,43 @@ export class ProductoController {
     return this.productoService.findAll(isPublished, seccionId, categoriaId);
   }
 
-
-
-  // GET /productos/search?q=palabra
   @Get('search')
   async search(@Query('q') query: string) {
     if (!query || query.trim() === '') return [];
     return this.productoService.searchProducts(query.trim());
   }
-  // Obtener producto por ID
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productoService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const producto = await this.productoService.findById(id, {
+      include: {
+        categoria: true,
+        imagenes: true,
+        secciones: { include: { seccion: true } },
+      },
+    });
+
+    if (!producto) {
+      throw new NotFoundException('Producto no encontrado');
+    }
+
+    return producto;
   }
+
   // =======================
   // ➕ POST
   // =======================
 
-  // Crear nueva sección
   @Post('secciones')
   crearSeccion(@Body() data: CreateSeccionDto) {
     return this.productoService.crearSeccion(data);
   }
 
-  // Crear producto (sin imagen)
   @Post()
   create(@Body() dto: CreateProductoDto) {
     return this.productoService.create(dto);
   }
 
-  // 📸 Crear producto con imágenes
   @Post('upload-producto')
   @UseInterceptors(FilesInterceptor('files'))
   @UsePipes(new ValidationPipe({ transform: true }))
@@ -105,8 +114,9 @@ export class ProductoController {
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: CreateProductoDto,
   ) {
-    if (!files || files.length === 0)
+    if (!files || files.length === 0) {
       throw new BadRequestException('Debes subir al menos una imagen');
+    }
 
     const imagenesUrls: string[] = [];
     for (const file of files) {
@@ -114,19 +124,9 @@ export class ProductoController {
       imagenesUrls.push(url);
     }
 
-    const productoCreado = await this.productoService.create(
-      {
-        ...body,
-        seccionId: body.seccionId ? String(body.seccionId) : undefined,
-        categoriaId: body.categoriaId ? String(body.categoriaId) : undefined,
-      },
-      imagenesUrls,
-    );
-
-    return productoCreado;
+    return this.productoService.create(body, imagenesUrls);
   }
 
-  // Crear categoría
   @Post('categorias')
   crearCategoria(
     @Body() data: { nombre: string; seccionSlug: string; parentId?: string },
@@ -138,7 +138,6 @@ export class ProductoController {
   // ✏️ PUT
   // =======================
 
-  // Actualizar sección
   @Put('secciones/:id')
   actualizarSeccion(
     @Param('id') id: string,
@@ -147,19 +146,17 @@ export class ProductoController {
     return this.productoService.actualizarSeccion(id, data);
   }
 
-  // Actualizar producto (sin imagen)
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: CreateProductoDto) {
     return this.productoService.updateProductoFlexible(id, dto);
   }
 
-  // 📸 Actualizar producto (con una nueva imagen)
   @Put(':id/upload')
   @UseInterceptors(FilesInterceptor('files'))
   async updateProductoWithImages(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: CreateProductoDto
+    @Body() body: CreateProductoDto,
   ) {
     const imagenUrls: string[] = [];
     if (files && files.length) {
@@ -170,14 +167,11 @@ export class ProductoController {
     return this.productoService.updateMultipleImages(id, body, imagenUrls);
   }
 
-
-  // 🖼 Eliminar imagen principal del producto
   @Put(':id/remover-imagen')
   removeImagen(@Param('id') id: string) {
     return this.productoService.removeImagen(id);
   }
 
-  // 📢 Publicar producto
   @Put(':id/publicar')
   publicar(@Param('id') id: string) {
     return this.productoService.publicar(id);
@@ -187,7 +181,6 @@ export class ProductoController {
   // ✏️ PATCH
   // =======================
 
-  // Actualizar categoría
   @Patch('categorias/:id')
   actualizarCategoria(
     @Param('id') id: string,
@@ -200,19 +193,16 @@ export class ProductoController {
   // 🗑 DELETE
   // =======================
 
-  // Eliminar sección
   @Delete('secciones/:id')
   eliminarSeccion(@Param('id') id: string) {
     return this.productoService.eliminarSeccion(id);
   }
 
-  // Eliminar producto
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productoService.remove(id);
   }
 
-  // Eliminar categoría
   @Delete('categorias/:id')
   eliminarCategoria(@Param('id') id: string) {
     return this.productoService.eliminarCategoria(id);

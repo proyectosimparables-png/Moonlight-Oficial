@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 
 export const CartButton = () => {
   const { cart = [] } = useCart();
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
   const cartCount = cart.reduce((acc, item) => acc + (item.quantity ?? 0), 0);
@@ -18,7 +18,8 @@ export const CartButton = () => {
       toast.error("Debes iniciar sesión para ver el carrito", {
         position: "top-center",
       });
-      login(); // redirige al login de Google
+      console.log("User not authenticated");
+    router.push("/login");
       return;
     }
 

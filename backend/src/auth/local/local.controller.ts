@@ -7,10 +7,12 @@ import {
   Req,
   UnauthorizedException,
   Get,
+  UseGuards,
 } from "@nestjs/common";
 import { LocalAuthService } from "./local.service";
 import { PrismaService } from "src/prisma/prisma.service";
 import type { Response } from "express";
+import { UnifiedAuthGuard } from "../guards/supabase-auth.guard";
 
 @Controller("auth/local")
 export class LocalAuthController {
@@ -18,15 +20,15 @@ export class LocalAuthController {
     private service: LocalAuthService,
     private prisma: PrismaService
   ) { }
+  @UseGuards(UnifiedAuthGuard)
+ @Get("me")
+  async me(@Req() req) {
+    const token = req.cookies?.auth_token;
+    if (!token) throw new UnauthorizedException("No autenticado");
 
-@Get("me")
-async me(@Req() req) {
-  const token = req.cookies?.auth_token;
-  if (!token) throw new UnauthorizedException("No autenticado");
-
-  const user = await this.service.getUserFromToken(token);
-  return { user };
-}
+    const user = await this.service.getUserFromToken(token);
+    return { user };
+  }
 
   // 1. ✅ Método Register (Crear Cookie)
   @Post("register")
@@ -88,7 +90,7 @@ logout(@Res() res: Response) {
 
 
 
-
+ @UseGuards(UnifiedAuthGuard)
 @Post("update-address")
 async updateAddress(
   @Body() body: { address: string },
@@ -98,11 +100,14 @@ async updateAddress(
   if (!token) throw new UnauthorizedException("No autenticado");
 
   const user = await this.service.getUserFromToken(token);
+  const updated = await this.service.updateAddress(user.id, body.address);
 
-  await this.service.updateAddress(user.id, body.address);
-
-  return { message: "Domicilio actualizado" };
+  return {
+    message: "Domicilio actualizado",
+    user: updated
+  };
 }
+
 
 
 }

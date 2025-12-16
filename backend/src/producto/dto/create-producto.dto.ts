@@ -1,55 +1,58 @@
-import { Type } from 'class-transformer';
-import {
-  IsString,
-  IsNumber,
-  IsOptional,
-  IsBoolean,
-  IsArray,
-} from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsArray } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 export class CreateProductoDto {
   @IsString()
   nombre: string;
 
-  @IsOptional()
   @IsString()
-  descripcion?: string;
+  descripcion: string;
 
   @Type(() => Number)
   @IsNumber()
   precio: number;
 
   @Type(() => Number)
+  @IsOptional()
   @IsNumber()
-  stock: number;
+  precioPromocional?: number;
 
-  // 👇 Array de URLs de imágenes
+  @Type(() => Number)
   @IsOptional()
+  @IsNumber()
+  stock?: number;
+
+  // 📦 ENVÍOS
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  peso?: number;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  profundidad?: number;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  ancho?: number;
+
+  @Type(() => Number)
+  @IsOptional()
+  @IsNumber()
+  alto?: number;
+
+  @IsString()
+  categoriaId: string;
+
+  // 👇 porque llega como JSON string desde FormData
+  @Transform(({ value }) =>
+    typeof value === 'string' ? JSON.parse(value) : value,
+  )
   @IsArray()
-  @IsString({ each: true })
-  imagenes?: string[];
-
-  // 👇 Campo para la imagen principal
-  @IsOptional()
-  @IsString()
-  imagenUrl?: string;
-
-  // 👇 Relación con categoría - puedes quitarla si no la necesitas
-  @IsOptional()
-  @IsString()
-  categoriaId?: string;
-
-  // 👇 Relación con la sección
-  @IsOptional()
-  @IsString()
-  seccionId?: string;
-
-  // 👇 Nombre de la sección
-  @IsOptional()
-  @IsString()
-  seccionNombre?: string;
+  seccionesIds: string[];
 
   @IsOptional()
-  @IsBoolean()
   published?: boolean;
 }

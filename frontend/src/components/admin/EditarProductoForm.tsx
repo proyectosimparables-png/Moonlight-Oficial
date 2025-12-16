@@ -7,17 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import toast from "react-hot-toast";
 import { ImagePlus } from "lucide-react";
+import type { Producto } from "@/types/types-productos";
 
-// Define la interfaz del producto
-interface Producto {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  stock: number;
-  categoriaNombre: string; // Mostramos nombre en lugar de ID
-  imagenUrl?: string | null;
-}
+
 
 interface EditarProductoFormProps {
   producto: Producto;
@@ -131,7 +123,7 @@ export default function EditarProductoForm({
 
       <div>
         <label className="block mb-1">Categoría</label>
-        <Input value={producto.categoriaNombre} disabled className="bg-gray-200" />
+        <Input value={producto.categoria.nombre} disabled className="bg-gray-200" />
       </div>
 
       {imagenUrl && (

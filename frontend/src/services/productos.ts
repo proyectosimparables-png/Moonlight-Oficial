@@ -1,5 +1,5 @@
 "use server";
-import { revalidatePath } from "next/cache";
+
 
 
 // ✅ Actualizar producto flexible (con o sin imagen)
@@ -80,8 +80,6 @@ export async function createProducto(formData: FormData) {
   console.log("RESPUESTA BACKEND:", res.status, text);
 
   if (!res.ok) throw new Error(`Error creando producto: ${text}`);
-
-  revalidatePath("/admin/productos");
   return JSON.parse(text);
 }
 
@@ -144,6 +142,23 @@ export async function getSecciones() {
 
   return data;
 }
+
+
+
+//Categorias en arbol para el formulario//////////////////////////////////////////////////////////////////////////////
+export async function getCategoriasTree(seccionId: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/productos/categorias/tree/por-seccion/${seccionId}`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) throw new Error("Error cargando árbol de categorías");
+
+  return res.json();
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 export async function getCategorias(seccionId: string) {
   const res = await fetch(
