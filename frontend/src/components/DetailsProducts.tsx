@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import Head from "next/head";
-import Navbar from "@/components/navbar/Navbar";
+
 import { QuantitySelector } from "@/components/cart/QuantitySelector";
 import { useProductDetails } from "@/services/useProductDetails";
 import { useCart } from "@/context/CartContext";
@@ -41,8 +41,6 @@ export default function DetailsProducts({ productId }: DetailsProductsProps) {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#faf5e5" }}>
-      <Navbar />
-
       <Head>
         <title>{product.nombre} | Mi Tienda</title>
         <meta name="description" content={product.descripcion} />

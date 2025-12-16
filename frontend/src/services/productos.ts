@@ -254,7 +254,7 @@ export async function actualizarCategoria(
 export async function crearCategoria(data: {
   nombre: string;
   seccionNombre: string;
-  padreId?: string;
+  parentId?: string;
 }) {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/productos/categorias`,

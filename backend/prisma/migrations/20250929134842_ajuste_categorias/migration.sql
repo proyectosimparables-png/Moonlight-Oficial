@@ -25,7 +25,7 @@ DROP INDEX "public"."Categoria_nombre_key";
 
 -- AlterTable
 ALTER TABLE "public"."Categoria" DROP COLUMN "tipoPrendaId",
-ADD COLUMN     "padreId" TEXT,
+ADD COLUMN     "parentId" TEXT,
 ADD COLUMN     "seccionId" TEXT;
 
 -- AlterTable
@@ -40,7 +40,7 @@ DROP TABLE "public"."TipoPrenda";
 ALTER TABLE "public"."Producto" ADD CONSTRAINT "Producto_categoriaId_fkey" FOREIGN KEY ("categoriaId") REFERENCES "public"."Categoria"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Categoria" ADD CONSTRAINT "Categoria_padreId_fkey" FOREIGN KEY ("padreId") REFERENCES "public"."Categoria"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Categoria" ADD CONSTRAINT "Categoria_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "public"."Categoria"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Categoria" ADD CONSTRAINT "Categoria_seccionId_fkey" FOREIGN KEY ("seccionId") REFERENCES "public"."Seccion"("id") ON DELETE SET NULL ON UPDATE CASCADE;

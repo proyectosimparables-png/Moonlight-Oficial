@@ -5,7 +5,7 @@ import * as jwt from "jsonwebtoken";
 
 @Injectable()
 export class LocalAuthService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) { }
 
     /**
      * @description Verifica el token JWT y recupera el objeto de usuario de la DB.
@@ -21,7 +21,7 @@ export class LocalAuthService {
             // El payload tendrá la estructura { sub: userId }
             const payload = jwt.verify(token, secret) as { sub: string, iat: number, exp: number };
             const userId = payload.sub;
-            
+
             // 2. Buscar el usuario en la base de datos
             const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
@@ -29,10 +29,10 @@ export class LocalAuthService {
                 // Si el token es válido pero el usuario ya no existe
                 throw new UnauthorizedException('Token válido, pero usuario no encontrado');
             }
-            
+
             // 3. Devolver el usuario
             return user;
-            
+
         } catch (error) {
             // Captura errores de JWT (ej: token expirado, token alterado)
             throw new UnauthorizedException('Token de autenticación inválido o expirado');
@@ -42,16 +42,23 @@ export class LocalAuthService {
     // --- Métodos de Autenticación Existentes ---
 
     async register(name: string, email: string, password: string, address: string) {
+        // 1. Verificar si el usuario YA existe en Prisma por email
         const exists = await this.prisma.user.findUnique({ where: { email } });
 
         if (exists) {
             throw new BadRequestException("El email ya está registrado");
         }
 
+        // 2. Crear el ID del usuario manualmente (porque Prisma NO usa default)
+        const userId = crypto.randomUUID();
         const hashed = await bcrypt.hash(password, 10);
 
-        const user = await this.prisma.user.create({
-            data: {
+        // 3. Crear usuario con UPSERT
+        const user = await this.prisma.user.upsert({
+            where: { id: userId },        // si no existe, lo crea
+            update: {},                   // no se actualiza porque no existía
+            create: {
+                id: userId,               // 🔥 obligatorio en tu schema
                 email,
                 password: hashed,
                 name,
@@ -61,6 +68,7 @@ export class LocalAuthService {
 
         return this.generateToken(user.id);
     }
+
 
     async login(email: string, password: string) {
         const user = await this.prisma.user.findUnique({ where: { email } });
@@ -87,12 +95,12 @@ export class LocalAuthService {
     }
 
 
-async updateAddress(userId: string, newAddress: string) {
-  return this.prisma.user.update({
-    where: { id: userId },
-    data: { address: newAddress }
-  });
-}
+    async updateAddress(userId: string, newAddress: string) {
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: { address: newAddress }
+        });
+    }
 
 
 }

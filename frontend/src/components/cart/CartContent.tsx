@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-import Navbar from "@/components/navbar/Navbar";
 import { useCart } from "@/context/CartContext";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
@@ -174,7 +173,6 @@ export default function CartContent() {
   if (loading && cart.length === 0 && !initialCartLoaded) {
     return (
       <>
-        <Navbar />
         <p className="p-6 text-center text-gray-500 animate-pulse">
           Cargando tu carrito...
         </p>
@@ -191,8 +189,6 @@ export default function CartContent() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFCEF] text-[#6c5b7b] relative">
-      <Navbar />
-
       <div className="p-6 flex-1 max-w-4xl mx-auto">
         {/* Título con cruz al lado */}
         <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-1">

@@ -20,14 +20,15 @@ import WhatsAppFloat from "@/components/home/Whatsapp";
 import CookieConsent from "@/components/home/Cookies";
 import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
 import { NightModeProvider } from "@/context/NightModeContext";
-
+import Navbar from "@/components/navbar/Navbar";
+import Footer from "@/components/home/Footer";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-const loveStory =  Love_Ya_Like_A_Sister({
+const loveStory = Love_Ya_Like_A_Sister({
   variable: "--font-love-story",
   weight: ["400"],
   subsets: ["latin"],
@@ -47,7 +48,11 @@ export const metadata: Metadata = {
   description: "Una tienda con alma romántica",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const htmlClassName = clsx(
     geistSans.variable,
     geistMono.variable,
@@ -58,44 +63,50 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="es" className={htmlClassName}>
-      {/* Fondo transparente para permitir ver el canvas */}
-      <body suppressHydrationWarning  className="antialiased bg-transparent text-[#4c3a6d] font-sans relative">
-
+      <body
+        suppressHydrationWarning
+        className="antialiased bg-transparent text-[#4c3a6d] font-sans relative"
+      >
         {/* Fondo mágico */}
         <ParticlesStarfieldPremium />
 
         {/* Contenido siempre por encima del canvas */}
-        <div className="relative z-10">
+        <AuthProvider>
+          <FavoritesProvider>
+            <CartProvider>
+              <NightModeProvider>
+                <div className="relative z-10 flex flex-col min-h-screen">
+                  {/* Navbar siempre visible */}
+                  <Navbar />
 
-          <AuthProvider>
-            <FavoritesProvider>
-              <CartProvider>
-                 <NightModeProvider>  
-                <Provaiders>
-                  {children}
-                </Provaiders>
-                </NightModeProvider>
-                <WhatsAppFloat />
-                <CookieConsent />
-                <AddedToCartModal />
+                  {/* Contenido principal */}
+                  <main className="flex-1">
+                    <Provaiders>{children}</Provaiders>
+                  </main>
 
-                {/* Toast personalizado en color lila */}
-                <Toaster
-                  position="top-right"
-                  toastOptions={{
-                    style: {
-                      background: "#d8c4fa",   // pastel lilac
-                      color: "#4c3a6d",        // texto lila oscuro
-                      borderRadius: "10px",
-                      border: "1px solid #cbb0f5",
-                    },
-                  }}
-                />
-              </CartProvider>
-            </FavoritesProvider>
-          </AuthProvider>
+                  {/* Footer siempre visible */}
+                  <Footer />
 
-        </div>
+                  {/* Modales y utilidades */}
+                  <WhatsAppFloat />
+                  <CookieConsent />
+                  <AddedToCartModal />
+                  <Toaster
+                    position="top-right"
+                    toastOptions={{
+                      style: {
+                        background: "#d8c4fa", // pastel lilac
+                        color: "#4c3a6d", // texto lila oscuro
+                        borderRadius: "10px",
+                        border: "1px solid #cbb0f5",
+                      },
+                    }}
+                  />
+                </div>
+              </NightModeProvider>
+            </CartProvider>
+          </FavoritesProvider>
+        </AuthProvider>
       </body>
     </html>
   );

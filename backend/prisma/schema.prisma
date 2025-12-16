@@ -1,79 +1,92 @@
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+/* -----------------------------
+   USUARIOS & AUTENTICACIÓN
+------------------------------ */
 
 model User {
-  id        String   @id // viene de Supabase Auth
-  email     String   @unique
-  name      String?
-  password  String
-  role      Role     @default(CLIENTE)
-  image     String? 
-  address   String? 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String      @id // viene de Supabase Auth
+  email      String      @unique
+  name       String?
+  password   String
+  role       Role        @default(CLIENTE)
+  image      String?
+  address    String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 
-  // Relaciones
   comentarios Comentario[]
   favoritos   Favorito[]
   historial   Historial[]
   ordenes     Orden[]
-
-  // 🔥 Relación faltante (corregido)
   carrito     Cart?
 }
 
+/* -----------------------------
+   PRODUCTOS & CATEGORÍA
+------------------------------ */
+
 model Producto {
-  id          String     @id @default(uuid())
+  id          String       @id @default(uuid())
   nombre      String
   descripcion String?
   precio      Float
   stock       Int
   imagenUrl   String?
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime     @default(now())
   categoriaId String?
-  published   Boolean    @default(false)
+  published   Boolean       @default(false)
   seccionId   String?
   cartItems   CartItem[]
   favoritos   Favorito[]
   imagenes    Imagen[]
-  categoria   Categoria? @relation(fields: [categoriaId], references: [id])
-  seccion     Seccion?   @relation(fields: [seccionId], references: [id])
+  categoria   Categoria?   @relation(fields: [categoriaId], references: [id])
+  seccion     Seccion?     @relation(fields: [seccionId], references: [id])
 }
 
 model Imagen {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   url        String
   productoId String
-  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  producto   Producto  @relation(fields: [productoId], references: [id], onDelete: Cascade)
 }
 
 model Categoria {
-  id            String      @id @default(uuid())
+  id            String       @id @default(uuid())
   nombre        String
-  padreId       String?
+  slug          String?
+  parentId      String?
   seccionId     String?
-  padre         Categoria?  @relation("CategoriaPadre", fields: [padreId], references: [id])
-  subcategorias Categoria[] @relation("CategoriaPadre")
-  seccion       Seccion?    @relation(fields: [seccionId], references: [id])
+
+  /* RELACIÓN JERÁRQUICA */
+  parent        Categoria?   @relation("Subcategorias", fields: [parentId], references: [id])
+  subcategorias Categoria[]  @relation("Subcategorias")
+
+  seccion       Seccion?     @relation(fields: [seccionId], references: [id])
   productos     Producto[]
 }
 
 model Seccion {
-  id         String      @id @default(uuid())
+  id         String       @id @default(uuid())
   nombre     String
-  createdAt  DateTime    @default(now())
-  slug       String?     @unique
-  updatedAt  DateTime?   @updatedAt
+  slug       String?      @unique
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
   categorias Categoria[]
   productos  Producto[]
 }
+
+/* -----------------------------
+   COMENTARIOS
+------------------------------ */
 
 model Comentario {
   id        String   @id @default(uuid())
@@ -82,6 +95,10 @@ model Comentario {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
+
+/* -----------------------------
+   ÓRDENES
+------------------------------ */
 
 model Orden {
   id            String      @id @default(uuid())
@@ -97,15 +114,19 @@ model Orden {
 }
 
 model OrdenItem {
-  id         String  @id @default(uuid())
+  id         String   @id @default(uuid())
   ordenId    String
   nombre     String
   precio     Float
   cantidad   Int
   productoId String?
   imagenUrl  String?
-  orden      Orden   @relation(fields: [ordenId], references: [id])
+  orden      Orden    @relation(fields: [ordenId], references: [id])
 }
+
+/* -----------------------------
+   HISTORIAL
+------------------------------ */
 
 model Historial {
   id         String   @id @default(uuid())
@@ -119,6 +140,10 @@ model Historial {
   user       User     @relation(fields: [userId], references: [id])
 }
 
+/* -----------------------------
+   FAVORITOS
+------------------------------ */
+
 model Favorito {
   id         String   @id @default(uuid())
   userId     String
@@ -129,6 +154,10 @@ model Favorito {
 
   @@unique([userId, productoId])
 }
+
+/* -----------------------------
+   CARRITO
+------------------------------ */
 
 model Cart {
   id        String     @id @default(uuid())

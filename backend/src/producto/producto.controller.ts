@@ -129,7 +129,7 @@ export class ProductoController {
   // Crear categoría
   @Post('categorias')
   crearCategoria(
-    @Body() data: { nombre: string; seccionSlug: string; padreId?: string },
+    @Body() data: { nombre: string; seccionSlug: string; parentId?: string },
   ) {
     return this.productoService.crearCategoria(data);
   }
