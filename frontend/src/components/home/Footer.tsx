@@ -57,12 +57,15 @@ export default function Footer() {
           <div className="flex-1 flex flex-col items-start">
             <div className="flex items-center gap-2 mb-4">
               <h2 className="text-2xl lg:text-3xl font-bold text-[var(--color-dark)]">
-                UNITE A #MOONLIGHTCLUB PARA ENTERARTE DE TODO
+                Suscribite para recibir novedades
               </h2>
               <span className="text-3xl text-[#6c2bd3]">💜</span>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-4 w-full"
+            >
               <input
                 type="email"
                 required
@@ -106,10 +109,7 @@ export default function Footer() {
               >
                 <FaWhatsapp />
               </a>
-              <a
-                href="tel:2226622903"
-                className="hover:text-white transition"
-              >
+              <a href="tel:2226622903" className="hover:text-white transition">
                 <FaPhone />
               </a>
               <a
@@ -192,7 +192,8 @@ export default function Footer() {
           </motion.div>
 
           <p className="mt-4 text-md text-[var(--color-dark)]">
-            También podés retirar por domicilio
+            Por correo argentino a sucursal y a domicilio, o retiros por
+            Moonlight Point a coordinar (Moron, Ituzaingo, Once, Recoleta)
           </p>
         </div>
 

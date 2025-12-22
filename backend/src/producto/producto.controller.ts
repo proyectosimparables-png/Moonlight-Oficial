@@ -3,11 +3,11 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Param,
-  Delete,
   Put,
   Patch,
+  Delete,
+  Body,
+  Param,
   Query,
   UseInterceptors,
   UploadedFiles,
@@ -16,10 +16,12 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { ProductoService } from './producto.service';
-import { CreateProductoDto } from './dto/create-producto.dto';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
+
+import { ProductoService } from './producto.service';
+
+import { CreateProductoDto } from './dto/create-producto.dto';
 import { CreateSeccionDto } from './dto/create-seccion.dto';
 import { CloudinaryService } from 'src/claudinary/cloudinary.service';
 
@@ -43,7 +45,9 @@ export class ProductoController {
   async getSeccionPorSlug(@Param('slug') slug: string) {
     const seccion = await this.productoService.getSeccionConProductos(slug);
     if (!seccion) {
-      throw new NotFoundException(`No se encontró la sección con slug "${slug}"`);
+      throw new NotFoundException(
+        `No se encontró la sección con slug "${slug}"`,
+      );
     }
     return seccion;
   }
@@ -66,7 +70,11 @@ export class ProductoController {
     @Query('categoriaId') categoriaId?: string,
   ) {
     const isPublished =
-      published === 'true' ? true : published === 'false' ? false : undefined;
+      published === 'true'
+        ? true
+        : published === 'false'
+          ? false
+          : undefined;
     return this.productoService.findAll(isPublished, seccionId, categoriaId);
   }
 
@@ -78,18 +86,10 @@ export class ProductoController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const producto = await this.productoService.findById(id, {
-      include: {
-        categoria: true,
-        imagenes: true,
-        secciones: { include: { seccion: true } },
-      },
-    });
-
+    const producto = await this.productoService.findAll(undefined, undefined, id);
     if (!producto) {
       throw new NotFoundException('Producto no encontrado');
     }
-
     return producto;
   }
 
@@ -114,14 +114,13 @@ export class ProductoController {
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: CreateProductoDto,
   ) {
-    if (!files || files.length === 0) {
+    if (!files?.length) {
       throw new BadRequestException('Debes subir al menos una imagen');
     }
 
     const imagenesUrls: string[] = [];
     for (const file of files) {
-      const url = await this.cloudinaryService.uploadImage(file);
-      imagenesUrls.push(url);
+      imagenesUrls.push(await this.cloudinaryService.uploadImage(file));
     }
 
     return this.productoService.create(body, imagenesUrls);

@@ -12,21 +12,20 @@ generator client {
 ------------------------------ */
 
 model User {
-  id         String   @id // si usas Supabase Auth, sino @default(uuid())
-  email      String   @unique
+  id         String      @id @default(uuid())
+  email      String      @unique
   name       String?
   password   String
-  role       Role     @default(CLIENTE)
+  role       Role        @default(CLIENTE)
   image      String?
   address    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
   carrito    Cart?
-
   comentarios Comentario[]
   favoritos   Favorito[]
   historial   Historial[]
   ordenes     Orden[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 /* -----------------------------
@@ -34,29 +33,29 @@ model User {
 ------------------------------ */
 
 model Producto {
-  id                String           @id @default(uuid())
+  id                String     @id @default(uuid())
   nombre            String
   descripcion       String?
   precio            Float
-  precioPromocional Float?           // Precio en oferta
+  precioPromocional Float?     
   stock             Int
 
-  // Envíos
-  peso              Float?           // kg
-  profundidad       Int?             // cm
-  ancho             Int?             // cm
-  alto              Int?             // cm
+  // Envíos - peso y dimensiones
+  peso              Float?     
+  profundidad       Int?       
+  ancho             Int?       
+  alto              Int?       
 
   imagenUrl         String?
-  createdAt         DateTime         @default(now())
-  published         Boolean          @default(false)
+  createdAt         DateTime   @default(now())
+  published         Boolean    @default(false)
   categoriaId       String?
 
   cartItems         CartItem[]
   favoritos         Favorito[]
   imagenes          Imagen[]
 
-  categoria         Categoria?       @relation(fields: [categoriaId], references: [id])
+  categoria         Categoria? @relation(fields: [categoriaId], references: [id])
   secciones         ProductoSeccion[]
 }
 
@@ -70,15 +69,12 @@ model Imagen {
 model Categoria {
   id            String      @id @default(uuid())
   nombre        String
-  slug          String?
-  parentId      String?
   seccionId     String?
-
-  /* RELACIÓN JERÁRQUICA */
-  parent        Categoria?   @relation("Subcategorias", fields: [parentId], references: [id])
-  subcategorias Categoria[]  @relation("Subcategorias")
-
-  seccion       Seccion?     @relation(fields: [seccionId], references: [id])
+  parentId      String?
+  slug          String?
+  parent        Categoria?  @relation("Subcategorias", fields: [parentId], references: [id])
+  subcategorias Categoria[] @relation("Subcategorias")
+  seccion       Seccion?    @relation(fields: [seccionId], references: [id])
   productos     Producto[]
 }
 

@@ -11,7 +11,7 @@ export interface ProductSectionProps {
   slug: string;
   products: Array<{
     id: string;
-     image: string;
+    image: string;
     name: string;
     price: number;
   }>;
@@ -29,7 +29,6 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
       <div className="container mx-auto px-4">
         {/* Título y botón centrados */}
         <div className="flex flex-col items-center text-center mb-8">
-
           {/* TÍTULO DINÁMICO */}
           <h2
             className={`font-serif text-2xl md:text-3xl italic mb-2 transition-colors duration-700
@@ -58,7 +57,7 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
                 }
               `}
             >
-              Ver todo
+              Ver más
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           </Link>
@@ -66,17 +65,15 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
 
         {/* Grilla de productos */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {products
-            .slice(-4)
-            .map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                image={product.image}
-                name={product.name}
-                price={`$ ${product.price.toLocaleString("es-AR")}`}
-              />
-            ))}
+          {products.slice(-4).map((product, index) => (
+            <ProductCard
+              key={`${product.id}-${index}`} // ahora es único
+              id={product.id}
+              image={product.image}
+              name={product.name}
+              price={`$ ${product.price.toLocaleString("es-AR")}`}
+            />
+          ))}
         </div>
       </div>
     </section>

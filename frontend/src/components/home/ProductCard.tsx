@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Heart, ShoppingCart } from "lucide-react";
+import { ShoppingCart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/context/CartContext";
@@ -19,7 +19,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
   const { addItem } = useCart();
-  const { isAuthenticated} = useAuth();
+  const { isAuthenticated } = useAuth();
 
   // 💰 Convertimos price a número para cálculos
   const numericPrice = Number((price ?? "0").replace(/[^0-9]+/g, "")); // quita todo menos números
@@ -46,7 +46,6 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
     toast.success("Producto agregado al carrito", { position: "top-center" });
   };
 
-
   return (
     <Card className="group overflow-hidden bg-white border border-[#ddd] hover:shadow-md transition-shadow rounded-lg">
       <CardContent className="p-0">
@@ -54,7 +53,7 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
         <div className="relative aspect-square overflow-hidden">
           <Image
             src={image}
-            alt={name || "Imagen del producto"} 
+            alt={name || "Imagen del producto"}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 25vw"
@@ -66,9 +65,12 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
             className="absolute top-3 right-3 z-10"
             aria-label="Agregar a favoritos"
           >
-            <Heart
-              className={`h-6 w-6 transition-colors duration-200 ${isFavorite(id) ? "fill-[#6c5b7b] text-[#6c5b7b]" : "text-[#6c5b7b]"
-                }`}
+            <Star
+              className={`h-6 w-6 transition-colors duration-200 ${
+                isFavorite(id)
+                  ? "fill-[#f5c518] text-[#f5c518]"
+                  : "text-[#6c5b7b]"
+              }`}
             />
           </button>
 
