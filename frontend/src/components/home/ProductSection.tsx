@@ -11,9 +11,9 @@ export interface ProductSectionProps {
   slug: string;
   products: Array<{
     id: string;
-     image: string;
-    name: string;
-    price: number;
+     imagenUrl?: string;
+    nombre: string;
+    precio: number;
   }>;
 }
 
@@ -72,9 +72,9 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
               <ProductCard
                 key={product.id}
                 id={product.id}
-                image={product.image}
-                name={product.name}
-                price={`$ ${product.price.toLocaleString("es-AR")}`}
+                imagenUrl={product.imagenUrl || "/placeholder.jpg"}
+                nombre={product.nombre}
+                precio={`$ ${product.precio.toLocaleString("es-AR")}`}
               />
             ))}
         </div>

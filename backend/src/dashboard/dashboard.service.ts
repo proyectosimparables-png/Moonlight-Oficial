@@ -1,4 +1,4 @@
-/*import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -12,7 +12,7 @@ export class DashboardService {
   async getOrdenesActivas(): Promise<number> {
     return this.prisma.orden.count({
       where: {
-        estado: 'pendiente', // ajustá según el estado que consideres activo
+        estado: 'PENDIENTE', 
       },
     });
   }
@@ -32,7 +32,7 @@ export class DashboardService {
           total: true,
         },
         where: {
-          estado: 'entregado', // solo ventas concretadas
+          estado: 'ENTREGADO', // solo ventas concretadas
           createdAt: {
             gte: inicioMes,
           },
@@ -52,27 +52,33 @@ export class DashboardService {
     });
   }
 
-  async getProductosPopulares() {
-    const populares = await this.prisma.producto.findMany({
-      select: {
-        id: true,
-        nombre: true,
-        _count: {
-          select: { ordenes: true },
+ async getProductosPopulares() {
+  const populares = await this.prisma.ordenItem.groupBy({
+    by: ['productoId', 'nombre'],
+    where: {
+      productoId: { not: null },
+      orden: {
+        estado: {
+          in: ['PAGADO', 'EMPAQUETADO', 'ENVIADO', 'ENTREGADO'],
         },
       },
-      orderBy: {
-        ordenes: {
-          _count: 'desc',
-        },
+    },
+    _sum: {
+      cantidad: true,
+    },
+    orderBy: {
+      _sum: {
+        cantidad: 'desc',
       },
-      take: 5,
-    });
+    },
+    take: 5,
+  });
 
-    return populares.map((p) => ({
-      nombre: p.nombre,
-      vendidos: p._count.ordenes,
-    }));
-  }
+  return populares.map((p) => ({
+    productoId: p.productoId,
+    nombre: p.nombre,
+    vendidos: p._sum.cantidad ?? 0,
+  }));
 }
-*/
+
+}

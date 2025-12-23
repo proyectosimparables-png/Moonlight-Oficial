@@ -73,6 +73,7 @@ export async function createProducto(formData: FormData) {
     {
       method: "POST",
       body: formData,
+      credentials: "include",
     },
   );
 
@@ -88,6 +89,7 @@ export async function publicarProducto(id: string) {
     `${process.env.NEXT_PUBLIC_API_URL}/productos/${id}/publicar`,
     {
       method: "PUT",
+      credentials: "include",
     },
   );
 

@@ -15,17 +15,21 @@ import {
   X,
   LogOut,
   Cloud,
+  MapIcon,
+  MapPin,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
+import { title } from "process";
 
 const menuItems = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Resumen", url: "/admin", icon: LayoutDashboard },
+  {title: "Ventas", url: "/admin/ventas", icon: ShoppingCart},
   { title: "Publicar", url: "/admin/nuevo-producto", icon: Tags },
   { title: "Productos", url: "/admin/productos", icon: Package },
-  { title: "Órdenes", url: "/admin/ordenes", icon: ShoppingCart },
   { title: "Secciones", url: "/admin/secciones", icon: FolderTree },
   { title: "Usuarios", url: "/admin/usuarios", icon: Users },
+  {title: "Puntos de Entrega", url: "/admin/puntos-entrega", icon: MapPin},
   { title: "Comentarios", url: "/admin/comentarios", icon: Cloud },
   { title: "Volver a la tienda", url: "/", icon: ShoppingCart },
 ];

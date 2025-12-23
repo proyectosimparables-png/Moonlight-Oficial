@@ -14,7 +14,7 @@ export class ProductoService {
     private cloudinaryService: CloudinaryService, // 👈 Inyectamos CloudinaryService
   ) { }
 
-  // 🔹 Formatear precio
+   // 🔹 Formatear precio
   private formatearPrecio(precio: number): string {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -40,7 +40,14 @@ export class ProductoService {
   }
 
   // 🧩 Crear producto (una o varias imágenes)
- async create(data: CreateProductoDto, imagenesUrls: string[] = []) {
+async create(data: CreateProductoDto, imagenesUrls: string[] = []) {
+  // Como tu esquema solo permite UNA categoría, tomamos la última del array 
+  // (que suele ser la subcategoría más profunda: RM, Jungkook, etc.)
+  const categoriasIds = Array.isArray(data.categoriaId) ? data.categoriaId: [];
+  const categoriaFinalId = categoriasIds.length > 0 
+    ? categoriasIds[categoriasIds.length - 1] 
+    : null;
+
   const producto = await this.prisma.producto.create({
     data: {
       nombre: data.nombre,
@@ -48,18 +55,16 @@ export class ProductoService {
       precio: data.precio,
       precioPromocional: data.precioPromocional ?? null,
       stock: data.stock ?? 0,
-
-      // Envíos
       peso: data.peso ?? null,
       profundidad: data.profundidad ?? null,
       ancho: data.ancho ?? null,
       alto: data.alto ?? null,
-
       published: data.published ?? false,
 
-      categoriaId: data.categoriaId,
+      // USAMOS EL CAMPO CORRECTO SEGÚN TU SCHEMA: categoriaId
+      categoriaId: categoriaFinalId,
 
-      // 👇 relación MANY TO MANY con secciones
+      // Relación Many-to-Many con Secciones (ProductoSeccion)
       secciones: {
         create: data.seccionesIds.map((seccionId) => ({
           seccionId,
@@ -77,13 +82,12 @@ export class ProductoService {
     include: {
       imagenes: true,
       secciones: { include: { seccion: true } },
-      categoria: true,
+      categoria: true, // "categoria" en singular como tu schema
     },
   });
 
   return this.formatearProducto(producto);
 }
-
 
 
   // 📝 Formatear producto con imágenes
@@ -275,15 +279,23 @@ if (typeof updateData.alto === "string")
   // 📁 Secciones con productos
   async getSecciones() {
     const secciones = await this.prisma.seccion.findMany({
-      orderBy: { nombre: 'asc' },
-      include: { productos: true },
-    });
+    orderBy: { nombre: 'asc' },
+  include: {
+    productos: {
+      include: {
+        producto: true,
+      },
+    },
+  },
+});
 
-    return secciones.map((s) => ({
-      ...s,
-      productos: this.formatearProductos(s.productos),
-    }));
-  }
+return secciones.map((s) => ({
+  ...s,
+  productos: s.productos
+    .filter(p => p.producto && p.producto.published)
+    .map(p => this.formatearProducto(p.producto)),
+}));
+}
 //Categirias con sus secciones de raiz
 
 async getCategoriasTreePorSeccion(seccionId: string) {
@@ -344,17 +356,22 @@ async getCategoriasTreePorSeccion(seccionId: string) {
   }
 
 
-  async getCategoriasPorSeccion(seccionId: string) {
-    return this.prisma.categoria.findMany({
-      where: { seccionId, parentId: null },
-      orderBy: { nombre: 'asc' },
-      include: {
-        subcategorias: { orderBy: { nombre: 'asc' } },
-        seccion: true,
+ // En producto.service.ts
+async getCategoriasPorSeccion(seccionId: string) {
+  return await this.prisma.categoria.findMany({
+    where: {
+      seccionId: seccionId,
+      parentId: null, // 🔥 IMPORTANTE: Solo traemos las raíces para empezar el árbol
+    },
+    include: {
+      subcategorias: {
+        include: {
+          subcategorias: true, // 🔥 Esto trae el tercer nivel (RM, Jungkook, etc.)
+        },
       },
-    });
-  }
-
+    },
+  });
+}
   // ➕ Crear categoría
   async crearCategoria(data: { nombre: string; seccionSlug: string; padreId?: string }) {
     const seccion = await this.prisma.seccion.findUnique({
@@ -478,38 +495,39 @@ async getCategoriasTreePorSeccion(seccionId: string) {
 
 
   // 🔹 Obtener una sección por slug (con todos sus productos publicados)
-
-  async getSeccionConProductos(slug: string) {
-  return this.prisma.seccion.findUnique({
+ // En producto.service.ts
+async getSeccionConProductos(slug: string) {
+  const seccion = await this.prisma.seccion.findUnique({
     where: { slug },
     include: {
       productos: {
         include: {
-          producto: {
-            select: {
-              id: true,
-              nombre: true,
-              precio: true,
-              precioPromocional: true,
-              imagenUrl: true,
-              published: true,
-            },
-          },
+          producto: true, // Esto trae la data real del producto
         },
       },
     },
   });
+
+  if (!seccion) return null;
+
+  // IMPORTANTE: Mapeamos para que el objeto sea plano y el frontend lo entienda
+  const productosFormateados = seccion.productos
+    .filter(item => item.producto && item.producto.published) // Solo publicados
+    .map(item => {
+      // Usamos tu función de formateo existente para el precio
+      return this.formatearProducto(item.producto);
+    });
+
+  return {
+    ...seccion,
+    productos: productosFormateados,
+  };
+}
 }
 
 
 
 
-
-
-
-
-
-}
 
 
 

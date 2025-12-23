@@ -21,14 +21,15 @@ export class LocalAuthController {
     private prisma: PrismaService
   ) { }
   @UseGuards(UnifiedAuthGuard)
- @Get("me")
+  @Get("me")
   async me(@Req() req) {
-    const token = req.cookies?.auth_token;
-    if (!token) throw new UnauthorizedException("No autenticado");
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+    return { user: dbUser };
 
-    const user = await this.service.getUserFromToken(token);
-    return { user };
   }
+
 
   // 1. ✅ Método Register (Crear Cookie)
   @Post("register")
@@ -66,7 +67,7 @@ export class LocalAuthController {
     res.cookie("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-     sameSite: "lax",
+      sameSite: "lax",
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -75,38 +76,38 @@ export class LocalAuthController {
   }
 
   // 3. ✅ Método Logout (Eliminar Cookie)
- @Post("logout")
-logout(@Res() res: Response) {
-  res.clearCookie('auth_token', {
-     httpOnly: true,
+  @Post("logout")
+  logout(@Res() res: Response) {
+    res.clearCookie('auth_token', {
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-     sameSite: "lax",
+      sameSite: "lax",
       path: '/',
       maxAge: 0,
-     
-  });
-  return res.json({ ok: true });
-}
+
+    });
+    return res.json({ ok: true });
+  }
 
 
 
- @UseGuards(UnifiedAuthGuard)
-@Post("update-address")
-async updateAddress(
-  @Body() body: { address: string },
-  @Req() req,
-) {
-  const token = req.cookies?.auth_token;
-  if (!token) throw new UnauthorizedException("No autenticado");
+  @UseGuards(UnifiedAuthGuard)
+  @Post("update-address")
+  async updateAddress(
+    @Body() body: { address: string },
+    @Req() req,
+  ) {
+    const token = req.cookies?.auth_token;
+    if (!token) throw new UnauthorizedException("No autenticado");
 
-  const user = await this.service.getUserFromToken(token);
-  const updated = await this.service.updateAddress(user.id, body.address);
+    const user = await this.service.getUserFromToken(token);
+    const updated = await this.service.updateAddress(user.id, body.address);
 
-  return {
-    message: "Domicilio actualizado",
-    user: updated
-  };
-}
+    return {
+      message: "Domicilio actualizado",
+      user: updated
+    };
+  }
 
 
 

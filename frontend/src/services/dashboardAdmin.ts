@@ -1,3 +1,5 @@
+import { OrdenReciente, ProductoPopular } from "@/types/dashboard";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
 export async function fetchTotalProductos(): Promise<number> {
@@ -24,13 +26,13 @@ export async function fetchVentasDelMes() {
   return res.json();
 }
 
-export async function fetchVentasRecientes() {
+export async function fetchVentasRecientes(): Promise<OrdenReciente[]> {
   const res = await fetch(`${API_BASE_URL}/dashboard/ventas-recientes`);
   if (!res.ok) throw new Error("Error fetching ventas recientes");
   return res.json();
 }
 
-export async function fetchProductosPopulares() {
+export async function fetchProductosPopulares(): Promise<ProductoPopular[]> {
   const res = await fetch(`${API_BASE_URL}/dashboard/productos-populares`);
   if (!res.ok) throw new Error("Error fetching productos populares");
   return res.json();

@@ -12,17 +12,18 @@ import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
   id: string;
-  image: string;
-  name: string;
-  price: string; // Formateado desde backend, ej: "$ 22.000"
+  imagenUrl?: string;
+  nombre: string;
+  precio: string; // Formateado desde backend, ej: "$ 22.000"
 }
 
-const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
+const ProductCard = ({ id, imagenUrl, nombre, precio }: ProductCardProps) => {
   const { addItem } = useCart();
   const { isAuthenticated} = useAuth();
 
-  // 💰 Convertimos price a número para cálculos
-  const numericPrice = Number((price ?? "0").replace(/[^0-9]+/g, "")); // quita todo menos números
+
+  // 💰 Convertimos precio a número para cálculos
+  const numericPrice = Number((precio ?? "0").replace(/[^0-9]+/g, "")); // quita todo menos números
   const discountPrice = numericPrice * 0.9; // 10% OFF por transferencia
   const installmentPrice = numericPrice / 3; // 3 cuotas sin interés
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -31,6 +32,7 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
   // Función para formatear cualquier número a ARS
   const formatARS = (value: number) =>
     value.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+
 
   // Función para requerir login antes de agregar al carrito
   const handleAddToCart = () => {
@@ -53,8 +55,8 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
         {/* Imagen */}
         <div className="relative aspect-square overflow-hidden">
           <Image
-            src={image}
-            alt={name || "Imagen del producto"} 
+            src={ imagenUrl || "/images/placeholder.png"}
+            alt={nombre || "Imagen del producto"} 
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 25vw"
@@ -77,7 +79,7 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
             size="icon"
             className="absolute bottom-3 right-3 bg-[#7b5ca2] hover:bg-[#665ca2] text-white shadow-lg"
             onClick={handleAddToCart}
-            aria-label={`Agregar ${name} al carrito`}
+            aria-label={`Agregar ${nombre} al carrito`}
           >
             <ShoppingCart className="h-5 w-5" />
           </Button>
@@ -86,7 +88,7 @@ const ProductCard = ({ id, image, name, price }: ProductCardProps) => {
         {/* Info del producto */}
         <div className="p-4">
           <h3 className="text-[#6c5b7b] font-medium mb-2 text-sm md:text-base line-clamp-2 min-h-[40px]">
-            {name}
+            {nombre}
           </h3>
 
           {/* 💲 Precio principal */}

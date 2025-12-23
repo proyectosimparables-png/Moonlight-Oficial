@@ -92,40 +92,39 @@ export class AuthController {
     }
   }
 
-  @UseGuards(UnifiedAuthGuard )
-  @Get('me')
-  async getMe(@Req() req: Request, @Res() res: Response) {
-    try {
-      const user = req['user'];
-      if (!user.email) {
-        return res.status(HttpStatus.BAD_REQUEST).json({
-          message: 'El usuario no tiene email asociado',
-        });
-      }
+  @UseGuards(UnifiedAuthGuard)
+@Get('me')
+async getMe(@Req() req: Request, @Res() res: Response) {
+  try {
+    const user = req['user']; // 👈 viene del guard
 
-      const dbUser = await this.authService.findUserByEmail(user.email);
-
-      if (!dbUser) {
-        return res.status(HttpStatus.NOT_FOUND).json({
-          message: 'Usuario no encontrado en la base de datos',
-        });
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...safeUser } = dbUser;
-
-      return res.status(HttpStatus.OK).json({
-        message: 'Usuario autenticado con guard',
-        user: safeUser,
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Error interno del servidor',
-        error: message,
+    if (!user?.email || !user?.id) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        message: 'Usuario inválido',
       });
     }
+
+    // 🔥 ACÁ se crea o actualiza el usuario Google en la DB
+    const dbUser = await this.authService.syncUserWithDatabase({
+      id: user.id,
+      email: user.email,
+    });
+
+    // Nunca devolver password
+    const { password, ...safeUser } = dbUser;
+
+    return res.status(HttpStatus.OK).json({
+      message: 'Usuario autenticado',
+      user: safeUser,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+      message: 'Error interno del servidor',
+      error: message,
+    });
   }
+}
 
   // ✅ Obtener todos los usuarios (solo para admin)
   @UseGuards(UnifiedAuthGuard)

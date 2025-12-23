@@ -80,9 +80,9 @@ const Home = () => {
             slug={section.slug} 
             products={section.productos.map((p) => ({
               id: p.id,
-              name: p.nombre,
-              price: p.precio,
-              image: p.imagenUrl ?? "/placeholder.jpg",
+              nombre: p.nombre,
+              precio: p.precio,
+              imagenUrl: p.imagenUrl ?? "/placeholder.jpg",
             }))}
           />
         ))}

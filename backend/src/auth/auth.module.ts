@@ -3,18 +3,19 @@ import { LocalAuthModule } from './local/local.module';
 
 
 import { PrismaModule } from 'src/prisma/prisma.module';
-import { UnifiedAuthGuard } from './guards/supabase-auth.guard';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { AuthGuardsModule } from './auth-guards.module';
 
 
 @Module({
   imports: [
     PrismaModule,
-    LocalAuthModule,   
+    LocalAuthModule,
+    AuthGuardsModule,  
   ],
    controllers: [AuthController],
-  providers: [ UnifiedAuthGuard,AuthService],
+  providers: [ AuthService],
  
 })
 export class AuthModule {}

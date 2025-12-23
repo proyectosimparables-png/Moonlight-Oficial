@@ -14,6 +14,8 @@ export class LocalAuthService {
      */
     async getUserFromToken(token: string) {
         const secret = process.env.JWT_SECRET;
+        console.log("JWT_SECRET actual:", process.env.JWT_SECRET);
+
         if (!secret) throw new Error("JWT_SECRET no definido en .env");
 
         try {

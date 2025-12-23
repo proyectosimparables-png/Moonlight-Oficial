@@ -21,7 +21,6 @@ type Categoria = {
 
 export default function FormProducto() {
   /* ---------------- STATE ---------------- */
-
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
   const [precioPromocional, setPrecioPromocional] = useState("");
@@ -37,10 +36,12 @@ export default function FormProducto() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   const [secciones, setSecciones] = useState<Seccion[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  
+  // 🔹 DIFERENCIAMOS: Los datos que vienen del servidor vs los IDs que marca el usuario
+  const [categoriasData, setCategoriasData] = useState<Categoria[]>([]);
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>([]);
 
   const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState<string[]>([]);
-  const [categoriaId, setCategoriaId] = useState("");
 
   /* ---------------- LOAD DATA ---------------- */
 
@@ -50,13 +51,14 @@ export default function FormProducto() {
 
   useEffect(() => {
     if (seccionesSeleccionadas.length === 0) {
-      setCategorias([]);
-      setCategoriaId("");
+      setCategoriasData([]);
+      setCategoriasSeleccionadas([]);
       return;
     }
 
+    // Traemos el árbol de categorías de la sección elegida
     getCategorias(seccionesSeleccionadas[0])
-      .then(setCategorias)
+      .then(setCategoriasData)
       .catch(console.error);
   }, [seccionesSeleccionadas]);
 
@@ -89,59 +91,37 @@ export default function FormProducto() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!imagenes.length) {
-      return toast.error("Agregá al menos una imagen");
-    }
-
-    if (!seccionesSeleccionadas.length) {
-      return toast.error("Seleccioná al menos una sección");
-    }
-
-    if (!categoriaId) {
-      return toast.error("Seleccioná una categoría");
-    }
-
-    if (
-      precioPromocional &&
-      Number(precioPromocional) >= Number(precio)
-    ) {
-      return toast.error(
-        "El precio promocional debe ser menor al precio",
-      );
-    }
+    if (!imagenes.length) return toast.error("Agregá al menos una imagen");
+    if (!seccionesSeleccionadas.length) return toast.error("Seleccioná al menos una sección");
+    if (categoriasSeleccionadas.length === 0) return toast.error("Seleccioná al menos una categoría");
+    const categoriaFinalId =
+  categoriasSeleccionadas[categoriasSeleccionadas.length - 1];
 
     const formData = new FormData();
 
-    /* imágenes */
     imagenes.forEach((img) => formData.append("files", img));
 
-    /* datos base */
     formData.append("nombre", nombre);
     formData.append("descripcion", descripcion);
     formData.append("precio", precio);
     formData.append("stock", stock);
-    formData.append("categoriaId", categoriaId);
 
-    if (precioPromocional) {
-      formData.append("precioPromocional", precioPromocional);
-    }
+    // 🔹 Enviamos el array de categorías como JSON
+    formData.append("categoriaId", categoriaFinalId);
 
-    /* dimensiones (solo si existen) */
+
+    if (precioPromocional) formData.append("precioPromocional", precioPromocional);
     if (peso) formData.append("peso", peso);
     if (profundidad) formData.append("profundidad", profundidad);
     if (ancho) formData.append("ancho", ancho);
     if (alto) formData.append("alto", alto);
 
-    /* secciones -> JSON */
-    formData.append(
-      "seccionesIds",
-      JSON.stringify(seccionesSeleccionadas),
-    );
-
+   seccionesSeleccionadas.forEach((id) =>
+  formData.append("seccionesIds", id),
+);
     try {
       const producto = await createProducto(formData);
       await publicarProducto(producto.id);
-
       toast.success("Producto creado y publicado");
       window.location.reload();
     } catch (error) {
@@ -150,113 +130,217 @@ export default function FormProducto() {
     }
   };
 
-  /* ---------------- UI ---------------- */
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-3xl mx-auto bg-white/70 backdrop-blur p-6 rounded-2xl shadow-xl space-y-6"
-    >
+    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto bg-white/70 backdrop-blur p-6 rounded-2xl shadow-xl space-y-6">
       <h2 className="text-xl font-semibold">Nuevo producto</h2>
 
-      {/* DATOS */}
+        {/* DATOS */}
+
       <section className="grid grid-cols-2 gap-4">
-        <input
-          placeholder="Nombre"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          required
-        />
 
-        <input
-          placeholder="Stock"
-          type="number"
-          value={stock}
-          onChange={(e) => setStock(e.target.value)}
-          required
-        />
+        <label>Nombre
 
-        <input
-          placeholder="Precio"
-          type="number"
-          value={precio}
-          onChange={(e) => setPrecio(e.target.value)}
-          required
-        />
+          <input
 
-        <input
-          placeholder="Precio promocional"
-          type="number"
-          value={precioPromocional}
-          onChange={(e) => setPrecioPromocional(e.target.value)}
-        />
+            value={nombre}
+
+            onChange={(e) => setNombre(e.target.value)}
+
+            className="border rounded-lg p-2 col-span-2"
+
+            required
+
+          />
+
+        </label>
+
+        <label>Stock
+
+          <input
+
+            type="number"
+
+            value={stock}
+
+            onChange={(e) => setStock(e.target.value)}
+
+            className="border rounded-lg p-2 col-span-2"
+
+            required
+
+          />
+
+        </label>
+
+
+        <label>Precio
+
+          <input
+
+            type="number"
+
+            value={precio}
+
+            onChange={(e) => setPrecio(e.target.value)}
+
+            className="border rounded p-2 col-span-2"
+
+            required
+
+          />
+
+        </label>
+
+        <label>Precio promocional
+
+          <input
+
+            type="number"
+
+            value={precioPromocional}
+
+            onChange={(e) => setPrecioPromocional(e.target.value)}
+
+            className="border rounded p-2 col-span-2"
+
+          />
+
+        </label>
+
       </section>
 
-      {/* ENVÍOS */}
+      {/* DIMENSIONES */}
+
       <section className="grid grid-cols-4 gap-3">
-        <input placeholder="Peso (kg)" value={peso} onChange={(e) => setPeso(e.target.value)} />
-        <input placeholder="Prof. (cm)" value={profundidad} onChange={(e) => setProfundidad(e.target.value)} />
-        <input placeholder="Ancho (cm)" value={ancho} onChange={(e) => setAncho(e.target.value)} />
-        <input placeholder="Alto (cm)" value={alto} onChange={(e) => setAlto(e.target.value)} />
-      </section>
+
+        <label className="flex flex-col text-sm gap-1">
+
+          Peso (kg)
+
+          <input
+
+            placeholder="0.16"
+
+            value={peso}
+
+            onChange={(e) => setPeso(e.target.value)}
+
+            className="border rounded h-10 px-2 text-center"
+
+          />
+
+        </label>
+
+
+        <label className="flex flex-col text-sm gap-1">
+
+          Profundidad (cm)
+
+          <input
+
+            placeholder="30"
+
+            value={profundidad}
+
+            onChange={(e) => setProfundidad(e.target.value)}
+
+            className="border rounded h-10 px-2 text-center"
+
+          />
+
+        </label>
+
+
+        <label className="flex flex-col text-sm gap-1">
+
+          Ancho (cm)
+
+          <input
+
+            placeholder="30"
+
+            value={ancho}
+
+            onChange={(e) => setAncho(e.target.value)}
+
+            className="border rounded h-10 px-2 text-center"
+
+          />
+
+        </label>
+
+
+        <label className="flex flex-col text-sm gap-1">
+
+          Alto (cm)
+
+          <input
+
+            placeholder="30"
+
+            value={alto}
+
+            onChange={(e) => setAlto(e.target.value)}
+
+            className="border rounded h-10 px-2 text-center"
+
+          />
+
+        </label>
+
+      </section> 
 
       {/* DESCRIPCIÓN */}
-      <EditorDescripcion value={descripcion} onChange={setDescripcion} />
+      <div>
+        <label className="block text-sm font-medium mb-2">Descripción</label>
+        <EditorDescripcion value={descripcion} onChange={setDescripcion} />
+      </div>
 
       {/* SECCIONES */}
       <div>
-        <p className="font-medium mb-2">Secciones</p>
+        <p className="font-medium mb-2">Secciones donde aparecerá</p>
         <div className="flex flex-wrap gap-3">
           {secciones.map((s) => (
-            <label key={s.id} className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={seccionesSeleccionadas.includes(s.id)}
-                onChange={() => toggleSeccion(s.id)}
-              />
-              {s.nombre}
+            <label key={s.id} className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full cursor-pointer hover:bg-gray-200">
+              <input type="checkbox" checked={seccionesSeleccionadas.includes(s.id)} onChange={() => toggleSeccion(s.id)} />
+              <span className="text-sm">{s.nombre}</span>
             </label>
           ))}
         </div>
       </div>
 
-      {/* CATEGORÍA */}
+      {/* CATEGORÍAS (EL ÁRBOL) */}
       <div>
-        <p className="font-medium mb-2">Categoría</p>
-        <div className="border rounded-lg p-3 max-h-72 overflow-auto bg-white">
+        <p className="font-medium mb-2">Categorías y Subcategorías (Selección múltiple)</p>
+        <div className="border rounded-lg p-3 max-h-72 overflow-auto bg-white shadow-inner">
           <CategoriaTreeSelector
-            categorias={categorias}
-            value={categoriaId}
-            onChange={setCategoriaId}
+            categorias={categoriasData} // Pasamos los OBJETOS del árbol
+            value={categoriasSeleccionadas} // Pasamos los IDs seleccionados
+            onChange={setCategoriasSeleccionadas} // Actualizamos los IDs
           />
         </div>
       </div>
 
       {/* IMÁGENES */}
-      <div className="flex gap-3 flex-wrap">
-        {previewUrls.map((url, i) => (
-          <div key={i} className="relative w-24 h-24">
-            <img
-              src={url}
-              className="w-full h-full object-cover rounded-lg"
-            />
-            <button
-              type="button"
-              onClick={() => eliminarImagen(i)}
-              className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
-            >
-              <XMarkIcon className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-
-        <label className="w-24 h-24 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer">
-          <CameraIcon className="w-6 h-6" />
-          <input type="file" multiple hidden onChange={handleImageChange} />
-        </label>
+      <div>
+        <p className="font-medium mb-2">Imágenes del producto</p>
+        <div className="flex gap-3 flex-wrap">
+            {previewUrls.map((url, i) => (
+            <div key={i} className="relative w-24 h-24">
+                <img src={url} className="w-full h-full object-cover rounded-lg border" />
+                <button type="button" onClick={() => eliminarImagen(i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg">
+                <XMarkIcon className="w-4 h-4" />
+                </button>
+            </div>
+            ))}
+            <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-purple-500 transition-colors text-gray-400">
+            <CameraIcon className="w-6 h-6" />
+            <input type="file" multiple hidden onChange={handleImageChange} />
+            </label>
+        </div>
       </div>
 
-      <button className="w-full bg-purple-700 text-white py-2 rounded-md">
+      <button className="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition-all shadow-lg active:scale-95">
         Publicar producto
       </button>
     </form>

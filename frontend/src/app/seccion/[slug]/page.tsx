@@ -85,9 +85,9 @@ export default async function SeccionPage({ params }: { params: { slug: string }
               <ProductCard
                 key={product.id}
                 id={product.id}
-                image={product.imagenUrl}
-                name={product.nombre}
-                price={`$ ${product.precio.toLocaleString("es-AR")}`}
+                imagenUrl={product.imagenUrl}
+                nombre={product.nombre}
+                precio={`$ ${product.precio.toLocaleString("es-AR")}`}
               />
             ))}
           </div>

@@ -3,7 +3,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProductoModule } from './producto/producto.module';
 import { AuthModule } from './auth/auth.module'; // ✅ de tu rama
 import { CloudinaryModule } from './claudinary/cloudinary.module'; // ✅ de la rama maca
-//import { DashboardModule } from './dashboard/dashboard.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { TestModule } from './test/test.module';
 import { CartModule } from './cart/cart.module';
 import { ComentariosModule } from './comentarios/comentarios.module';
@@ -12,15 +12,19 @@ import { MailModule } from './mail/mail.module';
 import { PurchaseModule } from './purchase/purchase.module';
 import { HistorialModule } from './historial/historial.module';
 import { LocalAuthModule } from './auth/local/local.module';
+import { PuntoEntregaModule } from './punto-entrega/punto-entrega.module';
+import { OrdenesModule } from './ordenes/ordenes.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     PrismaModule,
     ProductoModule,
     AuthModule,
     CloudinaryModule,
-   // DashboardModule,
+   DashboardModule,
     TestModule,
     CartModule,
     ComentariosModule,
@@ -28,7 +32,7 @@ import { LocalAuthModule } from './auth/local/local.module';
     MailModule,
     PurchaseModule,
      HistorialModule, 
-     LocalAuthModule,
+     LocalAuthModule, PuntoEntregaModule, OrdenesModule,
 
   ],
 })

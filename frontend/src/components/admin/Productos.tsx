@@ -21,19 +21,31 @@ import React from "react";
 import toast from "react-hot-toast";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 
+export type SeccionType = {
+  id: string;
+  nombre: string;
+};
+
+type CategoriaType = {
+  id: string;
+  nombre: string;
+  parent?: CategoriaType | null;
+};
+
 type ProductoType = {
   imagenUrl: string | null;
   id: number;
   nombre: string;
   descripcion: string;
-  seccion: {
-    id: number;
-    nombre: string;
-  };
+secciones: {
+  seccion: SeccionType;
+}[];
+  categoria?: CategoriaType | null;
   precio: number;
   stock: number;
   published: boolean;
 };
+
 
 const Productos = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -58,14 +70,14 @@ const Productos = () => {
   };
 
   const formatPrecio = (precio: unknown) => {
-    if (precio === null || precio === undefined) return "$0.00";
+    if (precio === null || precio === undefined) return "$0.000";
 
     let clean = typeof precio === "string"
       ? precio.replace(/[^\d.,-]/g, "").replace(",", ".")
       : precio;
 
     const num = Number(clean);
-    return isNaN(num) ? "$0.00" : `$${num.toFixed(2)}`;
+    return isNaN(num) ? "$0.000" : `$${num.toFixed(2)}`;
   };
 
   const fetchProductos = async () => {
@@ -103,8 +115,23 @@ const Productos = () => {
     (producto) =>
       producto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       producto.descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      producto.seccion?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+      producto.secciones?.some((ps) => ps.seccion.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  function getCategoriaPath(categoria?: CategoriaType | null): string {
+    if (!categoria) return "Sin categoría";
+
+    const path: string[] = [];
+    let current: CategoriaType | null | undefined = categoria;
+
+    while (current) {
+      path.unshift(current.nombre);
+      current = current.parent;
+    }
+
+    return path.join(" > ");
+  }
+
 
   return (
     <div className="flex justify-center px-4">
@@ -182,8 +209,30 @@ const Productos = () => {
                     </TableCell>
 
                     <TableCell>
-                      {producto.seccion?.nombre ?? "Sin sección"}
+                      <div className="flex flex-col gap-1">
+                        {/* Sección */}
+                        <Badge variant="secondary" className="w-fit">
+                          {producto.secciones?.length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {producto.secciones.map((ps) => (
+                                <Badge key={ps.seccion.id} variant="secondary">
+                                  {ps.seccion.nombre}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <Badge variant="secondary">Sin sección</Badge>
+                          )}
+
+                        </Badge>
+
+                        {/* Categoría jerárquica */}
+                        <span className="text-sm text-muted-foreground">
+                          {getCategoriaPath(producto.categoria)}
+                        </span>
+                      </div>
                     </TableCell>
+
 
                     <TableCell>{formatPrecio(producto.precio)}</TableCell>
 
@@ -239,8 +288,8 @@ const Productos = () => {
                             published: producto.published,
                             imagenUrl: producto.imagenUrl ?? undefined,
                             categoria: {
-                              id: producto.seccion.id,
-                              nombre: producto.seccion.nombre,
+                              id: producto.secciones[0].seccion.id,
+                              nombre: producto.secciones[0].seccion.nombre,
                             },
                           }}
                           onCancel={() => setProductoEditandoId(null)}

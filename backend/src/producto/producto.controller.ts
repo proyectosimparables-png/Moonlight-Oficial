@@ -59,11 +59,9 @@ export class ProductoController {
   }
 
 @Get('tree/por-seccion/:seccionId')
-getTreePorSeccion(@Param('seccionId') seccionId: string) {
+getCategoriasTreePorSeccion(@Param('seccionId') seccionId: string) {
   return this.categoriaService.getCategoriasTreePorSeccion(seccionId);
 }
-
-
 
   // Obtener todos los productos
   @Get()

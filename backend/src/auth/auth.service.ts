@@ -21,10 +21,9 @@ export class AuthService {
     const avatarUrl = supabaseUser.user_metadata?.avatar_url ?? null;
 
     // Buscar si ya existe en la base de datos
-    let user = await this.prisma.user.findUnique({
-      where: { id },
-    });
-
+   let user = await this.prisma.user.findUnique({
+  where: {  email },
+});
     if (!user) {
       // Crear nuevo usuario con avatar
       user = await this.prisma.user.create({

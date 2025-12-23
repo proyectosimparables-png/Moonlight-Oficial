@@ -1,46 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
-import { Prisma } from '@prisma/client';
+import { EstadoOrden, Prisma } from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class PurchaseService {
-  transporter: any;
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
   ) {}
 
-  // Crear orden (compra)
-  async createOrder(
-    userId: string,
-    items: { productoId: string; cantidad: number }[],
-  ) {
-    // Buscar usuario
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new Error('Usuario no encontrado');
-    }
-
-    // Construir ordenItems y calcular total
+  // MÉTODO 1: Iniciar el carrito (Cuando el usuario agrega productos)
+  async startCart(userId: string, items: { productoId: string; cantidad: number }[]) {
     let total = 0;
-
+    
+    // CORRECCIÓN: Definimos el tipo del array para que no sea 'never'
     const ordenItems: Prisma.OrdenItemCreateWithoutOrdenInput[] = [];
 
     for (const item of items) {
-      const producto = await this.prisma.producto.findUnique({
-        where: { id: item.productoId },
-      });
-
+      const producto = await this.prisma.producto.findUnique({ where: { id: item.productoId } });
+      
       if (!producto) {
-        throw new Error(`Producto con id ${item.productoId} no encontrado`);
+        throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
       }
-
+      
       total += producto.precio * item.cantidad;
-
+      
       ordenItems.push({
         nombre: producto.nombre,
         precio: producto.precio,
@@ -50,44 +36,82 @@ export class PurchaseService {
       });
     }
 
-    // Crear la orden con items relacionados
-    const orden = await this.prisma.orden.create({
+    // Creamos la orden en estado CARRITO
+    return await this.prisma.orden.create({
       data: {
         userId,
-        estado: 'pendiente',
+        estado: EstadoOrden.CARRITO,
         total,
-        items: { create: ordenItems },
+        items: { 
+            create: ordenItems 
+        },
+        carritoCreadoEn: new Date(),
       },
-      include: { items: true },
+      include: { items: true }
     });
-
-    // Enviar correo de confirmación
-    await this.mailService.sendMail(
-      user.email,
-      'Compra realizada con éxito',
-      `
-      <h2>Hola ${user.name || 'cliente'}!</h2>
-      <p>Tu orden ha sido registrada correctamente.</p>
-      <p>Total: $${total}</p>
-      <h3>Productos:</h3>
-      <ul>
-        ${orden.items
-          .map(
-            (i) => `<li>${i.nombre} x${i.cantidad} - $${i.precio}</li>`,
-          )
-          .join('')}
-      </ul>
-      <p>Gracias por tu compra!</p>
-      `,
-    );
-
-    // Marcar correo enviado
-    await this.prisma.orden.update({
-      where: { id: orden.id },
-      data: { correoEnviado: true },
-    });
-
-    return orden;
   }
 
+  // MÉTODO 2: Tarea programada para carrito abandonado
+  @Cron(CronExpression.EVERY_HOUR)
+  async checkAbandonedCarts() {
+    const hace24Horas = new Date();
+    hace24Horas.setHours(hace24Horas.getHours() - 24);
+
+    const carritos = await this.prisma.orden.findMany({
+      where: {
+        estado: EstadoOrden.CARRITO,
+        carritoAbandonadoEmail: false,
+        carritoCreadoEn: { lte: hace24Horas },
+      },
+      include: { user: true, items: true },
+    });
+
+    for (const orden of carritos) {
+      const listaProductos = orden.items
+        .map(i => `<li>✨ ${i.nombre} (x${i.cantidad})</li>`)
+        .join('');
+
+      const htmlContent = `
+        <div style="font-family: sans-serif; color: #333; max-width: 600px; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+          <h2 style="color: #6a5acd;">¡Tu carrito te extraña en Moonlight! 🌙</h2>
+          <p>Hola <strong>${orden.user.name || 'enamorado del arte'}</strong>,</p>
+          <p>Notamos que dejaste algunas cosas especiales en tu carrito. Pasábamos por aquí para recordarte que tus elegidos todavía te están esperando.</p>
+          <p>Esto es lo que guardaste:</p>
+          <ul style="list-style: none; padding: 0;">${listaProductos}</ul>
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="https://tutienda.com/carrito" style="background-color: #6a5acd; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Terminar mi compra ahora
+            </a>
+          </div>
+          <p style="font-size: 0.9em; color: #777; margin-top: 30px;">
+            Si tienes alguna duda, responde a este correo. ¡Estamos para ayudarte!<br>
+            <strong>Equipo Moonlight Estampas</strong>
+          </p>
+        </div>
+      `;
+
+      try {
+        await this.mailService.sendMail(
+          orden.user.email, 
+          '¿Te olvidaste de algo especial? ✨', 
+          htmlContent
+        );
+        
+        await this.prisma.orden.update({
+          where: { id: orden.id },
+          data: { carritoAbandonadoEmail: true },
+        });
+      } catch (error) {
+        console.error(`Error enviando mail de abandono a ${orden.user.email}:`, error);
+      }
+    }
+  }
+
+  // MÉTODO 3: Finalizar compra
+  async finalizeOrder(ordenId: string) {
+    return await this.prisma.orden.update({
+      where: { id: ordenId },
+      data: { estado: EstadoOrden.PENDIENTE }
+    });
+  }
 }

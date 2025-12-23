@@ -90,7 +90,7 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-[var(--text-heading)]">
-          Dashboard
+          Resumen
         </h1>
         <p className="text-[var(--color-dark-gray)]">
           Resumen general de tu tienda de ropa

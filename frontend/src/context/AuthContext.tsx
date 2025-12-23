@@ -180,9 +180,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await loadSupabaseUser(session);
       }
     });
+    
 
     return () => listener.subscription.unsubscribe();
-  }, []); 
+  }, [pathname]); // Re-ejecutar si cambia la ruta (importante para el callback de OAuth)
 
   // --- Métodos de Autenticación ---
 
