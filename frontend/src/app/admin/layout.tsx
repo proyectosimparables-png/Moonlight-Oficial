@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <AdminNavbar />
      
         <main className="flex-1 p-4 md:p-6">
-            <ParticlesStarfieldPremium />
+           
           {children}
           </main>
    

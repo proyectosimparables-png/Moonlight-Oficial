@@ -52,21 +52,23 @@ export class PurchaseService {
   }
 
   // MÉTODO 2: Tarea programada para carrito abandonado
-  @Cron(CronExpression.EVERY_HOUR)
-  async checkAbandonedCarts() {
-    const hace24Horas = new Date();
-    hace24Horas.setHours(hace24Horas.getHours() - 24);
+@Cron(CronExpression.EVERY_MINUTE) // Revisamos cada minuto para que sea rápido
+async checkAbandonedCarts() {
+  const hace2M = new Date();
+  hace2M.setMinutes(hace2M.getMinutes() - 2);
 
-    const carritos = await this.prisma.orden.findMany({
-      where: {
-        estado: EstadoOrden.CARRITO,
-        carritoAbandonadoEmail: false,
-        carritoCreadoEn: { lte: hace24Horas },
-      },
-      include: { user: true, items: true },
-    });
+  const carritosAbandonados = await this.prisma.orden.findMany({
+    where: {
+      estado: 'CARRITO', 
+      carritoAbandonadoEmail: false, 
+      createdAt: { lte: hace2M }, 
+    },
+    include: { user: true, items: true },
+    
+  });
+  console.log(`Carritos encontrados: ${carritosAbandonados.length}`);
 
-    for (const orden of carritos) {
+    for (const orden of carritosAbandonados) {
       const listaProductos = orden.items
         .map(i => `<li>✨ ${i.nombre} (x${i.cantidad})</li>`)
         .join('');
@@ -114,4 +116,28 @@ export class PurchaseService {
       data: { estado: EstadoOrden.PENDIENTE }
     });
   }
+
+
+
+
+async sendOrderConfirmation(ordenId: string) {
+  const orden = await this.prisma.orden.findUnique({
+    where: { id: ordenId },
+    include: { user: true, items: true }
+  });
+
+  if (!orden) return;
+
+  const htmlSuccess = `
+    <h1>¡Gracias por tu compra en Moonlight! 💜</h1>
+    <p>Tu orden #${orden.id} ha sido procesada con éxito.</p>
+    <p>Pronto prepararemos tus estampas.</p>
+  `;
+
+  await this.mailService.sendMail(
+    orden.user.email,
+    'Confirmación de Compra - Moonlight Estampas',
+    htmlSuccess
+  );
+}
 }

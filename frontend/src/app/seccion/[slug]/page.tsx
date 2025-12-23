@@ -82,13 +82,13 @@ export default async function SeccionPage({ params }: { params: { slug: string }
         {data.productos?.length ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
             {data.productos.map((product: Product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                imagenUrl={product.imagenUrl}
-                nombre={product.nombre}
-                precio={`$ ${product.precio.toLocaleString("es-AR")}`}
-              />
+               <ProductCard
+          key={product.id}
+          id={product.id}
+          nombre={product.nombre}
+          imagenUrl={product.imagenUrl ?? "/placeholder.png"}
+          precio={String(product.precio  ?? 0)}
+        />
             ))}
           </div>
         ) : (

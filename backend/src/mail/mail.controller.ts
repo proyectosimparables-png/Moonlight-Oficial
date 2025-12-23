@@ -29,7 +29,7 @@ export class MailController {
     }
 
     await this.mailService.sendMail(
-      "moonlightestampas@gmail.com",
+      "russnataliav@gmail.com",
       "Nuevo suscriptor del Moonlight Club",
       `
         <h2>Nuevo suscriptor</h2>

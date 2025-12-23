@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Navbar from "@/components/navbar/Navbar";
+
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ProductSection from "@/components/home/ProductSection";
 import ComentariosSection from "../ComentariosSeccion";
-import Footer from "./Footer";
+import MoonlightClubBanner from "@/components/home/MoonlightClubBanner";
 
 interface Product {
   id: string;
@@ -21,21 +21,11 @@ interface Section {
   productos: Product[];
 }
 
-
 const Home = () => {
   const [sections, setSections] = useState<Section[]>([]);
 
-  // 🟣 Orden deseado de las secciones
-  const order = [
-    "Los más elegidos",
-    "Lo más nuevo",
-    "Indumentaria",
-    "Bangtan Limited Edition",
-    "Bangtan Bags",
-    "Bangtan Home",
-    "Accesorios",
-    "Outlet",
-  ];
+  // 🟣 SOLO estas secciones se muestran en Home
+  const visibleSections = ["Novedades", "Los más elegidos", "Outlet"];
 
   useEffect(() => {
     const fetchSections = async () => {
@@ -47,16 +37,15 @@ const Home = () => {
 
         const data: Section[] = await res.json();
 
-        // 🟣 Ordenamos según el orden definido arriba
-        const sorted = [...data].sort((a, b) => {
-          const indexA = order.indexOf(a.nombre);
-          const indexB = order.indexOf(b.nombre);
-          return (
-            (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB)
+        const filteredAndSorted = data
+          .filter((section) => visibleSections.includes(section.nombre))
+          .sort(
+            (a, b) =>
+              visibleSections.indexOf(a.nombre) -
+              visibleSections.indexOf(b.nombre)
           );
-        });
 
-        setSections(sorted);
+        setSections(filteredAndSorted);
       } catch (err) {
         console.error("Error cargando secciones:", err);
       }
@@ -66,14 +55,12 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col  text-[#6c5b7b]">
-
-      <Navbar />
-
+    <div className="min-h-screen flex flex-col text-[#6c5b7b]">
       <main className="flex-1">
         <HeroCarousel />
 
         {sections.map((section) => (
+          <div key={section.id} className="my-8">
           <ProductSection
             key={section.id}
             title={section.nombre}
@@ -85,10 +72,17 @@ const Home = () => {
               imagenUrl: p.imagenUrl ?? "/placeholder.jpg",
             }))}
           />
+
+
+            {/* 🌙 Banner entre Novedades y Los más elegidos */}
+            {section.nombre === "Novedades" && <MoonlightClubBanner />}
+          </div>
+
         ))}
       </main>
+
+      {/* 💬 Comentarios de las clientas */}
       <ComentariosSection />
-      { <Footer /> }
     </div>
   );
 };

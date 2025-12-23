@@ -87,37 +87,38 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     const existingItem = cart.find((i) => i.productoId === productoId);
 
     if (existingItem) {
-      // Actualizar cantidad optimista
-      await optimisticUpdate(
-        () =>
-          setCart((prev) =>
-            prev.map((i) =>
-              i.productoId === productoId
-                ? { ...i, quantity: i.quantity + quantity }
-                : i
-            )
-          ),
-        async () => {
-          const response = await CartService.addItem(productoId, quantity);
-          const updatedItem =
-            response.items.find((it) => it.productoId === productoId) ??
-            existingItem;
+      // 1️⃣ MOSTRAR EL MODAL INSTANTÁNEAMENTE
+      setLastAddedItem({
+        ...existingItem,
+        quantity: existingItem.quantity + quantity,
+      });
 
-          setCart((prev) =>
-            prev.map((i) => (i.productoId === productoId ? updatedItem : i))
-          );
-
-          setLastAddedItem(updatedItem); // Guardamos para el modal
-          return response;
-        },
-        () =>
-          setCart((prev) =>
-            prev.map((i) =>
-              i.productoId === productoId ? { ...i, quantity: i.quantity } : i
-            )
-          )
+      // 2️⃣ Actualización optimista instantánea
+      const prevCart = [...cart];
+      setCart((prev) =>
+        prev.map((i) =>
+          i.productoId === productoId
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
+        )
       );
+
+      // 3️⃣ Llamada al backend SIN BLOQUEAR LA UI
+      try {
+        const response = await CartService.addItem(productoId, quantity);
+        const updatedItem =
+          response.items.find((it) => it.productoId === productoId) ??
+          existingItem;
+
+        setCart((prev) =>
+          prev.map((i) => (i.productoId === productoId ? updatedItem : i))
+        );
+      } catch (err) {
+        console.error(err);
+        setCart(prevCart); // rollback si falla
+      }
     } else {
+      // Item nuevo
       const tempId = `temp-${productoId}-${Date.now()}`;
       const tempItem: CartItem = {
         id: tempId,
@@ -126,21 +127,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         producto: { id: productoId, nombre: "", precio: 0, loading: true },
       };
 
-      await optimisticUpdate(
-        () => setCart((prev) => [...prev, tempItem]),
-        async () => {
-          const response = await CartService.addItem(productoId, quantity);
-          const addedItem =
-            response.items.find((it) => it.productoId === productoId) ??
-            tempItem;
+      // 1️⃣ MOSTRAR MODAL INMEDIATAMENTE
+      setLastAddedItem(tempItem);
 
-          setCart((prev) => prev.map((i) => (i.id === tempId ? addedItem : i)));
+      // 2️⃣ Optimistic add instantáneo
+      const prevCart = [...cart];
+      setCart((prev) => [...prev, tempItem]);
 
-          setLastAddedItem(addedItem); // Guardamos para el modal
-          return response;
-        },
-        () => setCart((prev) => prev.filter((i) => i.id !== tempId))
-      );
+      try {
+        const response = await CartService.addItem(productoId, quantity);
+        const addedItem =
+          response.items.find((it) => it.productoId === productoId) ?? tempItem;
+
+        setCart((prev) => prev.map((i) => (i.id === tempId ? addedItem : i)));
+      } catch (err) {
+        console.error(err);
+        setCart(prevCart); // rollback
+      }
     }
   };
 

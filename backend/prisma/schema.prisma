@@ -1,57 +1,62 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
+/* -----------------------------
+   USUARIOS & AUTENTICACIÓN
+------------------------------ */
 
 model User {
- id        String   @id @default(uuid())
-  email       String       @unique
-  name        String?
-  password    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  role        Role         @default(CLIENTE)
-  image       String?
-  address     String?
-  carrito     Cart?
+  id         String      @id @default(uuid())
+  email      String      @unique
+  name       String?
+  password   String
+  role       Role        @default(CLIENTE)
+  image      String?
+  address    String?
+  carrito    Cart?
   comentarios Comentario[]
   favoritos   Favorito[]
   historial   Historial[]
   ordenes     Orden[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
+
+/* -----------------------------
+   PRODUCTOS & CATEGORÍA
+------------------------------ */
 
 model Producto {
   id                String     @id @default(uuid())
   nombre            String
   descripcion       String?
   precio            Float
-  precioPromocional Float?     // Precio en oferta (opcional)
+  precioPromocional Float?     
   stock             Int
 
   // Envíos - peso y dimensiones
-  peso              Float?     // en kg (ej: 0.14)
-  profundidad       Int?       // en cm
-  ancho             Int?       // en cm
-  alto              Int?       // en cm
+  peso              Float?     
+  profundidad       Int?       
+  ancho             Int?       
+  alto              Int?       
 
   imagenUrl         String?
   createdAt         DateTime   @default(now())
   published         Boolean    @default(false)
-
   categoriaId       String?
-
 
   cartItems         CartItem[]
   favoritos         Favorito[]
   imagenes          Imagen[]
 
   categoria         Categoria? @relation(fields: [categoriaId], references: [id])
-   secciones         ProductoSeccion[]
+  secciones         ProductoSeccion[]
 }
 
 model Imagen {
@@ -73,7 +78,6 @@ model Categoria {
   productos     Producto[]
 }
 
-
 model ProductoSeccion {
   productoId String
   seccionId  String
@@ -84,17 +88,19 @@ model ProductoSeccion {
   @@id([productoId, seccionId])
 }
 
-
 model Seccion {
   id         String      @id @default(uuid())
   nombre     String
-  createdAt  DateTime    @default(now())
   slug       String?     @unique
+  createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   categorias Categoria[]
-  
-  productos ProductoSeccion[]
+  productos  ProductoSeccion[]
 }
+
+/* -----------------------------
+   COMENTARIOS
+------------------------------ */
 
 model Comentario {
   id        String   @id @default(uuid())
@@ -103,6 +109,7 @@ model Comentario {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
+
 
 // Definimos los estados posibles según la captura
 enum EstadoOrden {
@@ -115,6 +122,7 @@ enum EstadoOrden {
   REEMBOLSADO
   CANCELADO
 }
+
 
 model Orden {
   id                     String      @id @default(uuid())
@@ -143,15 +151,16 @@ model Orden {
 
 
 model OrdenItem {
-  id         String  @id @default(uuid())
+  id         String   @id @default(uuid())
   ordenId    String
   nombre     String
   precio     Float
   cantidad   Int
   productoId String?
   imagenUrl  String?
-  orden      Orden   @relation(fields: [ordenId], references: [id])
+  orden      Orden    @relation(fields: [ordenId], references: [id])
 }
+
 model Historial {
   id         String   @id @default(uuid())
   userId     String
@@ -164,6 +173,10 @@ model Historial {
   user       User     @relation(fields: [userId], references: [id])
 }
 
+/* -----------------------------
+   FAVORITOS
+------------------------------ */
+
 model Favorito {
   id         String   @id @default(uuid())
   userId     String
@@ -174,6 +187,10 @@ model Favorito {
 
   @@unique([userId, productoId])
 }
+
+/* -----------------------------
+   CARRITO
+------------------------------ */
 
 model Cart {
   id        String     @id @default(uuid())

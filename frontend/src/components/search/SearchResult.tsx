@@ -22,9 +22,9 @@ export const SearchResults = ({ products }: SearchResultsProps) => {
         <ProductCard
           key={product.id}
           id={product.id}
-          name={product.nombre}
-          image={product.imagenes?.[0]?.url ?? "/placeholder.png"}
-          price={String(product.precio ?? "0")}
+          nombre={product.nombre}
+          imagenUrl={product.imagenes?.[0]?.url ?? "/placeholder.png"}
+          precio={String(product.precio  ?? 0)}
         />
       ))}
     </div>

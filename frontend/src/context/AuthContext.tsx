@@ -180,31 +180,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await loadSupabaseUser(session);
       }
     });
-    
-
+     
     return () => listener.subscription.unsubscribe();
-  }, [pathname]); // Re-ejecutar si cambia la ruta (importante para el callback de OAuth)
+  }, []); 
 
   // --- Métodos de Autenticación ---
 
   // 5) Login Local
   const loginLocal = async (email: string, password: string) => {
-    // Cerrar sesión de Supabase/Google por si acaso
-    await supabase.auth.signOut(); 
-    await fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" }); // Limpiar cookie de Supabase
+  await supabase.auth.signOut(); 
+  await fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" });
 
-    const res = await fetch(`${API_URL}/auth/local/login`, {
-      method: "POST",
-      credentials: "include", 
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
+  const res = await fetch(`${API_URL}/auth/local/login`, {
+    method: "POST",
+    credentials: "include", 
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
 
-    if (!res.ok) throw new Error("Credenciales inválidas");
+  if (!res.ok) throw new Error("Credenciales inválidas");
 
-    // Cargar y establecer el usuario local
-    await loadLocalUser();
-  };
+  // Forzamos la carga y esperamos a que el estado se asiente
+  const success = await loadLocalUser();
+  if (success) {
+    return;
+  }
+};
 
   // 6) Register Local
   const registerLocal = async (data: {
@@ -239,7 +240,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
   };
-
+// Este useEffect detecta específicamente cuando volvemos de Google
+useEffect(() => {
+  if (pathname === '/auth/callback' || pathname === '/') {
+    // Si estamos en el callback, forzamos una revisión de sesión
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) loadSupabaseUser(data.session);
+    });
+  }
+}, [pathname]); // Este SI usa pathname porque es solo una comprobación ligera
   // 8) Logout UNIFICADO
   const logout = async () => {
     // 1. Supabase logout

@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { loginLocal } from "@/services/authService";
+
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginForm() {
     const router = useRouter();
+    const { loginLocal } = useAuth();
     const [form, setForm] = useState({
         email: "",
         password: ""
@@ -23,6 +25,7 @@ export default function LoginForm() {
         try {
             await loginLocal(form.email, form.password);
             toast.success("Inicio de sesión correcto 🎉");
+            router.refresh();
             router.push("/");
         } catch (error) {
             toast.error("Credenciales incorrectas");

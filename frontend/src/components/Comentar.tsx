@@ -10,27 +10,28 @@ export default function ComentarSection() {
   const [contenido, setContenido] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [enviando, setEnviando] = useState(false);
+
   const { isAuthenticated } = useAuth();
-const router = useRouter();
+  const router = useRouter();
 
-
-  useEffect(()=>{
-  if (!isAuthenticated) {
+  useEffect(() => {
+    if (!isAuthenticated) {
       toast.error("Debes iniciar sesión para poder comentar", {
         position: "top-center",
       });
-     setTimeout(() => {
-        router.push("/login");
-         }, 3000);
 
-  
+      setTimeout(() => {
+        router.push("/login");
+      }, 3000);
+
       return;
     }
-  },[isAuthenticated, router]);
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contenido.trim()) return setMensaje("Por favor escribe un comentario.");
+    if (!contenido.trim())
+      return setMensaje("Por favor escribe un comentario.");
 
     try {
       setEnviando(true);

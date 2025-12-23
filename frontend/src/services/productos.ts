@@ -24,9 +24,9 @@ export async function updateProductoFlexible(
     // Agregar el resto de los campos
     formData.append("nombre", data.nombre);
     formData.append("descripcion", data.descripcion);
-    formData.append("precio", String(data.precio)); 
-formData.append("stock", String(data.stock));    
-  
+    formData.append("precio", String(data.precio));
+    formData.append("stock", String(data.stock));
+
 
     // Hacer la petición PUT al endpoint /upload
     const res = await fetch(
@@ -176,6 +176,47 @@ export async function getProductos() {
   return res.json();
 }
 
+// services/productos.ts
+export interface Producto {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  imagenes: { url: string }[];
+  categoria: {
+    nombre: string;
+    seccion: { nombre: string };
+  };
+}
+
+/**
+ * Busca productos por nombre o descripción
+ */
+export async function searchProductos(query: string): Promise<Producto[]> {
+  console.log("searchProductos llamado con query:", query);
+  if (!query.trim()) return [];
+
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/productos/search?q=${encodeURIComponent(query)}`
+    );
+    console.log("Respuesta del fetch:", res.status);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Error buscando productos: ${text}`);
+    }
+
+    const text = await res.text();
+    console.log("Texto recibido del backend:", text);
+    const data: Producto[] = text ? JSON.parse(text) : [];
+    return data;
+  } catch (err) {
+    console.error("Error en searchProductos:", err);
+
+    return [];
+  }
+}
+
 //categorias con sus productos para el admin
 export async function getCategoriasBySeccion(seccionId?: string) {
   // Si seccionId existe, agrega el query param; si no, llama al endpoint sin filtro
@@ -230,7 +271,7 @@ export async function actualizarCategoria(
 export async function crearCategoria(data: {
   nombre: string;
   seccionNombre: string;
-  padreId?: string;
+  parentId?: string;
 }) {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/productos/categorias`,

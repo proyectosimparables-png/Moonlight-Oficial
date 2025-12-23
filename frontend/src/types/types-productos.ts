@@ -10,6 +10,7 @@ export type Producto = {
   stock: number;
   published: boolean;
   imagenUrl?: string;
+  imagenes?: string[];
 };
 
 export type CreateProductoDto = {

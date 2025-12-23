@@ -1,3 +1,4 @@
+//frontend/src/components/cart/CartSummary.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ interface CartSummaryProps {
   setPostalCode: (val: string) => void;
   handleCheckout: () => void;
   router: ReturnType<typeof useRouter>;
+  openClearCartModal: () => void;
 }
 
 export default function CartSummary({
@@ -73,8 +75,9 @@ export default function CartSummary({
       </div>
 
       <Button
-        className="w-full text-white"
-        style={{ backgroundColor: "#7b5ca2" }}
+        className="w-full text-gray-800 bg-[#d8c4fa] hover:bg-[#cbb1f5]"
+        size="default"
+        variant="default"
         onClick={handleCheckout}
       >
         INICIAR COMPRA
