@@ -10,7 +10,7 @@ import MoonlightClubBanner from "@/components/home/MoonlightClubBanner";
 interface Product {
   id: string;
   nombre: string;
-  precio: number;
+  precio: string;
   imagenUrl?: string;
 }
 
@@ -31,9 +31,9 @@ const Home = () => {
     const fetchSections = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`
-        );
+          `${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`);
         if (!res.ok) throw new Error("Error al obtener secciones");
+       
 
         const data: Section[] = await res.json();
 
@@ -62,7 +62,6 @@ const Home = () => {
         {sections.map((section) => (
           <div key={section.id} className="my-8">
           <ProductSection
-            key={section.id}
             title={section.nombre}
             slug={section.slug} 
             products={section.productos.map((p) => ({

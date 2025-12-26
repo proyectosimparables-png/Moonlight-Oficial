@@ -11,9 +11,9 @@ export interface ProductSectionProps {
   slug: string;
   products: Array<{
     id: string;
-     imagenUrl?: string;
+    imagenUrl?: string;
     nombre: string;
-    precio: number;
+    precio: string;
 
   }>;
 }
@@ -66,7 +66,7 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
 
         {/* Grilla de productos */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-
+       
           {products
             .slice(-4)
             .map((product) => (
@@ -75,7 +75,7 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
                 id={product.id}
                 imagenUrl={product.imagenUrl || "/placeholder.jpg"}
                 nombre={product.nombre}
-                precio={`$ ${product.precio.toLocaleString("es-AR")}`}
+                precio={product.precio}
               />
             ))}
           </div>

@@ -2,17 +2,23 @@
 
 import ProductCard from "@/components/home/ProductCard";
 import { VolverInicioButton } from "@/components/navbar/BotonDeInicio";
-interface Product {
-  id: string;
-  nombre: string;
-  precio: number;
-  imagenUrl: string;
+interface ProductoBackend {
+  productoId: string;
+  seccionId: string;
+  producto: {
+    id: string;
+    nombre: string;
+    precio: number;
+    precioPromocional?: number | null;
+    imagenUrl?: string | null;
+  };
 }
 
 interface SectionData {
   nombre: string;
-  productos: Product[];
+  productos: ProductoBackend[];
 }
+
 
 export default async function SeccionPage({ params }: { params: { slug: string } }) {
   // respeté tu línea original con await para params
@@ -43,6 +49,7 @@ export default async function SeccionPage({ params }: { params: { slug: string }
   });
 
   if (!res.ok) {
+
     console.error("❌ Error al cargar la sección:", res.status, res.statusText);
     return (
       <div className="container mx-auto px-4 py-20 text-center text-red-600">
@@ -81,14 +88,14 @@ export default async function SeccionPage({ params }: { params: { slug: string }
 
         {data.productos?.length ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
-            {data.productos.map((product: Product) => (
-               <ProductCard
-          key={product.id}
-          id={product.id}
-          nombre={product.nombre}
-          imagenUrl={product.imagenUrl ?? "/placeholder.png"}
-          precio={String(product.precio  ?? 0)}
-        />
+            {data.productos.map((item) => (
+              <ProductCard
+                key={item.producto.id}
+                id={item.producto.id}
+                nombre={item.producto.nombre}
+                imagenUrl={item.producto.imagenUrl ?? "/placeholder.png"}
+                precio={`$ ${item.producto.precio.toLocaleString("es-AR")}`}
+              />
             ))}
           </div>
         ) : (

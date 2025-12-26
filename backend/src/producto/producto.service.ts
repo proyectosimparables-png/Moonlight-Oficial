@@ -192,31 +192,25 @@ export class ProductoService {
 
   // 📁 Secciones con productos
  async getSecciones() {
-   const secciones = await this.prisma.seccion.findMany({
-   orderBy: { nombre: 'asc' },
-  include: {
+  const secciones = await this.prisma.seccion.findMany({
+    orderBy: { nombre: 'asc' },
+    include: {
       productos: {
         include: {
-          producto: {
-            select: {
-              id: true,
-              nombre: true,
-              precio: true,
-              precioPromocional: true,
-              imagenUrl: true,
-              published: true,
-            },
-          },
+          producto: true,
         },
       },
     },
-    });
-  
- return secciones.map((s) => ({
-   ...s,
-   productos: this.formatearProductos(s.productos),
- }));
- }
+  });
+
+  return secciones.map((s) => ({
+    ...s,
+    productos: s.productos
+      .filter((sp) => sp.producto?.published)
+      .map((sp) => this.formatearProducto(sp.producto)),
+  }));
+}
+
 //Categirias con sus secciones de raiz
 
 async getCategoriasTreePorSeccion(seccionId: string) {

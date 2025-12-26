@@ -31,7 +31,7 @@ const ProductCard = ({ id, imagenUrl, nombre, precio }: ProductCardProps) => {
 
   // Función para formatear cualquier número a ARS
   const formatARS = (value: number) =>
-    value.toLocaleString("es-AR", { minimumFractionDigits: 2 });
+    value.toLocaleString("es-AR", { minimumFractionDigits: 0 });
 
 
   // Función para requerir login antes de agregar al carrito
