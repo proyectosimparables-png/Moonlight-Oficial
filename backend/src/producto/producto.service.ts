@@ -39,6 +39,7 @@ export class ProductoService {
     return productos.map((p) => this.formatearProducto(p));
   }
 
+
   // 🧩 Crear producto (una o varias imágenes)
  async create(data: CreateProductoDto, imagenesUrls: string[] = []) {
   const producto = await this.prisma.producto.create({
@@ -94,6 +95,23 @@ export class ProductoService {
     };
   }
 
+ 
+  // 🔍 Buscar productos por nombre o descripción
+  async searchProducts(query: string) {
+    if (!query) return [];
+    const productos = await this.prisma.producto.findMany({
+      where: {
+        OR: [
+          { nombre: { contains: query, mode: 'insensitive' } },
+          { descripcion: { contains: query, mode: 'insensitive' } },
+        ],
+        published: true,
+      },
+      include: { categoria: { include: { seccion: true } }, secciones: true, imagenes: true },
+      take: 10,
+    });
+    return this.formatearProductos(productos);
+  }
   // 📦 Listar productos
   async findAll(
     published?: boolean,
@@ -115,23 +133,6 @@ export class ProductoService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return this.formatearProductos(productos);
-  }
-
-  // 🔍 Buscar productos por nombre o descripción
-  async searchProducts(query: string) {
-    if (!query) return [];
-    const productos = await this.prisma.producto.findMany({
-      where: {
-        OR: [
-          { nombre: { contains: query, mode: 'insensitive' } },
-          { descripcion: { contains: query, mode: 'insensitive' } },
-        ],
-        published: true,
-      },
-      include: { categoria: { include: { seccion: true } }, secciones: true, imagenes: true },
-      take: 10,
-    });
     return this.formatearProductos(productos);
   }
 
@@ -170,6 +171,7 @@ export class ProductoService {
     return this.formatearProducto(producto);
   }
 
+
   // 🖼 Quitar imagen principal
   async removeImagen(id: string) {
     const producto = await this.prisma.producto.update({
@@ -187,6 +189,7 @@ export class ProductoService {
     });
     return this.formatearProducto(producto);
   }
+
 
   
 
@@ -237,13 +240,24 @@ async getCategoriasTreePorSeccion(seccionId: string) {
 }
 
 
+  // 🔄 Actualizar múltiples imágenes
+  async updateMultipleImages(id: string, data: CreateProductoDto, imagenUrls: string[]) {
+    const updateData: any = { ...data };
+    if (imagenUrls.length > 0) {
+      updateData.imagenUrl = imagenUrls[0];
+      updateData.imagenes = { create: imagenUrls.map((url) => ({ url })) };
+    }
 
+    const producto = await this.prisma.producto.update({
+      where: { id },
+      data: updateData,
+      include: { imagenes: true },
+    });
 
+    return this.formatearProducto(producto);
+  }
 
-
-
-
-
+ 
   // 📚 Categorías
   async getTodasLasCategorias() {
     return this.prisma.categoria.findMany({
@@ -257,41 +271,43 @@ async getCategoriasTreePorSeccion(seccionId: string) {
     return this.prisma.categoria.findMany({
       where: { seccionId, parentId: null },
       orderBy: { nombre: 'asc' },
-      include: {
-        subcategorias: { orderBy: { nombre: 'asc' } },
-        seccion: true,
-      },
+      include: { subcategorias: { orderBy: { nombre: 'asc' } }, seccion: true },
     });
   }
 
-  // ➕ Crear categoría
-  async crearCategoria(data: { nombre: string; seccionSlug: string; padreId?: string }) {
-    const seccion = await this.prisma.seccion.findUnique({
-      where: { slug: data.seccionSlug },
-    });
-
-    if (!seccion) {
-      throw new Error(`No se encontró la sección con slug "${data.seccionSlug}"`);
-    }
+  async crearCategoria(data: { nombre: string; seccionSlug: string; parentId?: string }) {
+    const seccion = await this.prisma.seccion.findUnique({ where: { slug: data.seccionSlug } });
+    if (!seccion) throw new BadRequestException(`No se encontró la sección con slug "${data.seccionSlug}"`);
 
     return this.prisma.categoria.create({
-      data: { nombre: data.nombre, seccionId: seccion.id, parentId: data.padreId ?? null },
+
+      data: { nombre: data.nombre, seccionId: seccion.id, parentId: data.parentId ?? null },
     });
   }
 
-  async validarCategoria(categoriaId: string) {
+      async validarCategoria(categoriaId: string) {
     if (!categoriaId) return null;
     const categoria = await this.prisma.categoria.findUnique({ where: { id: categoriaId } });
     if (!categoria) throw new BadRequestException(`La categoría con ID ${categoriaId} no existe`);
     return categoria;
   }
 
-  
+ 
+
   async crearSeccion(data: CreateSeccionDto) {
     return this.prisma.seccion.create({ data });
   }
 
+
   
+
+  async getSeccionConProductos(slug: string) {
+    return this.prisma.seccion.findUnique({
+      where: { slug },
+      include: { productos: { include: { producto: true } } },
+    });
+  }
+
 
   // ⚡ Métodos que faltaban en tu controller
   async actualizarSeccion(id: string, data: Partial<CreateSeccionDto>) {
@@ -299,112 +315,16 @@ async getCategoriasTreePorSeccion(seccionId: string) {
   }
 
   async eliminarSeccion(id: string) {
-    return this.prisma.seccion.delete({ where: { id } });
+    await this.prisma.seccion.delete({ where: { id } });
+    return { message: 'Sección eliminada' };
   }
 
-  async updateMultipleImages(
-    id: string,
-    data: CreateProductoDto,
-    imagenUrls: string[]
-  ) {
-     console.log("🔥 updateMultipleImages ejecutado");
-    try {
-      const updateData: any = { ...data };
-
-      // VALIDACIÓN CATEGORÍA
-      if ('categoriaId' in updateData) {
-        if (!updateData.categoriaId) {
-          updateData.categoriaId = null;
-        } else {
-          await this.validarCategoria(updateData.categoriaId);
-        }
-      }
-
-      // VALIDACIÓN SECCIÓN
-      if ('seccionId' in updateData) {
-        if (!updateData.seccionId) {
-          updateData.seccionId = null;
-        } else {
-          const seccion = await this.prisma.seccion.findUnique({
-            where: { id: updateData.seccionId },
-          });
-          if (!seccion) {
-            throw new BadRequestException(
-              `La sección con ID ${updateData.seccionId} no existe`
-            );
-          }
-        }
-      }
-
-      // Conversión segura
-      if (typeof updateData.precio === 'string')
-        updateData.precio = parseFloat(updateData.precio);
-      if (typeof updateData.stock === 'string')
-        updateData.stock = parseInt(updateData.stock);
-
-      if (imagenUrls.length > 0) {
-        updateData.imagenUrl = imagenUrls[0];
-        updateData.imagenes = {
-          create: imagenUrls.map((url) => ({ url })),
-        };
-      } else {
-        // ❗ NO tocamos la imagen principal ni las imágenes anteriores
-        delete updateData.imagenUrl;
-        delete updateData.imagenes;
-      }
-
-
-      const producto = await this.prisma.producto.update({
-        where: { id },
-        data: updateData,
-        include: { imagenes: true },
-      });
-
-      return this.formatearProducto(producto);
-    } catch (error) {
-      console.error('❌ Error en updateMultipleImages:', error);
-      throw error;
-    }
+  async actualizarCategoria(id: string, data: { nombre?: string; seccionId?: string; parentId?: string }) {
+    return this.prisma.categoria.update({ where: { id }, data });
   }
 
-
-
-  // 🔹 Obtener una sección por slug (con todos sus productos publicados)
-
-  async getSeccionConProductos(slug: string) {
-  return this.prisma.seccion.findUnique({
-    where: { slug },
-    include: {
-      productos: {
-        include: {
-          producto: {
-            select: {
-              id: true,
-              nombre: true,
-              precio: true,
-              precioPromocional: true,
-              imagenUrl: true,
-              published: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  async eliminarCategoria(id: string) {
+    await this.prisma.categoria.delete({ where: { id } });
+    return { message: 'Categoría eliminada' };
+  }
 }
-
-
-
-
-
-
-
-
-
-}
-
-
-
-
-
-

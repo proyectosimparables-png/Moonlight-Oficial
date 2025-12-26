@@ -124,6 +124,11 @@ enum EstadoOrden {
 }
 
 
+/* -----------------------------
+   ÓRDENES
+------------------------------ */
+
+
 model Orden {
   id                     String      @id @default(uuid())
   userId                 String
@@ -160,6 +165,10 @@ model OrdenItem {
   imagenUrl  String?
   orden      Orden    @relation(fields: [ordenId], references: [id])
 }
+
+/* -----------------------------
+   HISTORIAL
+------------------------------ */
 
 model Historial {
   id         String   @id @default(uuid())

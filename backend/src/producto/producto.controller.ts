@@ -59,12 +59,13 @@ export class ProductoController {
   }
 
 
-  // Obtener todos los productos
 
   @Get('tree/por-seccion/:seccionId')
   getTreePorSeccion(@Param('seccionId') seccionId: string) {
     return this.productoService.getCategoriasTreePorSeccion(seccionId);
   }
+
+
 
 
   @Get()
@@ -184,7 +185,15 @@ export class ProductoController {
   // ✏️ PATCH
   // =======================
 
-  
+
+  @Patch('categorias/:id')
+  actualizarCategoria(
+    @Param('id') id: string,
+    @Body() data: { nombre?: string; seccionId?: string },
+  ) {
+    return this.productoService.actualizarCategoria(id, data);
+  }
+
 
   // =======================
   // 🗑 DELETE
@@ -200,5 +209,11 @@ export class ProductoController {
     return this.productoService.remove(id);
   }
 
+
   
+
+  @Delete('categorias/:id')
+  eliminarCategoria(@Param('id') id: string) {
+    return this.productoService.eliminarCategoria(id);
+  }
 }
