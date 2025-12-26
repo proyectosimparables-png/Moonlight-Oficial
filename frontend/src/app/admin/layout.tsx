@@ -5,7 +5,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import AdminNavbar from "@/components/admin/NavbarAdmin";
 import { ReactNode, useEffect, useState } from "react";
 import {  Toaster } from "react-hot-toast";
-import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
+
 
 
 

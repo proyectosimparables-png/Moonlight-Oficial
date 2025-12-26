@@ -54,13 +54,9 @@ const ProductCard = ({ id, imagenUrl, nombre, precio }: ProductCardProps) => {
         {/* Imagen */}
         <div className="relative aspect-square overflow-hidden">
           <Image
-<<<<<<< HEAD
             src={ imagenUrl || "/images/placeholder.png"}
             alt={nombre || "Imagen del producto"} 
-=======
-            src={image}
-            alt={name || "Imagen del producto"}
->>>>>>> e08fc9411680f479c42991371d840a767ab19d9e
+
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 25vw"

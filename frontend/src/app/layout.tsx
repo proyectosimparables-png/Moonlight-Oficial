@@ -16,12 +16,10 @@ import { Toaster } from "react-hot-toast";
 import clsx from "clsx";
 import { AddedToCartModal } from "@/components/cart/AddedToCartModal";
 import { FavoritesProvider } from "@/context/FavoritesContext";
-import WhatsAppFloat from "@/components/home/Whatsapp";
 import CookieConsent from "@/components/home/Cookies";
 import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
 import { NightModeProvider } from "@/context/NightModeContext";
-import Navbar from "@/components/navbar/Navbar";
-import Footer from "@/components/home/Footer";
+
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({
@@ -68,7 +66,7 @@ export default function RootLayout({
         className="antialiased bg-transparent text-[#4c3a6d] font-sans relative"
       >
         {/* Fondo mágico */}
-        <ParticlesStarfieldPremium />
+         <ParticlesStarfieldPremium />      
 
         {/* Contenido siempre por encima del canvas */}
         <AuthProvider>
@@ -76,19 +74,14 @@ export default function RootLayout({
             <CartProvider>
               <NightModeProvider>
                 <div className="relative z-10 flex flex-col min-h-screen">
-                  {/* Navbar siempre visible */}
-                  <Navbar />
+                 
+                  
 
                   {/* Contenido principal */}
                   <main className="flex-1">
                     <Provaiders>{children}</Provaiders>
                   </main>
-
-                  {/* Footer siempre visible */}
-                  <Footer />
-
                   {/* Modales y utilidades */}
-                  <WhatsAppFloat />
                   <CookieConsent />
                   <AddedToCartModal />
                   <Toaster

@@ -60,7 +60,6 @@ const Home = () => {
         <HeroCarousel />
 
         {sections.map((section) => (
-<<<<<<< HEAD
           <div key={section.id} className="my-8">
           <ProductSection
             title={section.nombre}
@@ -73,27 +72,14 @@ const Home = () => {
             }))}
           />
 
-=======
-          <div key={section.id}>
-            <ProductSection
-              title={section.nombre}
-              slug={section.slug}
-              products={section.productos.map((p) => ({
-                id: p.id,
-                name: p.nombre,
-                price: p.precio,
-                image: p.imagenUrl ?? "/placeholder.jpg",
-              }))}
-            />
->>>>>>> e08fc9411680f479c42991371d840a767ab19d9e
+
 
             {/* 🌙 Banner entre Novedades y Los más elegidos */}
             {section.nombre === "Novedades" && <MoonlightClubBanner />}
           </div>
-<<<<<<< HEAD
 
-=======
->>>>>>> e08fc9411680f479c42991371d840a767ab19d9e
+
+
         ))}
       </main>
 

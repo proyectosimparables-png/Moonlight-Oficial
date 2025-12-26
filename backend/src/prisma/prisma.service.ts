@@ -1,10 +1,8 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-<<<<<<< HEAD
-export class PrismaService extends PrismaClient implements OnModuleInit {
-=======
+
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     super();
@@ -14,8 +12,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     }
     return global.prisma;
   }
+  onModuleDestroy() {
+    throw new Error('Method not implemented.');
+  }
 
->>>>>>> e08fc9411680f479c42991371d840a767ab19d9e
+
   async onModuleInit() {
     await this.$connect();
     console.log('✅ Prisma conectado');
@@ -25,14 +26,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect();
     console.log('❌ Prisma desconectado');
   }
-<<<<<<< HEAD
+
 }
-=======
-}
+
+
 
 // @ts-ignore
 declare global {
   // @ts-ignore
   var prisma: PrismaService;
 }
->>>>>>> e08fc9411680f479c42991371d840a767ab19d9e
+
