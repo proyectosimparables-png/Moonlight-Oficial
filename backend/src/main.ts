@@ -10,7 +10,13 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // 🛡️ Activar validación automática
-  app.useGlobalPipes(new ValidationPipe());
+ app.useGlobalPipes(new ValidationPipe({
+  whitelist: true,
+  transform: true, // <--- ESTO DEBE ESTAR EN TRUE
+  transformOptions: {
+    enableImplicitConversion: true,
+  },
+}));
 
   // 🌐 Habilitar CORS para el frontend en 3001
   app.enableCors({

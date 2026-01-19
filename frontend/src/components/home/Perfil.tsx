@@ -123,16 +123,6 @@ export default function UserProfile() {
           <p>
             <span className="font-semibold">Email:</span> {user?.email}
           </p>
-
-          <p>
-            <span className="font-semibold">Autenticado con:</span>{" "}
-            {provider === "supabase" ? (
-              <span className="text-blue-700 font-medium">Google (Supabase)</span>
-            ) : (
-              <span className="text-purple-700 font-medium">Cuenta Local</span>
-            )}
-          </p>
-
           <p>
             <span className="font-semibold">Domicilio:</span>{" "}
             {user?.address ? (

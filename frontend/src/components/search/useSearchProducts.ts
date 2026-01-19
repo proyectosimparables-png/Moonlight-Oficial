@@ -1,6 +1,4 @@
-"use client";
-import { useState, useEffect } from "react";
-
+'use client';
 export interface Product {
   id: string;
   nombre: string;
@@ -8,34 +6,37 @@ export interface Product {
   precio: string;
 }
 
+// El formato que viene del Backend ahora
+export interface SearchResponse {
+  exactos: Product[];
+  relacionados: Product[];
+}
+
+import { useState, useEffect } from "react";
+
 export function useSearchProducts(query: string, delay = 500) {
-  const [results, setResults] = useState<Product[]>([]);
+  // Inicializamos con el objeto correcto
+  const [results, setResults] = useState<SearchResponse>({ exactos: [], relacionados: [] });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!query || query.length < 3) {
-      setResults([]);
+      setResults({ exactos: [], relacionados: [] });
       return;
     }
 
     const handler = setTimeout(async () => {
       try {
         setLoading(true);
-        setError(null);
-
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/productos/search?q=${encodeURIComponent(query)}`
         );
-
-        if (!res.ok) throw new Error("No se encontraron productos");
-
-        const data: Product[] = await res.json();
-        setResults(data);
+        if (res.ok) {
+          const data: SearchResponse = await res.json();
+          setResults(data);
+        }
       } catch (err) {
-        console.error(err);
-        setResults([]);
-        setError("No se encontraron productos");
+        setResults({ exactos: [], relacionados: [] });
       } finally {
         setLoading(false);
       }
@@ -44,5 +45,5 @@ export function useSearchProducts(query: string, delay = 500) {
     return () => clearTimeout(handler);
   }, [query, delay]);
 
-  return { results, loading, error };
+  return { results, loading };
 }

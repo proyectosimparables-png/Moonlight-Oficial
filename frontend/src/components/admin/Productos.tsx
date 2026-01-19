@@ -37,9 +37,9 @@ type ProductoType = {
   id: number;
   nombre: string;
   descripcion: string;
-secciones: {
-  seccion: SeccionType;
-}[];
+  secciones: {
+    seccion: SeccionType;
+  }[];
   categoria?: CategoriaType | null;
   precio: number;
   stock: number;
@@ -287,10 +287,13 @@ const Productos = () => {
                             stock: producto.stock,
                             published: producto.published,
                             imagenUrl: producto.imagenUrl ?? undefined,
-                            categoria: {
-                              id: producto.secciones[0].seccion.id,
-                              nombre: producto.secciones[0].seccion.nombre,
-                            },
+                            // Solución al error de tipos:
+                            categoria: producto.secciones?.[0]?.seccion
+                              ? {
+                                id: producto.secciones[0].seccion.id,
+                                nombre: producto.secciones[0].seccion.nombre,
+                              }
+                              : { id: "", nombre: "Sin categoría" }, // Valor por defecto para que no sea undefined
                           }}
                           onCancel={() => setProductoEditandoId(null)}
                           onUpdate={() => {
@@ -298,7 +301,6 @@ const Productos = () => {
                             fetchProductos();
                           }}
                         />
-
                       </TableCell>
                     </TableRow>
                   )}
@@ -327,13 +329,20 @@ const Productos = () => {
         >
           <div
             className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative overflow-auto"
-            style={{ maxHeight: "80vh", wordWrap: "break-word" }}
+            style={{ maxHeight: "80vh" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-semibold mb-4">Descripción del producto</h2>
-            <p className="whitespace-pre-wrap break-words">{descripcionModal}</p>
+            <h2 className="text-xl font-semibold mb-4 text-[#7b5ca2]">Descripción del producto</h2>
+
+            {/* CAMBIO AQUÍ: Renderizado de HTML con estilos para listas */}
+            <div
+              className="break-words text-gray-800 leading-relaxed
+                   [&>ul]:list-disc [&>ul]:ml-5 [&>ol]:list-decimal [&>ol]:ml-5"
+              dangerouslySetInnerHTML={{ __html: descripcionModal }}
+            />
+
             <Button
-              className="mt-6"
+              className="mt-6 bg-[#7b5ca2] hover:bg-[#654a91] text-white"
               onClick={() => setModalDescripcionOpen(false)}
             >
               Cerrar

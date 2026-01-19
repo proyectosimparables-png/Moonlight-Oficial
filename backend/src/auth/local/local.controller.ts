@@ -56,6 +56,28 @@ export class LocalAuthController {
     return { message: "Usuario registrado y autenticado", token };
   }
 
+@UseGuards(UnifiedAuthGuard) // Necesitamos que esté logueado (acaba de registrarse)
+  @Post("verify-email")
+  async verifyEmail(
+    @Body() body: { code: string },
+    @Req() req
+  ) {
+    // req.user.id viene del UnifiedAuthGuard
+    await this.service.verifyCode(req.user.id, body.code);
+    
+    return { message: "Email verificado con éxito" };
+  }
+
+
+  // para reenviar el código de verificación
+@UseGuards(UnifiedAuthGuard)
+@Post("resend-verification")
+async resendCode(@Req() req) {
+  return await this.service.resendVerificationCode(req.user.id);
+}
+
+
+
   // 2. ✅ Método Login (Crear Cookie)
   @Post("login")
   async login(

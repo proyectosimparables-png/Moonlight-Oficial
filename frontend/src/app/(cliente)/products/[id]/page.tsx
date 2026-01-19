@@ -1,13 +1,19 @@
-// app/products/[id]/page.tsx
-
+// app/(cliente)/products/[id]/page.tsx
 import DetailsProducts from "@/components/DetailsProducts";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
-export default async function ProductPage({ params }: PageProps) {
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  return <DetailsProducts productId={id} />;
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/${id}`, {
+    cache: 'no-store'
+  });
+
+  if (!res.ok) {
+    return <div className="p-10 text-center">Producto no encontrado en el servidor</div>;
+  }
+
+  const product = await res.json();
+
+  // ✅ CAMBIO CLAVE: Cambia 'productId' por 'initialProduct'
+  return <DetailsProducts initialProduct={product} />;
 }

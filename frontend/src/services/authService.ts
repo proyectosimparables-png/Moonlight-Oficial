@@ -36,3 +36,27 @@ export async function getLocalUser() {
   if (!res.ok) return null;
   return await res.json();
 }
+export async function verifyEmailLocal(code: string) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/local/verify-email`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Código inválido o expirado");
+  }
+
+  return true;
+}
+
+export async function resendCodeLocal() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/local/resend-verification`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("No se pudo reenviar el código");
+  return true;
+}

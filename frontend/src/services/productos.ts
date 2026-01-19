@@ -1,72 +1,64 @@
 "use server";
 
+import { Producto } from "@/types/types-productos";
+
 
 
 // ✅ Actualizar producto flexible (con o sin imagen)
-export async function updateProductoFlexible(
-  id: string,
-  data: {
-    nombre: string;
-    descripcion: string;
-    precio: number;
-    stock: number;
-    categoriaId?: string;
-    imagenes?: File[];
-  }
-) {
-  // Si hay imágenes, usamos FormData (como en createProducto)
+export async function updateProductoFlexible(id: string, data: any) {
+  // CASO A: Hay imágenes nuevas (FormData)
   if (data.imagenes && data.imagenes.length > 0) {
     const formData = new FormData();
-
-    // Agregar imágenes al FormData
-    data.imagenes.forEach((img) => formData.append("files", img));
-
-    // Agregar el resto de los campos
     formData.append("nombre", data.nombre);
-    formData.append("descripcion", data.descripcion);
+    formData.append("descripcion", data.descripcion || "");
     formData.append("precio", String(data.precio));
     formData.append("stock", String(data.stock));
 
-
-    // Hacer la petición PUT al endpoint /upload
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/productos/${id}/upload`,
-      {
-        method: "PUT",
-        body: formData,
-      }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Error actualizando producto con imagen: ${errText}`);
+    // Solo adjuntar si existe y es string
+    if (data.categoriaId && typeof data.categoriaId === "string") {
+      formData.append("categoriaId", data.categoriaId);
     }
 
+    if (data.seccionesIds && Array.isArray(data.seccionesIds)) {
+      data.seccionesIds.forEach((sId: string) => {
+        formData.append("seccionesIds", sId);
+      });
+    }
+
+    data.imagenes.forEach((file: File) => {
+      formData.append("files", file);
+    });
+
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/${id}/upload`, {
+      method: "PUT",
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error(await res.text());
     return res.json();
   }
 
-  // Si no hay imágenes, usamos JSON como antes
+  // CASO B: JSON puro (Sin imágenes)
+  const { imagenes, ...rest } = data;
+
+  // 🛡️ LIMPIEZA DINÁMICA: Eliminamos cualquier propiedad que sea null o undefined
+  const cleanData = Object.fromEntries(
+    Object.entries(rest).filter(([_, v]) => v != null)
+  );
+
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nombre: data.nombre,
-      descripcion: data.descripcion,
-      precio: data.precio,
-      stock: data.stock,
-      categoriaId: data.categoriaId,
-    }),
+    body: JSON.stringify(cleanData),
   });
 
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Error actualizando producto: ${errText}`);
+    const errorText = await res.text();
+    throw new Error(errorText);
   }
 
   return res.json();
 }
-
-
 export async function createProducto(formData: FormData) {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/productos/upload-producto`,
@@ -144,17 +136,57 @@ export async function getSecciones() {
 
   return data;
 }
+/////////////Para publico//////////////////////////////////////////////////////
+export async function getProductosPublicos() {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/productos`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) throw new Error("Error cargando productos públicos");
+  return res.json();
+}
+
+
+////////////////Para admin/////////////////////////////////////////////////////
+export async function getProductosAdmin(
+  filters?: { seccionId?: string; categoriaId?: string }
+) {
+  const params = new URLSearchParams();
+
+  if (filters?.seccionId) params.append("seccionId", filters.seccionId);
+  if (filters?.categoriaId) params.append("categoriaId", filters.categoriaId);
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/productos/admin?${params.toString()}`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) throw new Error("Error cargando productos admin");
+  return res.json();
+}
+
+
+
+//////////////producto individual///////////////////////////////////////////////////
+export async function getProductoAdminById(id: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/productos/admin/${id}`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) throw new Error("Producto no encontrado");
+  return res.json();
+}
 
 
 
 //Categorias en arbol para el formulario//////////////////////////////////////////////////////////////////////////////
 export async function getCategoriasTree(seccionId: string) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/productos/categorias/tree/por-seccion/${seccionId}`,
-    { cache: "no-store" }
-  );
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tree/por-seccion/${seccionId}`);
 
-  if (!res.ok) throw new Error("Error cargando árbol de categorías");
+  if (res.status === 404) return []; // Si no hay nada, devolvemos array vacío en vez de tirar error
+  if (!res.ok) throw new Error("Error cargando categorías");
 
   return res.json();
 }
@@ -176,18 +208,7 @@ export async function getProductos() {
   return res.json();
 }
 
-// services/productos.ts
-export interface Producto {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  imagenes: { url: string }[];
-  categoria: {
-    nombre: string;
-    seccion: { nombre: string };
-  };
-}
+
 
 /**
  * Busca productos por nombre o descripción

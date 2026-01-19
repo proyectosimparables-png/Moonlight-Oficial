@@ -11,7 +11,7 @@ interface Product {
   id: string;
   nombre: string;
   precio: string;
-  imagenUrl?: string;
+  imagenes?: string[];
 }
 
 interface Section {
@@ -33,7 +33,7 @@ const Home = () => {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`);
         if (!res.ok) throw new Error("Error al obtener secciones");
-       
+
 
         const data: Section[] = await res.json();
 
@@ -61,16 +61,20 @@ const Home = () => {
 
         {sections.map((section) => (
           <div key={section.id} className="my-8">
-          <ProductSection
-            title={section.nombre}
-            slug={section.slug} 
-            products={section.productos.map((p) => ({
-              id: p.id,
-              nombre: p.nombre,
-              precio: p.precio,
-              imagenUrl: p.imagenUrl ?? "/placeholder.jpg",
-            }))}
-          />
+            <ProductSection
+              title={section.nombre}
+              slug={section.slug}
+              products={section.productos.map((p) => ({
+                id: p.id,
+                nombre: p.nombre,
+                precio: p.precio,
+                // Aquí está el truco: enviamos el array de imágenes
+                // Si p.imagenes no existe, enviamos un array con el placeholder
+                imagenes: p.imagenes && p.imagenes.length > 0
+                  ? p.imagenes
+                  : ["/images/placeholder.png"]
+              }))}
+            />
 
 
 

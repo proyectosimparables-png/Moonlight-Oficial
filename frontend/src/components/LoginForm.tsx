@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
+import { Eye, EyeOff } from "lucide-react"; // Importamos iconos
 
 export default function LoginForm() {
     const router = useRouter();
     const { loginLocal } = useAuth();
+    const [showPassword, setShowPassword] = useState(false); // ESTADO NUEVO
     const [form, setForm] = useState({
         email: "",
         password: ""
@@ -21,7 +22,6 @@ export default function LoginForm() {
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
-
         try {
             await loginLocal(form.email, form.password);
             toast.success("Inicio de sesión correcto 🎉");
@@ -33,17 +33,17 @@ export default function LoginForm() {
     };
 
     const handleGoogleLogin = async () => {
-        const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + "/auth/callback", }, }); if (error) console.error("Error al iniciar sesión:", error);
+        const { error } = await supabase.auth.signInWithOAuth({ 
+            provider: "google", 
+            options: { redirectTo: window.location.origin + "/auth/callback" } 
+        }); 
+        if (error) console.error("Error al iniciar sesión:", error);
     };
 
     return (
-       <div className="flex justify-center items-center min-h-screen bg-transparent p-4">
-
+        <div className="flex justify-center items-center min-h-screen bg-transparent p-4">
             <div className="w-full max-w-md bg-white border border-[#ddd1f2] rounded-2xl shadow-xl p-8 text-center">
-
-                <h2 className="text-3xl font-semibold text-[#6a46a7] mb-6">
-                    Iniciar Sesión
-                </h2>
+                <h2 className="text-3xl font-semibold text-[#6a46a7] mb-6">Iniciar Sesión</h2>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input
@@ -51,16 +51,26 @@ export default function LoginForm() {
                         type="email"
                         placeholder="Email"
                         onChange={handleChange}
-                        className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-[#7b5ca2]"
+                        className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-[#7b5ca2] focus:outline-none"
                     />
 
-                    <input
-                        name="password"
-                        type="password"
-                        placeholder="Contraseña"
-                        onChange={handleChange}
-                        className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-[#7b5ca2]"
-                    />
+                    {/* CONTENEDOR DE CONTRASEÑA */}
+                    <div className="relative">
+                        <input
+                            name="password"
+                            type={showPassword ? "text" : "password"} // TIPO DINÁMICO
+                            placeholder="Contraseña"
+                            onChange={handleChange}
+                            className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-[#7b5ca2] focus:outline-none pr-12"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#7b5ca2] transition-colors"
+                        >
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
+                    </div>
 
                     <button
                         type="submit"

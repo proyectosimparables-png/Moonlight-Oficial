@@ -21,7 +21,7 @@ export const NavbarDesktop = () => {
   };
 
   const irAComentar = () => {
-    router.push("/cliente/comentar");
+    router.push("/comentar");
   };
 
   return (
@@ -279,31 +279,31 @@ export const NavbarDesktop = () => {
           <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2]">
             <DropdownMenu.Item
               className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
-              onClick={() => router.push("/cliente/como-comprar")}
+              onClick={() => router.push("/como-comprar")}
             >
               Guia de Compra
             </DropdownMenu.Item>
             <DropdownMenu.Item
               className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
-              onClick={() => router.push("/cliente/politicas-de-compras")}
+              onClick={() => router.push("/politicas-de-compras")}
             >
               Políticas de Compra
             </DropdownMenu.Item>
             <DropdownMenu.Item
               className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
-              onClick={() => router.push("/cliente/guia-de-talles")}
+              onClick={() => router.push("/guia-de-talles")}
             >
               Guia de Talles
             </DropdownMenu.Item>
             <DropdownMenu.Item
               className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
-              onClick={() => router.push("/cliente/mayoristas")}
+              onClick={() => router.push("/mayoristas")}
             >
               Mayoristas
             </DropdownMenu.Item>
             <DropdownMenu.Item
               className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
-              onClick={() => router.push("/cliente/preguntas-frecuentes")}
+              onClick={() => router.push("/preguntas-frecuentes")}
             >
               Preguntas Frecuentes
             </DropdownMenu.Item>

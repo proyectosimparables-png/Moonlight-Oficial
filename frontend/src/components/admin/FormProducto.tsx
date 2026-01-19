@@ -6,6 +6,7 @@ import {
   publicarProducto,
   getSecciones,
   getCategorias,
+  getCategoriasTree,
 } from "@/services/productos";
 import toast from "react-hot-toast";
 import EditorDescripcion from "./EditorDescripcion";
@@ -49,18 +50,22 @@ export default function FormProducto() {
     getSecciones().then(setSecciones).catch(console.error);
   }, []);
 
-  useEffect(() => {
-    if (seccionesSeleccionadas.length === 0) {
-      setCategoriasData([]);
-      setCategoriasSeleccionadas([]);
-      return;
-    }
+ useEffect(() => {
+  // Solo disparar si tenemos un ID real y largo (típico de UUID o MongoDB ID)
+  if (!seccionesSeleccionadas[0] || seccionesSeleccionadas[0].length < 10) {
+    setCategoriasData([]);
+    return;
+  }
 
-    // Traemos el árbol de categorías de la sección elegida
-    getCategorias(seccionesSeleccionadas[0])
-      .then(setCategoriasData)
-      .catch(console.error);
-  }, [seccionesSeleccionadas]);
+  getCategoriasTree(seccionesSeleccionadas[0])
+    .then((data) => {
+      if (data) setCategoriasData(data);
+    })
+    .catch((err) => {
+      console.error("Error en el componente:", err);
+      toast.error("No se pudieron cargar las categorías");
+    });
+}, [seccionesSeleccionadas]);
 
   /* ---------------- IMÁGENES ---------------- */
 

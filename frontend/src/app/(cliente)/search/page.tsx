@@ -1,26 +1,25 @@
-import { SearchResults } from "@/components/search/SearchResult";
-import { Product } from "@/components/search/useSearchProducts";
+// src/app/(cliente)/search/page.tsx
+
+import { SearchResults } from "@/components/search";
 
 export default async function SearchPage(props: {
   searchParams: { q?: string } | Promise<{ q?: string }>;
 }) {
-  // ✅ Compatibilidad con Next 14 y 15
-  const params = props.searchParams instanceof Promise
-    ? await props.searchParams
-    : props.searchParams;
-
+  const params = props.searchParams instanceof Promise ? await props.searchParams : props.searchParams;
   const query = params.q || "";
-  let products: Product[] = [];
+  
+  // Ajustamos el estado inicial al objeto que devuelve el service
+  let searchData = { exactos: [], relacionados: [] };
 
   if (query.length > 0) {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/productos/search?q=${encodeURIComponent(query)}`,
       { cache: "no-store" }
     );
-    if (res.ok) products = await res.json();
+    if (res.ok) {
+      searchData = await res.json();
+    }
   }
-
-  const hasResults = products.length > 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -28,21 +27,12 @@ export default async function SearchPage(props: {
         Resultados para: “{query}”
       </h1>
 
-      {hasResults ? (
-        <p className="text-gray-600 mb-6">
-          Se encontraron{" "}
-          <span className="font-semibold text-[#7b5ca2]">
-            {products.length}
-          </span>{" "}
-          productos relacionados con “{query}”.
-        </p>
-      ) : (
-        <p className="text-gray-500 mb-6">
-          No se encontraron productos para “{query}”.
-        </p>
-      )}
+      <p className="text-gray-600 mb-6">
+        Encontramos <span className="font-semibold text-[#7b5ca2]">{searchData.exactos.length}</span> resultados directos.
+      </p>
 
-      <SearchResults products={products} />
+      {/* Le pasamos el objeto completo al componente */}
+      <SearchResults data={searchData} />
 
       <div className="mt-10 text-center">
         <a

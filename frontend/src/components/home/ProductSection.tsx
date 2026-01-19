@@ -11,7 +11,7 @@ export interface ProductSectionProps {
   slug: string;
   products: Array<{
     id: string;
-    imagenUrl?: string;
+    imagenes: string[];
     nombre: string;
     precio: string;
 
@@ -24,9 +24,8 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
 
   return (
     <section
-      className={`py-12 transition-colors duration-700 ${
-        isNight ? "text-[#f3e9ff]" : "text-[#6c5b7b]"
-      }`}
+      className={`py-12 transition-colors duration-700 ${isNight ? "text-[#f3e9ff]" : "text-[#6c5b7b]"
+        }`}
     >
       <div className="container mx-auto px-4">
         {/* Título y botón centrados */}
@@ -42,9 +41,8 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
 
           {/* LÍNEA DECORATIVA */}
           <div
-            className={`w-16 h-[2px] mb-3 transition-colors duration-700 ${
-              isNight ? "bg-[#f0dfff]/50" : "bg-[#7b5ca2]/40"
-            }`}
+            className={`w-16 h-[2px] mb-3 transition-colors duration-700 ${isNight ? "bg-[#f0dfff]/50" : "bg-[#7b5ca2]/40"
+              }`}
           ></div>
 
           {/* BOTÓN "VER TODO" */}
@@ -52,10 +50,9 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
             <Button
               variant="ghost"
               className={`transition-colors duration-700 flex items-center
-                ${
-                  isNight
-                    ? "text-[#f3e9ff] hover:bg-[#f3e9ff]/20 hover:text-white"
-                    : "text-[#7b5ca2] hover:bg-[#7b5ca2]/80 hover:text-white"
+                ${isNight
+                  ? "text-[#f3e9ff] hover:bg-[#f3e9ff]/20 hover:text-white"
+                  : "text-[#7b5ca2] hover:bg-[#7b5ca2]/80 hover:text-white"
                 }
               `}
             >
@@ -68,21 +65,22 @@ const ProductSection = ({ title, slug, products }: ProductSectionProps) => {
         {/* Grilla de productos */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
 
-       
+
           {products
             .slice(-4)
             .map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                imagenUrl={product.imagenUrl || "/placeholder.jpg"}
-                nombre={product.nombre}
-                precio={product.precio}
-              />
+            <ProductCard
+            key={product.id} // Siempre agrega una key única
+            id={product.id}
+            nombre={product.nombre}
+            precio={product.precio}
+            imagenUrl={product.imagenes?.[0]} // Usamos el primer elemento
+            imagenHoverUrl={product.imagenes?.[1]} // Usamos el segundo elemento
+          />
             ))}
-          </div>
         </div>
-   
+      </div>
+
     </section>
   );
 };

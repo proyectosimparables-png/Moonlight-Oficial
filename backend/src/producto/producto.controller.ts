@@ -30,57 +30,18 @@ export class ProductoController {
   constructor(
     private readonly productoService: ProductoService,
     private readonly cloudinaryService: CloudinaryService,
-  ) { }
+  ) {}
 
   // =======================
-  // 🔍 GET
+  // 🔍 GET – PÚBLICO
   // =======================
-
-  @Get('secciones')
-  getSecciones() {
-    return this.productoService.getSecciones();
-  }
-
-  @Get('seccion/:slug')
-  async getSeccionPorSlug(@Param('slug') slug: string) {
-    const seccion = await this.productoService.getSeccionConProductos(slug);
-    if (!seccion) {
-      throw new NotFoundException(
-        `No se encontró la sección con slug "${slug}"`,
-      );
-    }
-    return seccion;
-  }
-
-  @Get('categorias')
-  getCategorias(@Query('seccionId') seccionId?: string) {
-    if (!seccionId) return this.productoService.getTodasLasCategorias();
-    return this.productoService.getCategoriasPorSeccion(seccionId);
-  }
-
-
-
-  @Get('tree/por-seccion/:seccionId')
-  getTreePorSeccion(@Param('seccionId') seccionId: string) {
-    return this.productoService.getCategoriasTreePorSeccion(seccionId);
-  }
-
-
-
 
   @Get()
-  findAll(
-    @Query('published') published?: string,
+  findAllPublic(
     @Query('seccionId') seccionId?: string,
     @Query('categoriaId') categoriaId?: string,
   ) {
-    const isPublished =
-      published === 'true'
-        ? true
-        : published === 'false'
-          ? false
-          : undefined;
-    return this.productoService.findAll(isPublished, seccionId, categoriaId);
+    return this.productoService.findAllPublic(seccionId, categoriaId);
   }
 
   @Get('search')
@@ -89,23 +50,98 @@ export class ProductoController {
     return this.productoService.searchProducts(query.trim());
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const producto = await this.productoService.findAll(undefined, undefined, id);
-    if (!producto) {
-      throw new NotFoundException('Producto no encontrado');
+  @Get('seccion/:slug')
+  async getSeccionPorSlug(@Param('slug') slug: string) {
+    const seccion = await this.productoService.getSeccionConProductos(slug);
+    if (!seccion) {
+      throw new NotFoundException(`No se encontró la sección con slug "${slug}"`);
     }
-    return producto;
+    return seccion;
   }
 
   // =======================
-  // ➕ POST
+  // 🔍 GET – ADMIN
   // =======================
+
+  @Get('admin')
+  findAllAdmin(
+    @Query('seccionId') seccionId?: string,
+    @Query('categoriaId') categoriaId?: string,
+  ) {
+    return this.productoService.findAllAdmin(seccionId, categoriaId);
+  }
+
+  @Get('admin/:id')
+  findOneAdmin(@Param('id') id: string) {
+    return this.productoService.findOneById(id);
+  }
+
+  // =======================
+  // 📦 SECCIONES / CATEGORÍAS
+  // =======================
+
+  @Get('secciones')
+  getSecciones() {
+    return this.productoService.getSecciones();
+  }
 
   @Post('secciones')
   crearSeccion(@Body() data: CreateSeccionDto) {
     return this.productoService.crearSeccion(data);
   }
+
+  @Put('secciones/:id')
+  actualizarSeccion(
+    @Param('id') id: string,
+    @Body() data: Partial<CreateSeccionDto>,
+  ) {
+    return this.productoService.actualizarSeccion(id, data);
+  }
+
+  @Delete('secciones/:id')
+  eliminarSeccion(@Param('id') id: string) {
+    return this.productoService.eliminarSeccion(id);
+  }
+
+  @Get('categorias')
+  getCategorias(@Query('seccionId') seccionId?: string) {
+    if (!seccionId) return this.productoService.getTodasLasCategorias();
+    return this.productoService.getCategoriasPorSeccion(seccionId);
+  }
+
+  @Get('tree/por-seccion/:seccionId')
+  getTreePorSeccion(@Param('seccionId') seccionId: string) {
+    return this.productoService.getCategoriasTreePorSeccion(seccionId);
+  }
+//get para obtener producto por id
+@Get(':id') // Esto permite /productos/3d89...
+findOne(@Param('id') id: string) {
+  return this.productoService.findOne(id);
+}
+
+  @Post('categorias')
+  crearCategoria(
+    @Body() data: { nombre: string; seccionSlug: string; parentId?: string },
+  ) {
+    return this.productoService.crearCategoria(data);
+  }
+
+  @Patch('categorias/:id')
+  actualizarCategoria(
+    @Param('id') id: string,
+    @Body() data: { nombre?: string; seccionId?: string },
+  ) {
+    return this.productoService.actualizarCategoria(id, data);
+  }
+
+  @Delete('categorias/:id')
+  eliminarCategoria(@Param('id') id: string) {
+    return this.productoService.eliminarCategoria(id);
+  }
+
+  // =======================
+  // ➕ POST – PRODUCTO
+  // =======================
 
   @Post()
   create(@Body() dto: CreateProductoDto) {
@@ -131,31 +167,20 @@ export class ProductoController {
     return this.productoService.create(body, imagenesUrls);
   }
 
-  @Post('categorias')
-  crearCategoria(
-    @Body() data: { nombre: string; seccionSlug: string; parentId?: string },
-  ) {
-    return this.productoService.crearCategoria(data);
-  }
+
+
+
 
   // =======================
-  // ✏️ PUT
+  // ✏️ PUT – ADMIN
   // =======================
-
-  @Put('secciones/:id')
-  actualizarSeccion(
-    @Param('id') id: string,
-    @Body() data: Partial<CreateSeccionDto>,
-  ) {
-    return this.productoService.actualizarSeccion(id, data);
-  }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: CreateProductoDto) {
     return this.productoService.updateProductoFlexible(id, dto);
   }
 
-  @Put(':id/upload')
+ @Put(':id/upload')
   @UseInterceptors(FilesInterceptor('files'))
   async updateProductoWithImages(
     @Param('id') id: string,
@@ -182,38 +207,11 @@ export class ProductoController {
   }
 
   // =======================
-  // ✏️ PATCH
+  // 🗑 DELETE – ADMIN
   // =======================
-
-
-  @Patch('categorias/:id')
-  actualizarCategoria(
-    @Param('id') id: string,
-    @Body() data: { nombre?: string; seccionId?: string },
-  ) {
-    return this.productoService.actualizarCategoria(id, data);
-  }
-
-
-  // =======================
-  // 🗑 DELETE
-  // =======================
-
-  @Delete('secciones/:id')
-  eliminarSeccion(@Param('id') id: string) {
-    return this.productoService.eliminarSeccion(id);
-  }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.productoService.remove(id);
-  }
-
-
-  
-
-  @Delete('categorias/:id')
-  eliminarCategoria(@Param('id') id: string) {
-    return this.productoService.eliminarCategoria(id);
   }
 }

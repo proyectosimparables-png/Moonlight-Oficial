@@ -14,6 +14,8 @@ export const useProductDetails = (productId: string) => {
                 const res = await fetch(
                     `${process.env.NEXT_PUBLIC_API_URL}/productos/${productId}`
                 );
+                console.log("ID recibido:", productId);
+                console.log("Producto desde API:", product);
                 if (!res.ok) throw new Error("Producto no encontrado");
 
                 const data: Producto = await res.json();
@@ -30,3 +32,5 @@ export const useProductDetails = (productId: string) => {
 
     return { product, loading, error };
 };
+
+

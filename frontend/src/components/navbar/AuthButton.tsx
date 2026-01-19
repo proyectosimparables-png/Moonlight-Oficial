@@ -87,21 +87,21 @@ export const AuthButton = () => {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem
-            onClick={() => router.push("/cliente/favoritos")}
+            onClick={() => router.push("/favoritos")}
             className="cursor-pointer text-[#6c5b7b]"
           >
             <Heart className="h-4 w-4 mr-2 text-[#6c5b7b]" /> Favoritos
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => router.push("/cliente/historial")}
+            onClick={() => router.push("/historial")}
             className="cursor-pointer text-[#6c5b7b]"
           >
             <Clock className="h-4 w-4 mr-2 text-[#6c5b7b]" /> Historial
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => router.push("/cliente/perfil")}
+            onClick={() => router.push("/perfil")}
             className="cursor-pointer text-[#6c5b7b]"
           >
             <UserCircle className="h-4 w-4 mr-2 text-[#6c5b7b]" /> Mi perfil

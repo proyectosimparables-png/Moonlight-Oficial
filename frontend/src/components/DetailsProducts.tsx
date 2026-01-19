@@ -1,32 +1,64 @@
-// frontend/src/components/DetailsProducts.tsx
 "use client";
 
 import Image from "next/image";
 import Head from "next/head";
-
 import { QuantitySelector } from "@/components/cart/QuantitySelector";
 import { useProductDetails } from "@/services/useProductDetails";
 import { useCart } from "@/context/CartContext";
-import { useState } from "react";
-import { formatPrice } from "@/utils/formatPrice";
+import { useState, useEffect } from "react";
 import { AddedToCartModal } from "@/components/cart/AddedToCartModal";
+import { Producto } from "@/types/types-productos";
 
 interface DetailsProductsProps {
-  productId: string;
+  initialProduct: Producto;
 }
 
-export default function DetailsProducts({ productId }: DetailsProductsProps) {
-  const { product, loading, error } = useProductDetails(productId);
+export default function DetailsProducts({ initialProduct }: DetailsProductsProps) {
+  const product = initialProduct;
   const { addItem, lastAddedItem } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [processing, setProcessing] = useState(false); // Para deshabilitar botones mientras agrega
+  const [processing, setProcessing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string>("");
+
+  const { loading, error } = useProductDetails(String(product.id));
+
+  useEffect(() => {
+    if (product) {
+      // Priorizamos la imagen principal y luego las del array
+      const initialImage = product.imagenUrl || (product.imagenes && product.imagenes.length > 0 ? product.imagenes[0].url : "");
+      setSelectedImage(initialImage);
+    }
+  }, [product]);
+
+  // 💰 FUNCIÓN CORREGIDA: Formatea el precio manteniendo el valor real
+  const formatPriceClean = (value: any) => {
+    if (!value) return "$ 0";
+
+    // Si viene como string "$ 50.000,00", extraemos solo los números
+    // Pero tenemos cuidado de no romper miles
+    let numericValue = value;
+    if (typeof value === "string") {
+      // Eliminamos el símbolo $, espacios y los decimales tras la coma
+      const baseValue = value.split(',')[0];
+      numericValue = Number(baseValue.replace(/[^0-9]/g, ""));
+    }
+
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      minimumFractionDigits: 0,
+    }).format(numericValue);
+  };
 
   if (loading) return <p className="p-6">Cargando...</p>;
   if (error) return <p className="p-6">Error: {error}</p>;
   if (!product) return <p className="p-6">Producto no encontrado</p>;
 
-  const mainImage = product.imagenUrl || product.imagenes?.[0] || null;
-  const precio = formatPrice(product.precio);
+  // 📸 GALERÍA CORREGIDA: Aseguramos que todas las imágenes del array se muestren
+  const allImages = [
+    ...(product.imagenUrl ? [product.imagenUrl] : []),
+    ...(product.imagenes?.map((img: any) => img.url) || []) // 👈 .url es la clave
+  ].filter((url, index, self) => url && self.indexOf(url) === index);
 
   const handleAddToCart = async () => {
     setProcessing(true);
@@ -40,72 +72,108 @@ export default function DetailsProducts({ productId }: DetailsProductsProps) {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#faf5e5" }}>
+    <div className="min-h-screen" style={{ backgroundColor: "#faf5e500" }}>
       <Head>
-        <title>{product.nombre} | Mi Tienda</title>
-        <meta name="description" content={product.descripcion} />
+        <title>{product.nombre} | Moonlight</title>
       </Head>
 
-      <div className="container mx-auto p-4 flex flex-col md:flex-row gap-8">
-        {/* --------------------- IMAGEN --------------------- */}
-        <div className="md:w-1/2 flex flex-col gap-4">
-          {mainImage ? (
-            <Image
-              src={mainImage}
-              alt={product.nombre}
-              width={400}
-              height={400}
-              className="rounded-lg shadow-md"
-              style={{ border: "3px solid #d8c4fa" }}
-            />
-          ) : (
-            <div className="w-full h-48 bg-gray-300 flex items-center justify-center rounded">
-              Sin imagen
+      <div className="container mx-auto p-6 lg:p-12">
+        <div className="flex flex-col lg:flex-row gap-12 items-start justify-center">
+
+          {/* --- COLUMNA IZQUIERDA: IMÁGENES --- */}
+          <div className="md:w-1/2 flex flex-col gap-4">
+            {/* Imagen Principal */}
+           <div className="relative aspect-square w-full bg-white rounded-2xl overflow-hidden shadow-lg border-2 border-[#d8c4fa]">
+              {selectedImage ? (
+                <Image
+                  src={selectedImage}
+                  alt={product.nombre}
+                  fill
+                  priority
+                  className="object-cover transition-all duration-300"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">Sin imagen</div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* --------------------- INFO --------------------- */}
-        <div className="md:w-1/2 flex flex-col gap-4">
-          <h1 className="text-3xl font-bold text-purple-700">
-            {product.nombre}
-          </h1>
-          <p className="text-2xl font-semibold text-green-700">{precio}</p>
+            {/* Miniaturas: Ahora sí aparecerán */}
+            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+              {allImages.map((imgUrl, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(imgUrl)}
+                  className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === imgUrl
+                      ? "border-[#7b5ca2] scale-105 shadow-md"
+                      : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                >
+                  <Image
+                    src={imgUrl}
+                    alt={`Miniatura ${index}`}
+                    fill
+                    className="object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          </div>
 
-          {/* --------------------- SELECTOR DE CANTIDAD --------------------- */}
-          {product.stock && product.stock > 0 && (
-            <QuantitySelector
-              quantity={quantity}
-              stock={product.stock}
-              onChange={setQuantity}
-              disabled={processing}
-            />
-          )}
+          {/* COLUMNA DERECHA: INFO */}
+          <div className="flex-1 max-w-xl">
+            <nav className="text-sm text-gray-500 mb-2 font-medium">
+              Producto / <span className="text-[#7b5ca2]">{product.nombre}</span>
+            </nav>
 
-          {/* --------------------- BOTÓN AGREGAR AL CARRITO --------------------- */}
-          <button
-            className={`mt-2 px-4 py-2 rounded text-white transition ${
-              product.stock === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-purple-600 hover:bg-purple-700"
-            }`}
-            onClick={handleAddToCart}
-            disabled={product.stock === 0 || processing}
-          >
-            {product.stock === 0 ? "Agotado" : "Agregar al carrito"}
-          </button>
+            <h1 className="text-4xl font-serif font-bold text-[#6c5b7b] mb-2 uppercase tracking-tight">
+              {product.nombre}
+            </h1>
 
-          <hr className="border-purple-200 my-2" />
-          <div>
-            <h3 className="text-xl font-semibold text-purple-700">
-              Descripción
-            </h3>
-            <p className="text-gray-700">{product.descripcion}</p>
+            <p className="text-3xl font-semibold text-[#7b5ca2] mb-6">
+              {formatPriceClean(product.precio)}
+            </p>
+
+            <div className="bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-purple-100 shadow-sm mb-8">
+              <label className="block text-sm font-bold text-[#6c5b7b] mb-4 uppercase tracking-wider">Cantidad</label>
+              {product.stock && product.stock > 0 ? (
+                <div className="flex flex-col gap-5">
+                  <QuantitySelector
+                    quantity={quantity}
+                    stock={product.stock}
+                    onChange={setQuantity}
+                    disabled={processing}
+                  />
+                  <button
+                    className={`w-full py-4 rounded-2xl font-bold text-lg uppercase tracking-widest transition-all shadow-lg ${processing
+                        ? "bg-gray-400 cursor-wait"
+                        : "bg-[#7b5ca2] hover:bg-[#665ca2] text-white hover:shadow-purple-200"
+                      }`}
+                    onClick={handleAddToCart}
+                    disabled={processing}
+                  >
+                    {processing ? "Agregando..." : "Agregar al carrito"}
+                  </button>
+                </div>
+              ) : (
+                <div className="py-4 px-6 bg-red-50 text-red-500 rounded-2xl font-bold text-center border border-red-100">
+                  PRODUCTO AGOTADO
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-[#6c5b7b] border-b-2 border-purple-100 pb-2 uppercase tracking-widest">
+                Descripción
+              </h3>
+              <div
+                className="prose prose-purple text-gray-700 leading-relaxed font-medium"
+                dangerouslySetInnerHTML={{ __html: product.descripcion }}
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* --------------------- MODAL AGREGADO --------------------- */}
       {lastAddedItem && <AddedToCartModal />}
     </div>
   );

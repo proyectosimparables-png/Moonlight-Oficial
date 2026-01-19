@@ -46,12 +46,25 @@ export class CreateProductoDto {
   @IsString()
   categoriaId: string;
 
-  // 👇 porque llega como JSON string desde FormData
-  @Transform(({ value }) =>
-    typeof value === 'string' ? JSON.parse(value) : value,
-  )
-  @IsArray()
-  seccionesIds: string[];
+  @Transform(({ value }) => {
+  // 1. Si ya es un array, lo devolvemos tal cual
+  if (Array.isArray(value)) return value;
+  
+  // 2. Si es un string, intentamos ver si es un JSON (como "[1,2]") 
+  // o si es un ID simple "123"
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e) {
+      // Si no es JSON (es un ID simple), lo metemos en un array
+      return [value];
+    }
+  }
+  return value;
+})
+@IsArray()
+seccionesIds: string[];
 
   @IsOptional()
   published?: boolean;

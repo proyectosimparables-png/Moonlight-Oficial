@@ -77,4 +77,17 @@ export const CartService = {
         if (!res.ok) throw new Error(data.message || 'Error clearing cart');
         return data;
     },
+
+async syncWithBackend(userId: string, items: { productoId: string; cantidad: number }[]) {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ordenes/carrito`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, items }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error sincronizando carrito');
+        return data;
+    },
+
+
 };
