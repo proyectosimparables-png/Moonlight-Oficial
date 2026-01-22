@@ -253,6 +253,27 @@ export async function getCategoriasBySeccion(seccionId?: string) {
 
   return res.json();
 }
+
+// PUBLICO con filtros
+export async function getProductosPublicosFiltrados(
+  filters?: { seccionId?: string; categoriaId?: string }
+) {
+  const params = new URLSearchParams();
+
+  if (filters?.seccionId) params.append("seccionId", filters.seccionId);
+  if (filters?.categoriaId) params.append("categoriaId", filters.categoriaId);
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/productos?${params.toString()}`,
+    { cache: "no-store" }
+  );
+
+  if (!res.ok) throw new Error("Error cargando productos públicos");
+  return res.json();
+}
+
+
+
 // Eliminar una categoría
 export async function eliminarCategoria(id: string) {
   const res = await fetch(

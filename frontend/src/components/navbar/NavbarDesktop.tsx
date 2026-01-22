@@ -69,7 +69,9 @@ export const NavbarDesktop = () => {
             {/* Ver todos los productos */}
             <DropdownMenu.Item
               className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
-              onClick={() => router.push("/productos")}
+              onClick={() =>
+                router.push("/vistas-de-productos/todos-los-productos")
+              }
             >
               Ver todos los productos
             </DropdownMenu.Item>
@@ -130,7 +132,7 @@ export const NavbarDesktop = () => {
                                   className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
                                   onClick={() =>
                                     router.push(
-                                      `/productos/bts/${member.toLowerCase()}`
+                                      `/productos/bts/${member.toLowerCase()}`,
                                     )
                                   }
                                 >
@@ -155,7 +157,7 @@ export const NavbarDesktop = () => {
                               router.push(
                                 `/productos/remeras/${group
                                   .toLowerCase()
-                                  .replace(/\s+/g, "-")}`
+                                  .replace(/\s+/g, "-")}`,
                               )
                             }
                           >
@@ -198,7 +200,7 @@ export const NavbarDesktop = () => {
                                       router.push(
                                         `/productos/abrigos/${type.toLowerCase()}/${group
                                           .toLowerCase()
-                                          .replace(/\s+/g, "-")}`
+                                          .replace(/\s+/g, "-")}`,
                                       )
                                     }
                                   >
@@ -226,7 +228,7 @@ export const NavbarDesktop = () => {
                 onMouseLeave={() => handleMouseLeave("bangtan")}
               >
                 <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center">
-                  Bangtan Limited Edition{" "}
+                  Bangtan Limited Edition
                   <ChevronDown className="ml-2 h-3 w-3 inline" />
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.SubContent className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px]">
@@ -237,15 +239,15 @@ export const NavbarDesktop = () => {
                         className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
                         onClick={() =>
                           router.push(
-                            `/productos/bangtan-limited/${item
+                            `/vistas-de-productos/bangtan-limited-edition/${item
                               .toLowerCase()
-                              .replace(/\s+/g, "-")}`
+                              .replace(/\s+/g, "-")}`,
                           )
                         }
                       >
                         {item}
                       </DropdownMenu.Item>
-                    )
+                    ),
                   )}
                 </DropdownMenu.SubContent>
               </div>
