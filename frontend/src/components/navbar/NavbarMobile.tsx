@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
+
 import { ChevronDown } from "lucide-react";
 
 import {
@@ -16,6 +16,7 @@ import {
 import { AuthButton } from "./AuthButton";
 import { CartButton } from "./CartButton";
 import { SearchInput } from "../search/SearchInput";
+import { useState } from "react";
 
 /* ───────────────────────────────────────────── */
 /* Types */
@@ -28,7 +29,7 @@ interface MenuItem {
 }
 
 /* ───────────────────────────────────────────── */
-/* Menu structure (MOBILE) */
+/* Menu structure (MOBILE) CORREGIDA */
 /* ───────────────────────────────────────────── */
 
 const MENU: MenuItem[] = [
@@ -45,27 +46,68 @@ const MENU: MenuItem[] = [
               {
                 label: "BTS",
                 sub: [
-                  { label: "RM", path: "/productos/bts/rm" },
-                  { label: "Jin", path: "/productos/bts/jin" },
-                  { label: "Suga", path: "/productos/bts/suga" },
-                  { label: "J-Hope", path: "/productos/bts/j-hope" },
-                  { label: "Jimin", path: "/productos/bts/jimin" },
-                  { label: "Taehyung", path: "/productos/bts/taehyung" },
-                  { label: "Jungkook", path: "/productos/bts/jungkook" },
-                  { label: "Rap Line", path: "/productos/bts/rap-line" },
-                  { label: "Vocal Line", path: "/productos/bts/vocal-line" },
+                  {
+                    label: "Ver todo BTS",
+                    path: "/productos/indumentaria/remeras/bts",
+                  },
+                  {
+                    label: "RM",
+                    path: "/productos/indumentaria/remeras/bts/rm",
+                  },
+                  {
+                    label: "Jin",
+                    path: "/productos/indumentaria/remeras/bts/jin",
+                  },
+                  {
+                    label: "Suga",
+                    path: "/productos/indumentaria/remeras/bts/suga",
+                  },
+                  {
+                    label: "J-Hope",
+                    path: "/productos/indumentaria/remeras/bts/j-hope",
+                  },
+                  {
+                    label: "Jimin",
+                    path: "/productos/indumentaria/remeras/bts/jimin",
+                  },
+                  {
+                    label: "Taehyung",
+                    path: "/productos/indumentaria/remeras/bts/taehyung",
+                  },
+                  {
+                    label: "Jungkook",
+                    path: "/productos/indumentaria/remeras/bts/jungkook",
+                  },
+                  {
+                    label: "Rap Line",
+                    path: "/productos/indumentaria/remeras/bts/rap-line",
+                  },
+                  {
+                    label: "Vocal Line",
+                    path: "/productos/indumentaria/remeras/bts/vocal-line",
+                  },
                 ],
               },
               {
                 label: "Stray Kids",
-                path: "/productos/remeras/stray-kids",
+                path: "/productos/indumentaria/remeras/stray-kids",
               },
-              { label: "The Rose", path: "/productos/remeras/the-rose" },
+              {
+                label: "The Rose",
+                path: "/productos/indumentaria/remeras/the-rose",
+              },
               {
                 label: "Jonas Brothers",
-                path: "/productos/remeras/jonas-brothers",
+                path: "/productos/indumentaria/remeras/jonas-brothers",
               },
-              { label: "New Jeans", path: "/productos/remeras/new-jeans" },
+              {
+                label: "New Jeans",
+                path: "/productos/indumentaria/remeras/new-jeans",
+              },
+              {
+                label: "Ver todas las Remeras",
+                path: "/productos/indumentaria/remeras",
+              },
             ],
           },
           {
@@ -76,11 +118,15 @@ const MENU: MenuItem[] = [
                 sub: [
                   {
                     label: "BTS",
-                    path: "/productos/abrigos/hoodies/bts",
+                    path: "/productos/indumentaria/abrigos/hoodies/bts",
                   },
                   {
                     label: "Stray Kids",
-                    path: "/productos/abrigos/hoodies/stray-kids",
+                    path: "/productos/indumentaria/abrigos/hoodies/stray-kids",
+                  },
+                  {
+                    label: "Ver todos los Hoodies",
+                    path: "/productos/indumentaria/abrigos/hoodies",
                   },
                 ],
               },
@@ -89,13 +135,21 @@ const MENU: MenuItem[] = [
                 sub: [
                   {
                     label: "BTS",
-                    path: "/productos/abrigos/buzos/bts",
+                    path: "/productos/indumentaria/abrigos/buzos/bts",
                   },
                   {
                     label: "Stray Kids",
-                    path: "/productos/abrigos/buzos/stray-kids",
+                    path: "/productos/indumentaria/abrigos/buzos/stray-kids",
+                  },
+                  {
+                    label: "Ver todos los Buzos",
+                    path: "/productos/indumentaria/abrigos/buzos",
                   },
                 ],
+              },
+              {
+                label: "Ver todos los Abrigos",
+                path: "/productos/indumentaria/abrigos",
               },
             ],
           },
@@ -106,43 +160,39 @@ const MENU: MenuItem[] = [
         sub: [
           {
             label: "Accesorios",
-            path: "/productos/bangtan-limited/accesorios",
+            path: "/productos/bangtan-limited-edition/accesorios",
           },
           {
             label: "Bangtan Bags",
-            path: "/productos/bangtan-limited/bags",
+            path: "/productos/bangtan-limited-edition/bangtan-bags",
           },
           {
             label: "Bangtan Home",
-            path: "/productos/bangtan-limited/home",
+            path: "/productos/bangtan-limited-edition/bangtan-home",
+          },
+          {
+            label: "Ver todo Limited Edition",
+            path: "/productos/bangtan-limited-edition",
           },
         ],
       },
       { label: "Gift Cards", path: "/productos/gift-cards" },
     ],
   },
-
   {
     label: "¿Cómo comprar?",
     sub: [
-      { label: "Guía de Compra", path: "/cliente/como-comprar" },
-      {
-        label: "Políticas de Compra",
-        path: "/cliente/politicas-de-compras",
-      },
-      { label: "Guía de Talles", path: "/cliente/guia-de-talles" },
-      { label: "Mayoristas", path: "/cliente/mayoristas" },
-      {
-        label: "Preguntas Frecuentes",
-        path: "/cliente/preguntas-frecuentes",
-      },
+      { label: "Guía de Compra", path: "/como-comprar" },
+      { label: "Políticas de Compra", path: "/politicas-de-compras" },
+      { label: "Guía de Talles", path: "/guia-de-talles" },
+      { label: "Mayoristas", path: "/mayoristas" },
+      { label: "Preguntas Frecuentes", path: "/preguntas-frecuentes" },
     ],
   },
-
-  { label: "¿Quiénes Somos?", path: "/cliente/quienes-somos" },
-  { label: "Experiencia Moonlight", path: "/cliente/comentar" },
-  { label: "Army Club", path: "/cliente/" },
-  { label: "Calendario Lunar", path: "/cliente/" },
+  { label: "¿Quiénes Somos?", path: "/quienes-somos" },
+  { label: "Experiencia Moonlight", path: "/comentar" },
+  { label: "Army Club", path: "/" },
+  { label: "Calendario Lunar", path: "/" },
 ];
 
 /* ───────────────────────────────────────────── */
@@ -163,8 +213,11 @@ export const NavbarMobile = () => {
       setMenuStack((prev) => [...prev, item.sub!]);
     } else if (item.path) {
       setOpen(false);
-      setMenuStack([MENU]);
-      router.push(item.path);
+      // Pequeño delay para cerrar el sheet antes de navegar
+      setTimeout(() => {
+        setMenuStack([MENU]);
+        router.push(item.path!);
+      }, 100);
     }
   };
 
@@ -177,8 +230,14 @@ export const NavbarMobile = () => {
   return (
     <div className="md:hidden">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3">
-        <Sheet open={open} onOpenChange={setOpen}>
+      <div className="flex items-center justify-between px-4 py-3 bg-[#FAFCEF]">
+        <Sheet
+          open={open}
+          onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) setMenuStack([MENU]); // Reset stack al cerrar
+          }}
+        >
           <SheetTrigger asChild>
             <button aria-label="Abrir menú">
               <svg
@@ -197,16 +256,21 @@ export const NavbarMobile = () => {
             </button>
           </SheetTrigger>
 
-          <SheetContent side="left" className="w-72 p-4 overflow-hidden">
-            <SheetHeader>
-              <SheetTitle className="text-lg text-[#7b5ca2]">
-                {menuStack.length > 1 && (
+          <SheetContent
+            side="left"
+            className="w-72 p-4 overflow-hidden bg-white"
+          >
+            <SheetHeader className="text-left">
+              <SheetTitle className="text-lg text-[#7b5ca2] flex items-center">
+                {menuStack.length > 1 ? (
                   <button
                     onClick={goBack}
-                    className="mb-3 flex items-center gap-1 text-sm text-gray-500"
+                    className="mb-3 flex items-center gap-1 text-sm text-[#7b5ca2] font-bold"
                   >
                     ← Volver
                   </button>
+                ) : (
+                  <span className="mb-3">Menú</span>
                 )}
               </SheetTitle>
             </SheetHeader>
@@ -223,13 +287,13 @@ export const NavbarMobile = () => {
                     <li key={item.label}>
                       <button
                         onClick={() => goForward(item)}
-                        className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-left
-                          hover:bg-[#f3eefb]
-                          ${isActive ? "bg-[#f3eefb] font-medium" : ""}`}
+                        className={`w-full flex items-center justify-between rounded-md px-3 py-3 text-left text-[#7b5ca2]
+                          hover:bg-[#f3eefb] transition-colors
+                          ${isActive ? "bg-[#f3eefb] font-bold" : ""}`}
                       >
-                        <span>{item.label}</span>
+                        <span className="text-[16px]">{item.label}</span>
                         {item.sub && (
-                          <ChevronDown className="h-4 w-4 -rotate-90 text-gray-400" />
+                          <ChevronDown className="h-4 w-4 -rotate-90 text-[#7b5ca2]" />
                         )}
                       </button>
                     </li>
@@ -241,15 +305,17 @@ export const NavbarMobile = () => {
         </Sheet>
 
         {/* Logo */}
-        <Image
-          src="/moonlight.png"
-          alt="Moonlight Logo"
-          width={120}
-          height={30}
-          priority
-          style={{ cursor: "pointer" }}
-          onClick={() => router.push("/")}
-        />
+        <div className="flex-1 flex justify-center">
+          <Image
+            src="/moonlight.png"
+            alt="Moonlight Logo"
+            width={120}
+            height={30}
+            priority
+            className="cursor-pointer"
+            onClick={() => router.push("/")}
+          />
+        </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
@@ -258,16 +324,14 @@ export const NavbarMobile = () => {
         </div>
       </div>
 
-      {/* animation */}
       <style jsx>{`
         .animate-slide-in {
           animation: slideIn 0.2s ease-out;
         }
-
         @keyframes slideIn {
           from {
             opacity: 0;
-            transform: translateX(12px);
+            transform: translateX(10px);
           }
           to {
             opacity: 1;

@@ -62,14 +62,12 @@ export const NavbarDesktop = () => {
           </DropdownMenu.Trigger>
 
           <DropdownMenu.Content
-            className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px]"
+            className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px] z-50"
             sideOffset={5}
           >
             <DropdownMenu.Item
-              className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-semibold"
-              onClick={() =>
-                router.push("/vistas-de-productos/todos-los-productos")
-              }
+              className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-semibold outline-none"
+              onClick={() => router.push("/productos")}
             >
               Ver todos los productos
             </DropdownMenu.Item>
@@ -85,7 +83,7 @@ export const NavbarDesktop = () => {
                 onMouseEnter={() => handleMouseEnter("indumentaria")}
                 onMouseLeave={() => handleMouseLeave("indumentaria")}
               >
-                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center">
+                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
                   Indumentaria{" "}
                   <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                 </DropdownMenu.SubTrigger>
@@ -102,7 +100,7 @@ export const NavbarDesktop = () => {
                       onMouseEnter={() => handleMouseEnter("remeras")}
                       onMouseLeave={() => handleMouseLeave("remeras")}
                     >
-                      <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center">
+                      <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
                         Remeras{" "}
                         <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                       </DropdownMenu.SubTrigger>
@@ -118,7 +116,7 @@ export const NavbarDesktop = () => {
                             onMouseEnter={() => handleMouseEnter("bts-rem")}
                             onMouseLeave={() => handleMouseLeave("bts-rem")}
                           >
-                            <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center">
+                            <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
                               BTS{" "}
                               <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                             </DropdownMenu.SubTrigger>
@@ -136,10 +134,10 @@ export const NavbarDesktop = () => {
                               ].map((m) => (
                                 <DropdownMenu.Item
                                   key={m}
-                                  className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                                  className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer outline-none"
                                   onClick={() =>
                                     router.push(
-                                      `/vistas-de-productos/indumentaria/remeras/bts/${m.toLowerCase().replace(/\s+/g, "-")}`,
+                                      `/productos/indumentaria/remeras/bts/${m.toLowerCase().replace(/\s+/g, "-")}`,
                                     )
                                   }
                                 >
@@ -148,10 +146,10 @@ export const NavbarDesktop = () => {
                               ))}
                               <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
                               <DropdownMenu.Item
-                                className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold"
+                                className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold outline-none"
                                 onClick={() =>
                                   router.push(
-                                    "/vistas-de-productos/indumentaria/remeras/bts",
+                                    "/productos/indumentaria/remeras/bts",
                                   )
                                 }
                               >
@@ -169,10 +167,10 @@ export const NavbarDesktop = () => {
                         ].map((g) => (
                           <DropdownMenu.Item
                             key={g}
-                            className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                            className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer outline-none"
                             onClick={() =>
                               router.push(
-                                `/vistas-de-productos/indumentaria/remeras/${g.toLowerCase().replace(/\s+/g, "-")}`,
+                                `/productos/indumentaria/remeras/${g.toLowerCase().replace(/\s+/g, "-")}`,
                               )
                             }
                           >
@@ -181,11 +179,9 @@ export const NavbarDesktop = () => {
                         ))}
                         <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
                         <DropdownMenu.Item
-                          className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold"
+                          className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold outline-none"
                           onClick={() =>
-                            router.push(
-                              "/vistas-de-productos/indumentaria/remeras",
-                            )
+                            router.push("/productos/indumentaria/remeras")
                           }
                         >
                           Ver todo en Remeras
@@ -205,7 +201,7 @@ export const NavbarDesktop = () => {
                       onMouseEnter={() => handleMouseEnter("abrigos")}
                       onMouseLeave={() => handleMouseLeave("abrigos")}
                     >
-                      <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center">
+                      <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
                         Abrigos{" "}
                         <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                       </DropdownMenu.SubTrigger>
@@ -222,7 +218,7 @@ export const NavbarDesktop = () => {
                               onMouseEnter={() => handleMouseEnter(type)}
                               onMouseLeave={() => handleMouseLeave(type)}
                             >
-                              <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center">
+                              <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
                                 {type}{" "}
                                 <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                               </DropdownMenu.SubTrigger>
@@ -230,10 +226,10 @@ export const NavbarDesktop = () => {
                                 {["BTS", "Stray Kids"].map((g) => (
                                   <DropdownMenu.Item
                                     key={g}
-                                    className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                                    className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer outline-none"
                                     onClick={() =>
                                       router.push(
-                                        `/vistas-de-productos/indumentaria/abrigos/${type.toLowerCase()}/${g.toLowerCase().replace(/\s+/g, "-")}`,
+                                        `/productos/indumentaria/abrigos/${type.toLowerCase()}/${g.toLowerCase().replace(/\s+/g, "-")}`,
                                       )
                                     }
                                   >
@@ -242,10 +238,10 @@ export const NavbarDesktop = () => {
                                 ))}
                                 <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
                                 <DropdownMenu.Item
-                                  className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold"
+                                  className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold outline-none"
                                   onClick={() =>
                                     router.push(
-                                      `/vistas-de-productos/indumentaria/abrigos/${type.toLowerCase()}`,
+                                      `/productos/indumentaria/abrigos/${type.toLowerCase()}`,
                                     )
                                   }
                                 >
@@ -257,11 +253,9 @@ export const NavbarDesktop = () => {
                         ))}
                         <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
                         <DropdownMenu.Item
-                          className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold"
+                          className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer font-bold outline-none"
                           onClick={() =>
-                            router.push(
-                              "/vistas-de-productos/indumentaria/abrigos",
-                            )
+                            router.push("/productos/indumentaria/abrigos")
                           }
                         >
                           Ver todo en Abrigos
@@ -284,7 +278,7 @@ export const NavbarDesktop = () => {
                 onMouseEnter={() => handleMouseEnter("bangtan")}
                 onMouseLeave={() => handleMouseLeave("bangtan")}
               >
-                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center">
+                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
                   Bangtan Limited Edition{" "}
                   <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                 </DropdownMenu.SubTrigger>
@@ -293,10 +287,10 @@ export const NavbarDesktop = () => {
                     (item) => (
                       <DropdownMenu.Item
                         key={item}
-                        className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                        className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer outline-none"
                         onClick={() =>
                           router.push(
-                            `/vistas-de-productos/bangtan-limited-edition/${item.toLowerCase().replace(/\s+/g, "-")}`,
+                            `/productos/bangtan-limited-edition/${item.toLowerCase().replace(/\s+/g, "-")}`,
                           )
                         }
                       >
@@ -309,8 +303,8 @@ export const NavbarDesktop = () => {
             </DropdownMenu.Sub>
 
             <DropdownMenu.Item
-              className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
-              onClick={() => router.push("/vistas-de-productos/gift-cards")}
+              className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer outline-none"
+              onClick={() => router.push("/productos/gift-cards")}
             >
               Gift Cards
             </DropdownMenu.Item>
@@ -319,7 +313,7 @@ export const NavbarDesktop = () => {
 
         {/* BOTONES FINALES */}
         <button
-          onClick={() => router.push("/cliente/quienes-somos")}
+          onClick={() => router.push("/quienes-somos")}
           className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
         >
           ¿Quiénes Somos?
@@ -331,7 +325,7 @@ export const NavbarDesktop = () => {
               ¿Cómo comprar? <ChevronDown className="ml-1 h-4 w-4" />
             </button>
           </DropdownMenu.Trigger>
-          <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[180px]">
+          <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[180px] z-50">
             {[
               { l: "Guía de Compra", h: "/como-comprar" },
               { l: "Políticas de Compra", h: "/politicas-de-compras" },
@@ -341,7 +335,7 @@ export const NavbarDesktop = () => {
             ].map((i) => (
               <DropdownMenu.Item
                 key={i.h}
-                className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer"
+                className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer outline-none"
                 onClick={() => router.push(i.h)}
               >
                 {i.l}
