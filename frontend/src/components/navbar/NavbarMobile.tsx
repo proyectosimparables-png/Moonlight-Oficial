@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-
-import { ChevronDown } from "lucide-react";
-
+import Link from "next/link"; // Importado para prefetching
+import { ChevronDown, ArrowLeft, Menu } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -16,7 +15,7 @@ import {
 import { AuthButton } from "./AuthButton";
 import { CartButton } from "./CartButton";
 import { SearchInput } from "../search/SearchInput";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 /* ───────────────────────────────────────────── */
 /* Types */
@@ -29,7 +28,7 @@ interface MenuItem {
 }
 
 /* ───────────────────────────────────────────── */
-/* Menu structure (MOBILE) CORREGIDA */
+/* Menu structure */
 /* ───────────────────────────────────────────── */
 
 const MENU: MenuItem[] = [
@@ -195,10 +194,6 @@ const MENU: MenuItem[] = [
   { label: "Calendario Lunar", path: "/" },
 ];
 
-/* ───────────────────────────────────────────── */
-/* Component */
-/* ───────────────────────────────────────────── */
-
 export const NavbarMobile = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -206,18 +201,21 @@ export const NavbarMobile = () => {
   const [open, setOpen] = useState(false);
   const [menuStack, setMenuStack] = useState<MenuItem[][]>([MENU]);
 
+  // Resetear el menú cuando se cierra el Sheet
+  useEffect(() => {
+    if (!open) {
+      setTimeout(() => setMenuStack([MENU]), 300);
+    }
+  }, [open]);
+
   const currentMenu = menuStack[menuStack.length - 1];
 
-  const goForward = (item: MenuItem) => {
+  const handleItemClick = (item: MenuItem) => {
     if (item.sub) {
       setMenuStack((prev) => [...prev, item.sub!]);
     } else if (item.path) {
       setOpen(false);
-      // Pequeño delay para cerrar el sheet antes de navegar
-      setTimeout(() => {
-        setMenuStack([MENU]);
-        router.push(item.path!);
-      }, 100);
+      router.push(item.path);
     }
   };
 
@@ -229,73 +227,67 @@ export const NavbarMobile = () => {
 
   return (
     <div className="md:hidden">
-      {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-[#FAFCEF]">
-        <Sheet
-          open={open}
-          onOpenChange={(isOpen) => {
-            setOpen(isOpen);
-            if (!isOpen) setMenuStack([MENU]); // Reset stack al cerrar
-          }}
-        >
+        <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button aria-label="Abrir menú">
-              <svg
-                className="h-6 w-6 text-[#7b5ca2]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+            <button aria-label="Abrir menú" className="p-1">
+              <Menu className="h-6 w-6 text-[#7b5ca2]" />
             </button>
           </SheetTrigger>
 
           <SheetContent
             side="left"
-            className="w-72 p-4 overflow-hidden bg-white"
+            className="w-[300px] p-0 flex flex-col bg-white"
           >
-            <SheetHeader className="text-left">
-              <SheetTitle className="text-lg text-[#7b5ca2] flex items-center">
+            <SheetHeader className="p-4 border-b border-gray-100">
+              <SheetTitle className="text-[#7b5ca2] flex items-center gap-2">
                 {menuStack.length > 1 ? (
                   <button
                     onClick={goBack}
-                    className="mb-3 flex items-center gap-1 text-sm text-[#7b5ca2] font-bold"
+                    className="flex items-center gap-2 text-sm font-bold"
                   >
-                    ← Volver
+                    <ArrowLeft className="h-4 w-4" /> Volver
                   </button>
                 ) : (
-                  <span className="mb-3">Menú</span>
+                  "Menú"
                 )}
               </SheetTitle>
             </SheetHeader>
 
-            <SearchInput placeholder="Buscar productos..." />
+            <div className="px-4 py-3">
+              <SearchInput placeholder="Buscar productos..." />
+            </div>
 
-            {/* Menu */}
-            <div className="relative mt-4">
-              <ul key={menuStack.length} className="space-y-1 animate-slide-in">
+            <div className="flex-1 overflow-y-auto">
+              <ul className="divide-y divide-gray-50">
                 {currentMenu.map((item) => {
                   const isActive = item.path === pathname;
 
                   return (
                     <li key={item.label}>
-                      <button
-                        onClick={() => goForward(item)}
-                        className={`w-full flex items-center justify-between rounded-md px-3 py-3 text-left text-[#7b5ca2]
-                          hover:bg-[#f3eefb] transition-colors
-                          ${isActive ? "bg-[#f3eefb] font-bold" : ""}`}
-                      >
-                        <span className="text-[16px]">{item.label}</span>
-                        {item.sub && (
-                          <ChevronDown className="h-4 w-4 -rotate-90 text-[#7b5ca2]" />
-                        )}
-                      </button>
+                      {/* Si tiene path pero NO sub-menú, usamos un Link real de Next.js
+                        para que el PREFETCH funcione al tocar/deslizar.
+                      */}
+                      {!item.sub && item.path ? (
+                        <Link
+                          href={item.path}
+                          onClick={() => setOpen(false)}
+                          className={`flex items-center justify-between px-5 py-4 text-[#7b5ca2] transition-colors
+                            ${isActive ? "bg-[#f3eefb] font-bold" : "active:bg-[#f3eefb]"}`}
+                        >
+                          <span className="text-[16px]">{item.label}</span>
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => handleItemClick(item)}
+                          className="w-full flex items-center justify-between px-5 py-4 text-[#7b5ca2] active:bg-[#f3eefb] transition-colors"
+                        >
+                          <span className="text-[16px]">{item.label}</span>
+                          {item.sub && (
+                            <ChevronDown className="h-4 w-4 -rotate-90 opacity-50" />
+                          )}
+                        </button>
+                      )}
                     </li>
                   );
                 })}
@@ -305,40 +297,22 @@ export const NavbarMobile = () => {
         </Sheet>
 
         {/* Logo */}
-        <div className="flex-1 flex justify-center">
+        <Link href="/" className="flex-1 flex justify-center">
           <Image
             src="/moonlight.png"
             alt="Moonlight Logo"
             width={120}
             height={30}
             priority
-            className="cursor-pointer"
-            onClick={() => router.push("/")}
           />
-        </div>
+        </Link>
 
-        {/* Actions */}
+        {/* Acciones */}
         <div className="flex items-center gap-2">
           <AuthButton />
           <CartButton />
         </div>
       </div>
-
-      <style jsx>{`
-        .animate-slide-in {
-          animation: slideIn 0.2s ease-out;
-        }
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };

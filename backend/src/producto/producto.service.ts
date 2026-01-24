@@ -217,6 +217,7 @@ export class ProductoService {
 
   async findAllPublic(seccionId?: string, categoriaId?: string) {
     const where: Prisma.ProductoWhereInput = { published: true };
+
     if (categoriaId) {
       const idsHijas = await this.getCategoriaYDescendientesIds(categoriaId);
       where.categoriaId = { in: [categoriaId, ...idsHijas] };
@@ -224,20 +225,34 @@ export class ProductoService {
 
     if (seccionId) where.secciones = { some: { seccionId } };
 
+    // OPTIMIZACIÓN: Usamos select para traer SOLO lo que necesita la card del producto
     const productos = await this.prisma.producto.findMany({
       where,
-      include: {
-        categoria: { include: { parent: true } },
-        secciones: { include: { seccion: true } },
-        imagenes: true,
+      select: {
+        id: true,
+        nombre: true,
+        precio: true,
+        precioPromocional: true,
+        imagenUrl: true,
+        categoriaId: true,
+        // Si usas una imagen secundaria para el hover, inclúyela aquí:
+        imagenes: {
+          take: 2,
+          select: { url: true }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    // Solo formateamos para la vista pública (donde no se edita)
-    return this.formatearProductos(productos);
+    // Formateamos los precios a String con "$"
+    return productos.map(p => ({
+      ...p,
+      precio: this.formatearPrecio(p.precio),
+      precioPromocional: p.precioPromocional ? this.formatearPrecio(p.precioPromocional) : null,
+      imagenHoverUrl: p.imagenes?.[1]?.url || null,
+      imagenes: p.imagenes?.map(img => img.url) || []
+    }));
   }
-
 
   // ✏️ Actualizar producto
   async updateProductoFlexible(id: string, data: any, file?: Express.Multer.File) {

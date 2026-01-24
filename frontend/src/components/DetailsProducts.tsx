@@ -15,13 +15,16 @@ interface DetailsProductsProps {
 export default function DetailsProducts({
   initialProduct,
 }: DetailsProductsProps) {
+  // Usamos el initialProduct directamente
   const product = initialProduct;
   const { addItem, lastAddedItem } = useCart();
   const [quantity, setQuantity] = useState<number>(1);
   const [processing, setProcessing] = useState<boolean>(false);
   const [selectedImage, setSelectedImage] = useState<string>("");
 
-  const { loading, error } = useProductDetails(String(product.id));
+  // Mantenemos el hook para que actualice datos en segundo plano si es necesario,
+  // pero ignoramos su estado de "loading" inicial.
+  const { error } = useProductDetails(String(product.id));
 
   useEffect(() => {
     if (product) {
@@ -55,8 +58,10 @@ export default function DetailsProducts({
     }).format(numericValue);
   };
 
-  if (loading) return <p className="p-6">Cargando...</p>;
-  if (error) return <p className="p-6">Error: {error}</p>;
+  // ELIMINADO: if (loading) return ...
+  // Ahora el componente renderiza directamente con initialProduct
+
+  if (error && !product) return <p className="p-6">Error: {error}</p>;
   if (!product) return <p className="p-6">Producto no encontrado</p>;
 
   const allImages: string[] = [
