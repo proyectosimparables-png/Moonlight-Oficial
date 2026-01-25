@@ -1,113 +1,71 @@
-# 🌙 Moonlight – Roadmap Full Stack
+# 🌙 Moonlight – Ecommerce Full Stack & ARMY Community
 
-Este documento organiza el desarrollo de la nueva web de **Moonlight**, combinando un ecommerce completo con features creativas e interactivas.  
-Duración estimada: **5–6 meses** (part-time, 2 personas).  
+**Moonlight** es una plataforma de e-commerce personalizada, diseñada para transformar la experiencia de compra de indumentaria en una vivencia interactiva para la comunidad fan. Este proyecto migra la operativa de una tienda real desde Tienda Nube hacia una solución propia, permitiendo total libertad creativa y optimización de costos operativos.
 
----
-## 🗓 Semana 0 – Setup inicial
-
-- Crear cuentas: Gmail, GitHub, Supabase, Vercel.  
-- Crear repositorio   
-- Configurar entornos de desarrollo (Node, NestJS/Express, Next.js, Tailwind).  
-- Configurar `.env` en BE y FE.  
-- APIs de prueba en Nest.js (`GET /ping`).  
-- Diseño inicial generado con IA + validación del equipo.  
-
----
-
-## 🗓 Fase 1 – Mes 1: Setup y MVP básico
-
-### Backend
-- Autenticación de terceros Supabase.
-- Modelo en Prisma: Users, Products, Orders, ARMY content, Quiz results.  
-- Endpoints: login/register, productos, carrito, pedidos, descarga ARMY.
-- Panel Admin  
+## 🚀 Stack Tecnológico
 
 ### Frontend
-- Creacion de componentes principales 
-- Integración paleta de colores, tipografías e iconos de marca.  
-- Hero banner con CTA.  
-- Catálogo con cards y videos cortos.  
-- Carrito funcional simple.  
-- Formulario de contacto + suscripción básica.  
-- Panel Admin  
-
-### QA
-- Testear endpoints básicos y frontend conectado.  
-
----
-
-## 🗓 Fase 2 – Mes 2: Funcionalidades básicas
+- **Framework:** [Next.js 15](https://nextjs.org/) (App Router) con Turbopack.
+- **Estilos:** Tailwind CSS 4 + Lucide React (iconografía).
+- **UI Components:** Radix UI + Sonner + Framer Motion (microinteracciones).
+- **Estado & Fetching:** TanStack Query (React Query) + React Hot Toast.
 
 ### Backend
-- Checkout con integración de pasarela de pago MP.  
-- Guardar compras y generar flags para ARMY.  
-- APIs para quiz y ruleta simple.  
+- **Framework:** [NestJS 11](https://nestjs.com/) (Node.js).
+- **Base de Datos:** PostgreSQL alojada en [Supabase](https://supabase.com/).
+- **ORM:** [Prisma](https://www.prisma.io/).
+- **Validación:** Class-validator & Class-transformer.
+- **Seguridad:** Bcrypt (Hashing) + JWT (Autenticación).
 
-### Frontend
-- Checkout paso a paso funcional.  
-- Sección ARMY desbloqueable tras compra.  
-- Quiz “Elegí tu destino lunar”.  
-- Popup ruleta básico.  
-
----
-
-## 🗓 Fase 3 – Mes 3: Experiencia interactiva
-
-### Frontend
-- Microinteracciones: estrellas que brillan, luna que se mueve.  
-- Scroll mágico con doodles.  
-- Moonlight TV (videos, playlists).  
-- Puchi como mascota / guía onboarding.  
-
-### Backend
-- Endpoints para guardar resultados del quiz y ruleta.  
-- Autenticación y permisos ARMY.  
+### Servicios Externos e Infraestructura
+- **Imágenes:** [Cloudinary](https://cloudinary.com/) (Upload dinámico vía Multer).
+- **Pagos:** Mercado Pago SDK, Ualá Go Cuotas (Integración vía Webhooks).
+- **Mailing:** Nodemailer + NestJS Schedule (Automatización de carritos abandonados).
+- **Infraestructura:** Cloud VPS (Ubuntu) con Nginx (Reverse Proxy) y PM2.
 
 ---
 
-## 🗓 Fase 4 – Mes 4: Comunidad & gamificación
+## 📂 Estructura del Proyecto (Monorepo)
 
-### Frontend
-- Filtros por miembro BTS.  
-- Easter eggs / códigos ocultos.  
-- Fondos dinámicos por hora del día.  
-- Sonido ambiental opt-in.  
+```text
+moonlight-oficial/
+├── backend/           # API Rest con NestJS (Lógica de negocio y DB)
+│   ├── prisma/        # Esquema de datos, variantes (talles/colores) y seeds
+│   └── src/           # Módulos, Servicios y Controladores
+├── frontend/          # Interfaz de usuario con Next.js 15
+│   ├── src/           # Components, Hooks, Contexts y App Router
+│   └── public/        # Recursos estáticos
+└── .env               # Configuración de producción
 
-### Backend
-- Guardar interacciones de Easter eggs.  
-- APIs para comentarios (Muro de constelaciones).  
-- Lógica básica de gamificación (estrellas por comentarios).  
+```
+## 🗓 Roadmap de Desarrollo
 
----
+### Fase 1: MVP & Gestión Administrativa 
+-  **Setup de Monorepo:** Configuración de NestJS 11 y Next.js 15.
+-  **Modelado de datos:** Prisma (Usuarios, Productos, Variantes, Órdenes).
+-  **Panel Admin:** Dashboard para gestión de productos, stock y categorías.
+-  **Multimedia:** Integración de Cloudinary para manejo de archivos.
+-  **Pagos:** Implementación de Pasarelas (Mercado Pago / Ualá).
 
-## 🗓 Fase 5 – Mes 5: Comunidad avanzada y optimización
+### Fase 2: Experiencia e Interacción 
+-  **Mascota Puchi:** Sistema de guía y onboarding interactivo.
+-  **Quiz Lunar:** Recomendaciones personalizadas de productos.
+-  **Sección ARMY:** Acceso a contenido exclusivo y descargables post-compra.
+-  **UX Avanzada:** Animaciones con Framer Motion.
 
-### Frontend
-- Chat básico automatizado “Puchi”.  
-- Calendario lunar interactivo.  
-- Test de usabilidad en dispositivos.  
-
-### Backend
-- Endpoints para chat automatizado.  
-- Gestión de calendario lunar y eventos.  
-- Optimización consultas y performance.  
-
----
-
-## 🗓 Fase 6 – Mes 6: QA final y lanzamiento
-
-- Optimización de imágenes, videos y audio.  
-- Seguridad básica y validación de pagos.  
-- Documentación de uso/admin (subir productos, manejar ARMY, quizzes, etc).  
-- Lanzamiento oficial con todas las features activas.  
+### Fase 3: Automatización y Lanzamiento
+-  **Marketing Tools:** Automatización de mails (Nodemailer + Schedule).
+-  **Muro de Constelaciones:** Módulo de feedback y comunidad.
+-  **Deploy:** Configuración de entorno de producción en VPS con SSL.
 
 ---
 
-## ✅ Resumen
+## ✨ Autoras
 
-- **Mes 1–2** → MVP funcional: tienda usable + checkout + ARMY + primeros quizzes.  
-- **Mes 3–4** → Features creativas: microinteracciones, scroll mágico, filtros, gamificación.  
-- **Mes 5–6** → Comunidad avanzada, optimización, QA y lanzamiento full stack.  
+Proyecto desarrollado con ❤️ para  **Moonlight** por:
 
-💡 **Tip:** Empezar siempre por el MVP completo (aunque sin animaciones complejas) para tener algo funcional y visible desde el inicio.
+* **Macarena** — [GitHub](https://github.com/MacarenaAliberti-web) • [LinkedIn](https://www.linkedin.com/in/macarena-aliberti-440b03373/)
+* **Natalia** — [GitHub](https://github.com/Russ) • [LinkedIn](https://www.linkedin.com/in/russ-villalba/)
+
+---
+
