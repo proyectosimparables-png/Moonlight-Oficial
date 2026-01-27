@@ -14,6 +14,11 @@ export async function updateProductoFlexible(id: string, data: any) {
     formData.append("precio", String(data.precio));
     formData.append("stock", String(data.stock));
 
+    // VARIANTES: Como son arrays, los enviamos uno por uno en el FormData
+    data.colores?.forEach((c: string) => formData.append("colores", c));
+    data.talles?.forEach((t: string) => formData.append("talles", t));
+    data.cortes?.forEach((cor: string) => formData.append("cortes", cor));
+
     // Solo adjuntar si existe y es string
     if (data.categoriaId && typeof data.categoriaId === "string") {
       formData.append("categoriaId", data.categoriaId);
@@ -201,6 +206,7 @@ export async function getCategorias(seccionId: string) {
   if (!res.ok) throw new Error("Error cargando categorías");
   return res.json();
 }
+
 
 export async function getProductos() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos`);

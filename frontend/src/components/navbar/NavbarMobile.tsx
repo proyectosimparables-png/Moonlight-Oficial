@@ -125,24 +125,24 @@ const MENU: MenuItem[] = [
   {
     label: "¿Cómo comprar?",
     sub: [
-      { label: "Guía de Compra", path: "/cliente/como-comprar" },
+      { label: "Guía de Compra", path: "/como-comprar" },
       {
         label: "Políticas de Compra",
-        path: "/cliente/politicas-de-compras",
+        path: "/politicas-de-compras",
       },
-      { label: "Guía de Talles", path: "/cliente/guia-de-talles" },
-      { label: "Mayoristas", path: "/cliente/mayoristas" },
+      { label: "Guía de Talles", path: "/guia-de-talles" },
+      { label: "Mayoristas", path: "/mayoristas" },
       {
         label: "Preguntas Frecuentes",
-        path: "/cliente/preguntas-frecuentes",
+        path: "/preguntas-frecuentes",
       },
     ],
   },
 
-  { label: "¿Quiénes Somos?", path: "/cliente/quienes-somos" },
-  { label: "Experiencia Moonlight", path: "/cliente/comentar" },
-  { label: "Army Club", path: "/cliente/" },
-  { label: "Calendario Lunar", path: "/cliente/" },
+  { label: "¿Quiénes Somos?", path: "/quienes-somos" },
+  { label: "Experiencia Moonlight", path: "/comentar" },
+  { label: "Army Club", path: "/" },
+  { label: "Calendario Lunar", path: "/" },
 ];
 
 /* ───────────────────────────────────────────── */
@@ -211,7 +211,7 @@ export const NavbarMobile = () => {
               </SheetTitle>
             </SheetHeader>
 
-            <SearchInput placeholder="Buscar productos..." />
+            <SearchInput />
 
             {/* Menu */}
             <div className="relative mt-4">

@@ -3,6 +3,9 @@ export type Producto = {
   nombre: string;
   descripcion: string;
   secciones?: any[];
+  talles: string[];
+  colores: string[];
+  cortes: string[];
   categoria: {
     id: string;
     nombre: string;
@@ -31,6 +34,7 @@ export type ProductoBackend = {
   nombre: string;
   descripcion: string;
   imagenUrl: string | null;
+  imagenHoverUrl: string | null;
   secciones: {
     seccion: SeccionType;
   }[];
@@ -39,6 +43,7 @@ export type ProductoBackend = {
   stock: number;
   published: boolean;
   imagenes: { url: string }[];
+
 };
 
 
@@ -74,11 +79,12 @@ export interface Favorito {
   id: string;
   productoId: string;
   userId: string;
-  createdAt: string;
   producto?: {
     id: string;
     nombre: string;
     precio: number;
-    imagenUrl?: string;
+    imagenUrl: string;
+    imagenHoverUrl?: string | null; // Agrega esta línea
+    imagenes: string[];
   };
 }

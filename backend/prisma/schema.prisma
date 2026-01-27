@@ -43,6 +43,12 @@ model Producto {
   precioPromocional Float?     
   stock             Int
 
+  // --- Nuevos Campos ---
+  colores           String[] // ["blanco", "negro", ...]
+  talles            String[] // ["S", "M", "L"]
+  cortes            String[] // ["clásica", "oversize"]
+  // ---------------------
+
   // Envíos - peso y dimensiones
   peso              Float?     
   profundidad       Int?       

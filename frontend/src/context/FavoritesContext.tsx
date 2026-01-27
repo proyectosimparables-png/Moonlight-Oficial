@@ -45,7 +45,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   // Agregar o eliminar favorito
   const toggleFavorite = async (productId: string) => {
     if (!isAuthenticated || !user?.id) {
-      toast.error("Debes iniciar sesión para favoritos 💜");
+      toast.error("Debes iniciar sesión para favoritos ⭐");
       router.push("/login");
       return;
     }
@@ -63,7 +63,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         const nuevoFav: Favorito = await agregarFavorito(userId, productId);
         // Asegúrate que el backend devuelva el objeto Favorito completo con producto incluido
         setFavorites(prev => [...prev, nuevoFav]);
-        toast.success("Agregado a favoritos 💜");
+        toast.success("Agregado a favoritos ⭐");
       }
     } catch (error) {
       console.error("Error al actualizar favoritos:", error);

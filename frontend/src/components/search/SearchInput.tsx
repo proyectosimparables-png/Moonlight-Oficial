@@ -80,7 +80,7 @@ export const SearchInput = () => {
                   className="flex items-center gap-3 p-4 md:p-3 hover:bg-purple-50 transition-colors border-b last:border-0"
                 >
                   <img
-                    src={product.imagenes?.[0]?.url || "/placeholder.png"}
+                    src={product.imagenUrl || "/placeholder.png"}
                     className="w-12 h-12 md:w-10 md:h-10 object-cover rounded shadow-sm"
                     alt={product.nombre}
                   />

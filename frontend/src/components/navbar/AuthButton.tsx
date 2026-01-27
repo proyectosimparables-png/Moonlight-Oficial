@@ -8,7 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { User, Heart, Clock, LogOut, UserCircle } from "lucide-react";
+import { User, Heart, Clock, LogOut, UserCircle, Star } from "lucide-react";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,7 @@ import toast from "react-hot-toast";
 import FavoritosList from "../home/Favoritos";
 
 export const AuthButton = () => {
-  const { isAuthenticated,  logout, user } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const router = useRouter();
   const [showFavoritos, setShowFavoritos] = useState(false);
 
@@ -26,7 +26,7 @@ export const AuthButton = () => {
     return (
       <Button
         variant="ghost"
-       onClick={() => router.push("/login")}
+        onClick={() => router.push("/login")}
         className="hover:bg-[#e6dff1] flex items-center gap-1 px-3 py-1 rounded"
         title="Iniciar sesión con Google"
       >
@@ -43,7 +43,7 @@ export const AuthButton = () => {
     toast.success("Sesión cerrada correctamente 👋", { position: "top-center" });
   };
 
-   const name =
+  const name =
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
     user?.email?.split("@")[0] ||
@@ -90,7 +90,8 @@ export const AuthButton = () => {
             onClick={() => router.push("/favoritos")}
             className="cursor-pointer text-[#6c5b7b]"
           >
-            <Heart className="h-4 w-4 mr-2 text-[#6c5b7b]" /> Favoritos
+            <Star className="h-4 w-4 mr-2 text-[#6c5b7b] fill-[#f5c518] border-[#f5c518]" />
+            <span>Favoritos</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -127,7 +128,7 @@ export const AuthButton = () => {
             >
               ✕
             </button>
-            <FavoritosList/>
+            <FavoritosList />
           </div>
         </div>
       )}

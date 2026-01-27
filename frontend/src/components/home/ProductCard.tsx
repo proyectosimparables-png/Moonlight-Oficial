@@ -25,10 +25,13 @@ const ProductCard = ({ id, imagenUrl, imagenHoverUrl, nombre, precio }: ProductC
   const { isFavorite, toggleFavorite } = useFavorites();
   const router = useRouter();
 
-  const numericPrice = Number((precio ?? "0").replace(/[^0-9]+/g, ""));
+  // Si precio es número, lo usa. Si es string, lo limpia. Si no existe, usa 0.
+  const numericPrice = typeof precio === 'number'
+    ? precio
+    : Number(String(precio ?? "0").replace(/[^\d]/g, ""));
+
   const discountPrice = numericPrice * 0.9;
   const installmentPrice = Math.round(numericPrice / 3);
-
   const formatARS = (value: number) =>
     value.toLocaleString("es-AR", { minimumFractionDigits: 0 });
 
@@ -53,30 +56,29 @@ const ProductCard = ({ id, imagenUrl, imagenHoverUrl, nombre, precio }: ProductC
   return (
     <Card className="group overflow-hidden bg-white border border-[#ddd] hover:shadow-xl transition-all duration-300 rounded-lg">
       <CardContent className="p-0">
-        
-        {/* Contenedor de Imagen con Efecto Hover */}
-  <div className="relative aspect-square overflow-hidden bg-gray-100">
-  {/* IMAGEN 2: Se queda quieta atrás */}
-  {imagenHoverUrl && (
-    <Image
-      src={imagenHoverUrl}
-      alt={`${nombre} vista 2`}
-      fill
-      className="object-cover" 
-      sizes="(max-width: 768px) 100vw, 25vw"
-    />
-  )}
 
-  {/* IMAGEN 1: Está encima y se desvanece al hacer hover */}
-  <Image
-    src={imagenUrl || "/images/placeholder.png"}
-    alt={nombre}
-    fill
-    className={`object-cover transition-opacity duration-500 ease-in-out ${
-      imagenHoverUrl ? "group-hover:opacity-0" : ""
-    }`}
-    sizes="(max-width: 768px) 100vw, 25vw"
-  />
+        {/* Contenedor de Imagen con Efecto Hover */}
+        <div className="relative aspect-square overflow-hidden bg-gray-100">
+          {/* IMAGEN 2: Se queda quieta atrás */}
+          {imagenHoverUrl && (
+            <Image
+              src={imagenHoverUrl}
+              alt={`${nombre} vista 2`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 25vw"
+            />
+          )}
+
+          {/* IMAGEN 1: Está encima y se desvanece al hacer hover */}
+          <Image
+            src={imagenUrl || "/images/placeholder.png"}
+            alt={nombre}
+            fill
+            className={`object-cover transition-opacity duration-500 ease-in-out ${imagenHoverUrl ? "group-hover:opacity-0" : ""
+              }`}
+            sizes="(max-width: 768px) 100vw, 25vw"
+          />
 
           {/* Overlay y Botón "Ver Detalle" */}
           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
@@ -96,9 +98,8 @@ const ProductCard = ({ id, imagenUrl, imagenHoverUrl, nombre, precio }: ProductC
             className="absolute top-3 right-3 z-10 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
           >
             <Star
-              className={`h-5 w-5 transition-colors duration-200 ${
-                isFavorite(id) ? "fill-[#f5c518] text-[#f5c518]" : "text-[#6c5b7b]"
-              }`}
+              className={`h-5 w-5 transition-colors duration-200 ${isFavorite(id) ? "fill-[#f5c518] text-[#f5c518]" : "text-[#6c5b7b]"
+                }`}
             />
           </button>
 

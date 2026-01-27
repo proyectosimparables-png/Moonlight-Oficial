@@ -36,6 +36,9 @@ type ProductoType = {
   imagenUrl: string | null;
   id: number;
   nombre: string;
+  colores: string[];
+  talles: string[];
+  cortes: string[];
   descripcion: string;
   secciones: {
     seccion: SeccionType;
@@ -67,17 +70,6 @@ const Productos = () => {
   const abrirModalDescripcion = (descripcion: string) => {
     setDescripcionModal(descripcion);
     setModalDescripcionOpen(true);
-  };
-
-  const formatPrecio = (precio: unknown) => {
-    if (precio === null || precio === undefined) return "$0.000";
-
-    let clean = typeof precio === "string"
-      ? precio.replace(/[^\d.,-]/g, "").replace(",", ".")
-      : precio;
-
-    const num = Number(clean);
-    return isNaN(num) ? "$0.000" : `$${num.toFixed(2)}`;
   };
 
   const fetchProductos = async () => {
@@ -132,6 +124,27 @@ const Productos = () => {
     return path.join(" > ");
   }
 
+  const formatPrecio = (precio: unknown) => {
+    if (precio === null || precio === undefined) return "$0";
+
+    // Limpiamos el valor en caso de que venga como string con símbolos
+    let clean = typeof precio === "string"
+      ? precio.replace(/[^\d.,-]/g, "").replace(",", ".")
+      : precio;
+
+    const num = Number(clean);
+
+    if (isNaN(num)) return "$0";
+
+    // Usamos Intl.NumberFormat para que ponga los puntos de miles correctamente
+    // y no ponga decimales a menos que realmente los tenga.
+    return new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      minimumFractionDigits: 0, // Si es entero, no muestra decimales
+      maximumFractionDigits: 2, // Si tiene centavos, muestra hasta 2
+    }).format(num);
+  };
 
   return (
     <div className="flex justify-center px-4">
@@ -213,17 +226,22 @@ const Productos = () => {
                         {/* Sección */}
                         <Badge variant="secondary" className="w-fit">
                           {producto.secciones?.length ? (
-                            <div className="flex flex-wrap gap-1">
-                              {producto.secciones.map((ps) => (
-                                <Badge key={ps.seccion.id} variant="secondary">
-                                  {ps.seccion.nombre}
+                            producto.secciones.map((ps: any) => {
+                              // Si ps es un string (porque ya pasó por el formateador del service)
+                              if (typeof ps === "string") {
+                                return <Badge key={ps} variant="secondary">{ps}</Badge>;
+                              }
+
+                              // Si ps es un objeto (estructura de Prisma), protegemos el acceso a .seccion
+                              return (
+                                <Badge key={ps.seccion?.id || Math.random()} variant="secondary">
+                                  {ps.seccion?.nombre || "Cargando..."}
                                 </Badge>
-                              ))}
-                            </div>
+                              );
+                            })
                           ) : (
                             <Badge variant="secondary">Sin sección</Badge>
                           )}
-
                         </Badge>
 
                         {/* Categoría jerárquica */}
@@ -232,10 +250,9 @@ const Productos = () => {
                         </span>
                       </div>
                     </TableCell>
-
-
-                    <TableCell>{formatPrecio(producto.precio)}</TableCell>
-
+                    <TableCell>
+                      {formatPrecio(producto.precio)}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={producto.stock > 50 ? "default" : "destructive"}
@@ -287,6 +304,9 @@ const Productos = () => {
                             stock: producto.stock,
                             published: producto.published,
                             imagenUrl: producto.imagenUrl ?? undefined,
+                            colores: producto.colores || [],
+                            talles: producto.talles || [],
+                            cortes: producto.cortes || [],
                             // Solución al error de tipos:
                             categoria: producto.secciones?.[0]?.seccion
                               ? {

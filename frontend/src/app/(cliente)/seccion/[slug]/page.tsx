@@ -2,17 +2,19 @@
 
 import ProductCard from "@/components/home/ProductCard";
 import { VolverInicioButton } from "@/components/navbar/BotonDeInicio";
-interface ProductoBackend {
-  productoId: string;
-  seccionId: string;
-  producto: {
-    id: string;
-    nombre: string;
-    precio: number;
-    precioPromocional?: number | null;
-    imagenUrl?: string | null;
-  };
-}
+import {ProductoBackend } from "@/types/types-productos";
+//interface ProductoBackend {
+//  productoId: string;
+//  seccionId: string;
+//  producto: {
+//    id: string;
+//    nombre: string;
+//    precio: number;
+//    precioPromocional?: number | null;
+//    imagenUrl?: string | null;
+//    imagenHoverUrl: string ;
+//  };
+//}
 
 interface SectionData {
   nombre: string;
@@ -90,11 +92,12 @@ export default async function SeccionPage({ params }: { params: { slug: string }
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
             {data.productos.map((item) => (
               <ProductCard
-                key={item.producto.id}
-                id={item.producto.id}
-                nombre={item.producto.nombre}
-                imagenUrl={item.producto.imagenUrl ?? "/placeholder.png"}
-                precio={`$ ${item.producto.precio.toLocaleString("es-AR")}`}
+                key={item.id}
+               id={`${item.id}`}
+                nombre={item.nombre}
+                imagenUrl={item.imagenUrl ?? "/placeholder.png"}
+                imagenHoverUrl={item.imagenHoverUrl ?? "/placeholder.png"}
+               precio={`$ ${(item.precio ?? 0).toLocaleString("es-AR")}`}
               />
             ))}
           </div>

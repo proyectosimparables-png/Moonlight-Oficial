@@ -1,12 +1,16 @@
 'use client';
+
 export interface Product {
   id: string;
   nombre: string;
-  imagenes: { url: string }[];
+  // CAMBIO: Tu formateador hace imagenes: producto.imagenes?.map((img) => img.url)
+  // Por lo tanto, ahora es un array de strings, no de objetos.
+  imagenes: string[]; 
+  // CAMBIO: Agregamos esta que es la que ya viene lista para usar
+  imagenUrl: string;   
   precio: string;
 }
 
-// El formato que viene del Backend ahora
 export interface SearchResponse {
   exactos: Product[];
   relacionados: Product[];
@@ -15,7 +19,6 @@ export interface SearchResponse {
 import { useState, useEffect } from "react";
 
 export function useSearchProducts(query: string, delay = 500) {
-  // Inicializamos con el objeto correcto
   const [results, setResults] = useState<SearchResponse>({ exactos: [], relacionados: [] });
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +39,7 @@ export function useSearchProducts(query: string, delay = 500) {
           setResults(data);
         }
       } catch (err) {
+        console.error("Error en búsqueda:", err);
         setResults({ exactos: [], relacionados: [] });
       } finally {
         setLoading(false);

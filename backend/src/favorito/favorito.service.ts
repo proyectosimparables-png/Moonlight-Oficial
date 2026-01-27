@@ -6,17 +6,43 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class FavoritoService {
   constructor(private prisma: PrismaService) { }
 
-  // 🔹 Agregar un favorito (crea o mantiene existente)
+ private formatearProductoFavorito(fav: any) {
+    if (!fav.producto) return fav;
+
+    const imagenesUrls = fav.producto.imagenes?.map((img: any) => img.url) || [];
+    
+    return {
+      ...fav,
+      producto: {
+        ...fav.producto,
+        precio: Number(fav.producto.precio),
+        imagenUrl: fav.producto.imagenUrl || imagenesUrls[0] || "/images/placeholder.png",
+        imagenHoverUrl: imagenesUrls[1] || null, // AQUÍ SE AGREGA LA MAGIA
+        imagenes: imagenesUrls,
+      }
+    };
+  }
+
   async agregarFavorito(userId: string, productoId: string) {
-    return this.prisma.favorito.upsert({
+    const favorito = await this.prisma.favorito.upsert({
       where: { userId_productoId: { userId, productoId } },
       update: {},
       create: { userId, productoId },
-      include: { producto: true },
+      include: { producto: { include: { imagenes: true } } }, // VITAL: Incluir imágenes
     });
+    return this.formatearProductoFavorito(favorito);
   }
 
-  // 🔹 Eliminar un favorito
+  async obtenerFavoritos(userId: string) {
+    const favoritos = await this.prisma.favorito.findMany({
+      where: { userId },
+      include: { producto: { include: { imagenes: true } } }, // VITAL: Incluir imágenes
+    });
+    return favoritos.map(fav => this.formatearProductoFavorito(fav));
+  }
+
+
+ // 🔹 Eliminar un favorito
   async eliminarFavorito(userId: string, productoId: string) {
     try {
       return await this.prisma.favorito.delete({
@@ -27,11 +53,4 @@ export class FavoritoService {
     }
   }
 
-  // 🔹 Obtener todos los favoritos de un usuario
-  async obtenerFavoritos(userId: string) {
-    return this.prisma.favorito.findMany({
-      where: { userId },
-      include: { producto: true },
-    });
-  }
 }

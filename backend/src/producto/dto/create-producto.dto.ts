@@ -46,26 +46,44 @@ export class CreateProductoDto {
   @IsString()
   categoriaId: string;
 
-  @Transform(({ value }) => {
-  // 1. Si ya es un array, lo devolvemos tal cual
+  // 🎨 NUEVOS CAMPOS: COLORES, TALLES, CORTES
+  @IsOptional()
+  @Transform(({ value }) => handleArrayTransform(value))
+  @IsArray()
+  colores?: string[];
+
+  @IsOptional()
+  @Transform(({ value }) => handleArrayTransform(value))
+  @IsArray()
+  talles?: string[];
+
+  @IsOptional()
+  @Transform(({ value }) => handleArrayTransform(value))
+  @IsArray()
+  cortes?: string[];
+
+  // 🔗 SECCIONES
+  @Transform(({ value }) => handleArrayTransform(value))
+  @IsArray()
+  seccionesIds: string[];
+
+  @IsOptional()
+  published?: boolean;
+}
+
+/**
+ * Función auxiliar para limpiar la lógica de transformación repetida
+ */
+function handleArrayTransform(value: any) {
   if (Array.isArray(value)) return value;
-  
-  // 2. Si es un string, intentamos ver si es un JSON (como "[1,2]") 
-  // o si es un ID simple "123"
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value);
       return Array.isArray(parsed) ? parsed : [parsed];
     } catch (e) {
-      // Si no es JSON (es un ID simple), lo metemos en un array
-      return [value];
+      // Si llega como un string simple (ej: "blanco"), lo convertimos a ["blanco"]
+      return value ? [value] : [];
     }
   }
-  return value;
-})
-@IsArray()
-seccionesIds: string[];
-
-  @IsOptional()
-  published?: boolean;
+  return value || [];
 }

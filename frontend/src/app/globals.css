@@ -194,3 +194,46 @@
   margin: 0.2rem 0; 
   padding-left: 1.2rem; 
 }
+
+
+
+/* globals.css */
+
+@keyframes floatNormal {
+  0% {
+    transform: translate(-50%, 0) scale(0.6);
+    opacity: 0;
+  }
+  20% { opacity: 0.8; }
+  100% {
+    /* Dispersión moderada y tamaño final mediano */
+    transform: translate(var(--tw-translate-x), -100vh) scale(2.8);
+    opacity: 0;
+  }
+}
+
+.animate-float-medium {
+  position: absolute;
+  /* Salen desde la base del formulario */
+  bottom: 20%; 
+  left: 50%;
+  animation: floatNormal 8s linear infinite;
+  pointer-events: none;
+  /* Asegura que estén detrás del formulario (z-index del formulario es 10) */
+  z-index: 0; 
+}
+
+@keyframes starExplosionSmall {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--ex), var(--ey)) scale(0); opacity: 0; }
+}
+
+.star-particle-small {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  animation: starExplosionSmall 0.6s ease-out forwards;
+  font-size: 1.2rem;
+  z-index: 20;
+}

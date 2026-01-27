@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { useState, useEffect } from "react";
 import { AddedToCartModal } from "@/components/cart/AddedToCartModal";
 import { Producto } from "@/types/types-productos";
+import { COLOR_MAP } from "@/lib/colores";
 
 interface DetailsProductsProps {
   initialProduct: Producto;
@@ -21,6 +22,11 @@ export default function DetailsProducts({ initialProduct }: DetailsProductsProps
   const [selectedImage, setSelectedImage] = useState<string>("");
 
   const { loading, error } = useProductDetails(String(product.id));
+
+  //colores y talles
+  const [selectedTalle, setSelectedTalle] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
+
 
   useEffect(() => {
     if (product) {
@@ -61,6 +67,14 @@ export default function DetailsProducts({ initialProduct }: DetailsProductsProps
   ].filter((url, index, self) => url && self.indexOf(url) === index);
 
   const handleAddToCart = async () => {
+
+    if (product.talles?.length > 0 && !selectedTalle) {
+      return alert("Por favor, selecciona un talle");
+    }
+    if (product.colores?.length > 0 && !selectedColor) {
+      return alert("Por favor, selecciona un color");
+    }
+
     setProcessing(true);
     try {
       await addItem(String(product.id), quantity);
@@ -83,7 +97,7 @@ export default function DetailsProducts({ initialProduct }: DetailsProductsProps
           {/* --- COLUMNA IZQUIERDA: IMÁGENES --- */}
           <div className="md:w-1/2 flex flex-col gap-4">
             {/* Imagen Principal */}
-           <div className="relative aspect-square w-full bg-white rounded-2xl overflow-hidden shadow-lg border-2 border-[#d8c4fa]">
+            <div className="relative aspect-square w-full bg-white rounded-2xl overflow-hidden shadow-lg border-2 border-[#d8c4fa]">
               {selectedImage ? (
                 <Image
                   src={selectedImage}
@@ -104,8 +118,8 @@ export default function DetailsProducts({ initialProduct }: DetailsProductsProps
                   key={index}
                   onClick={() => setSelectedImage(imgUrl)}
                   className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${selectedImage === imgUrl
-                      ? "border-[#7b5ca2] scale-105 shadow-md"
-                      : "border-transparent opacity-60 hover:opacity-100"
+                    ? "border-[#7b5ca2] scale-105 shadow-md"
+                    : "border-transparent opacity-60 hover:opacity-100"
                     }`}
                 >
                   <Image
@@ -133,6 +147,73 @@ export default function DetailsProducts({ initialProduct }: DetailsProductsProps
               {formatPriceClean(product.precio)}
             </p>
 
+            {/* --- SELECCIÓN DE TALLES --- */}
+            {product.talles && product.talles.length > 0 && (
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-[#6c5b7b] mb-3 uppercase tracking-wider">
+                  Talle: <span className="text-[#7b5ca2] font-extrabold">{selectedTalle || "Seleccioná uno"}</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {product.talles.map((talle: string) => (
+                    <button
+                      key={talle}
+                      type="button"
+                      onClick={() => setSelectedTalle(talle)}
+                      className={`min-w-[50px] px-4 py-2 border-2 rounded-xl text-sm font-bold transition-all ${selectedTalle === talle
+                          ? "border-[#7b5ca2] bg-[#7b5ca2] text-white shadow-md scale-105"
+                          : "border-gray-200 bg-white text-gray-600 hover:border-[#d8c4fa]"
+                        }`}
+                    >
+                      {talle}
+                      {/* Si el producto tiene un corte (ej. Oversize), lo mostramos al lado */}
+                      {product.cortes && product.cortes.length > 0 && (
+                        <span className={`ml-1 text-[10px] block opacity-70 ${selectedTalle === talle ? 'text-white' : 'text-gray-400'}`}>
+                          ({product.cortes[0]})
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* --- SELECCIÓN DE COLORES --- */}
+            {product.colores && product.colores.length > 0 && (
+              <div className="mb-8">
+                <label className="block text-sm font-bold text-[#6c5b7b] mb-3 uppercase tracking-wider">
+                  Color: <span className="capitalize text-[#7b5ca2] font-extrabold">{selectedColor || "Seleccioná uno"}</span>
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  {product.colores.map((color: string) => {
+                    const colorHex = COLOR_MAP[color.toLowerCase()] || "#eeeeee";
+                    const isWhite = color.toLowerCase() === "blanco" || color.toLowerCase() === "crema";
+
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setSelectedColor(color)}
+                        title={color}
+                        className={`w-12 h-12 rounded-xl border-2 transition-all flex items-center justify-center relative ${selectedColor === color
+                            ? "border-[#7b5ca2] scale-110 shadow-lg"
+                            : "border-gray-200 hover:border-[#d8c4fa]"
+                          }`}
+                        style={{ backgroundColor: colorHex }}
+                      >
+                        {/* Indicador de selección: un puntito central */}
+                        {selectedColor === color && (
+                          <div className={`w-2.5 h-2.5 rounded-full ${isWhite ? "bg-black" : "bg-white shadow"}`} />
+                        )}
+                        {/* Tooltip con el nombre por si el color es raro */}
+                        <span className="sr-only">{color}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+
             <div className="bg-white/60 backdrop-blur-sm p-6 rounded-3xl border border-purple-100 shadow-sm mb-8">
               <label className="block text-sm font-bold text-[#6c5b7b] mb-4 uppercase tracking-wider">Cantidad</label>
               {product.stock && product.stock > 0 ? (
@@ -145,8 +226,8 @@ export default function DetailsProducts({ initialProduct }: DetailsProductsProps
                   />
                   <button
                     className={`w-full py-4 rounded-2xl font-bold text-lg uppercase tracking-widest transition-all shadow-lg ${processing
-                        ? "bg-gray-400 cursor-wait"
-                        : "bg-[#7b5ca2] hover:bg-[#665ca2] text-white hover:shadow-purple-200"
+                      ? "bg-gray-400 cursor-wait"
+                      : "bg-[#7b5ca2] hover:bg-[#665ca2] text-white hover:shadow-purple-200"
                       }`}
                     onClick={handleAddToCart}
                     disabled={processing}

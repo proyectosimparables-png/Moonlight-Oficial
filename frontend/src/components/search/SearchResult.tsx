@@ -34,7 +34,7 @@ export const SearchResults = ({ data }: SearchResultsProps) => {
           <h2 className="text-xl font-bold mb-6 text-black">Resultados encontrados</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {exactos.map((p) => (
-              <ProductCard key={p.id} {...p} imagenUrl={p.imagenes?.[0]?.url} />
+              <ProductCard key={p.id} {...p} imagenUrl={p.imagenUrl || p.imagenes?.[0]} />
             ))}
           </div>
         </div>
@@ -48,7 +48,7 @@ export const SearchResults = ({ data }: SearchResultsProps) => {
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {relacionados.map((p) => (
-              <ProductCard key={p.id} {...p} imagenUrl={p.imagenes?.[0]?.url} />
+              <ProductCard key={p.id} {...p} imagenUrl={p.imagenUrl || p.imagenes?.[0]} imagenHoverUrl={p.imagenHoverUrl} />
             ))}
           </div>
         </div>

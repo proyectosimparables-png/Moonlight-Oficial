@@ -24,24 +24,41 @@ export class ProductoService {
     }).format(precio);
   }
 
+
+  //////////////////////////formateo de productos///////////////////////
+
   // 🔹 Formatear un producto
- 
 private formatearProducto(producto: any) {
+   const imagenesUrls = producto.imagenes?.map((img: any) => img.url) || [];
   return {
+   
+    // Copiamos todas las propiedades básicas (id, nombre, descripcion, stock, etc.)
     ...producto,
-    precio: this.formatearPrecio(producto.precio),
-    precioPromocional: producto.precioPromocional
-      ? this.formatearPrecio(producto.precioPromocional)
-      : null,
-    // Extraemos las URLs del array de objetos de Prisma
-    imagenes: producto.imagenes?.map((img: any) => img.url) || []
+
+    // Mantenemos los precios como NÚMEROS para que el frontend no rompa al hacer cálculos
+    precio: Number(producto.precio),
+    precioPromocional: producto.precioPromocional ? Number(producto.precioPromocional) : null,
+
+    // Aseguramos que los nuevos campos sean siempre arrays, incluso si vienen vacíos
+    colores: producto.colores || [],
+    talles: producto.talles || [],
+    cortes: producto.cortes || [],
+
+    // Manejo de imágenes: extraemos solo las URLs para el frontend
+   imagenUrl: producto.imagenUrl || imagenesUrls[0] || "/images/placeholder.png",
+    
+    // La SEGUNDA imagen para el efecto hover
+    imagenHoverUrl: imagenesUrls[1] || null, 
+
+    imagenes: imagenesUrls,
+    // Mapeamos las secciones para que el frontend reciba solo los nombres
+    secciones: producto.secciones?.map((s: any) => s.seccion?.nombre).filter(Boolean) || [],
   };
 }
 
-  private formatearProductos(productos: any[]) {
-    return productos.map((p) => this.formatearProducto(p));
-  }
-
+private formatearProductos(productos: any[]) {
+  return productos.map((p) => this.formatearProducto(p));
+}
 
 // 📦 Obtener un solo producto por ID
 async findOne(id: string) {
@@ -51,6 +68,7 @@ async findOne(id: string) {
       categoria: { include: { parent: true } }, 
       secciones: { include: { seccion: true } }, 
       imagenes: true,
+      
     },
   });
 
@@ -74,29 +92,25 @@ async findOne(id: string) {
       precioPromocional: data.precioPromocional ?? null,
       stock: data.stock ?? 0,
 
-      // Envíos
+      // 👇 Guardar los nuevos campos
+      colores: data.colores ?? [],
+      talles: data.talles ?? [],
+      cortes: data.cortes ?? [],
+
       peso: data.peso ?? null,
       profundidad: data.profundidad ?? null,
       ancho: data.ancho ?? null,
       alto: data.alto ?? null,
-
       published: data.published ?? false,
-
       categoriaId: data.categoriaId,
 
-      // 👇 relación MANY TO MANY con secciones
       secciones: {
-        create: data.seccionesIds.map((seccionId) => ({
-          seccionId,
-        })),
+        create: data.seccionesIds.map((seccionId) => ({ seccionId })),
       },
 
       imagenUrl: imagenesUrls[0] ?? null,
-
       imagenes: imagenesUrls.length
-        ? {
-            create: imagenesUrls.map((url) => ({ url })),
-          }
+        ? { create: imagenesUrls.map((url) => ({ url })) }
         : undefined,
     },
     include: {
@@ -135,6 +149,7 @@ async searchProducts(query: string) {
     },
     include: { imagenes: true, categoria: true },
     take: 10,
+    
   });
 
   // 2. CORRECCIÓN DEL ERROR: Definimos el tipo explícitamente como 'any[]'
@@ -257,13 +272,17 @@ async findAllPublic(seccionId?: string, categoriaId?: string) {
   if (imagenUrl) updateData.imagenUrl = imagenUrl;
 
   // 5. Ejecutamos el update con el objeto formateado correctamente para Prisma
-  try {
+ try {
     const productoActualizado = await this.prisma.producto.update({
       where: { id },
       data: updateData,
       include: { 
         imagenes: true,
-        secciones: true,
+        secciones: {
+          include: {
+            seccion: true // <--- ESTO ES LO QUE TE FALTABA
+          }
+        },
         categoria: true 
       },
     });
@@ -468,14 +487,31 @@ async updateMultipleImages(id: string, data: CreateProductoDto, imagenUrls: stri
 
 
   
-
+///slug recien agregado////////////////////////////###########
   async getSeccionConProductos(slug: string) {
-    return this.prisma.seccion.findUnique({
-      where: { slug },
-      include: { productos: { include: { producto: true } } },
-    });
-  }
+  const seccion = await this.prisma.seccion.findUnique({
+    where: { slug },
+    include: {
+      productos: {
+        include: {
+          producto: {
+            include: { imagenes: true } // 👈 ¡Fundamental para el hover!
+          }
+        }
+      }
+    },
+  });
 
+  if (!seccion) return null;
+
+  // Formateamos para que el frontend reciba el objeto "limpio"
+  return {
+    ...seccion,
+    productos: seccion.productos
+      .filter((sp) => sp.producto?.published) // Solo publicados
+      .map((sp) => this.formatearProducto(sp.producto)), // 👈 Aquí aplicas tu formateo
+  };
+}
 
   // ⚡ Métodos que faltaban en tu controller
   async actualizarSeccion(id: string, data: Partial<CreateSeccionDto>) {

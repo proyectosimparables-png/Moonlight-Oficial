@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import { ImagePlus, Loader2 } from "lucide-react";
 import type { Producto } from "@/types/types-productos";
 import type { Categoria } from "@/types/Categorias";
+import { COLOR_MAP, OPCIONES_COLORES, OPCIONES_CORTES, OPCIONES_TALLES } from "@/lib/colores";
 
 interface EditarProductoFormProps {
   producto: Producto;
@@ -47,7 +48,12 @@ export default function EditarProductoForm({ producto, onCancel, onUpdate }: Edi
   const [imagenUrlActual, setImagenUrlActual] = useState<string | null>(producto.imagenUrl || null);
   const [imagenesGaleria, setImagenesGaleria] = useState<any[]>(producto.imagenes || []);
   const [loading, setLoading] = useState(false);
-  const [imagenesExistentes, setImagenesExistentes] = useState<any[]>(producto.imagenes|| []);
+  const [imagenesExistentes, setImagenesExistentes] = useState<any[]>(producto.imagenes || []);
+
+  //colores y tallas//
+  const [coloresSel, setColoresSel] = useState<string[]>(producto.colores || []);
+  const [tallesSel, setTallesSel] = useState<string[]>(producto.talles || []);
+  const [cortesSel, setCortesSel] = useState<string[]>(producto.cortes || []);
 
   // 1. Cargar todas las secciones disponibles al montar
   useEffect(() => {
@@ -93,7 +99,9 @@ export default function EditarProductoForm({ producto, onCancel, onUpdate }: Edi
         descripcion,
         precio: Number(precio),
         stock: Number(stock),
-        // Solo enviamos seccionesIds si hay alguna seleccionada
+        colores: coloresSel,
+        talles: tallesSel,
+        cortes: cortesSel,
         seccionesIds: seccionesSeleccionadas.length > 0 ? seccionesSeleccionadas : undefined,
       };
 
@@ -126,19 +134,19 @@ export default function EditarProductoForm({ producto, onCancel, onUpdate }: Edi
     );
   };
 
-const handleRemoveExistente = async (imagenId: string) => {
-  try {
-    setLoading(true);
-    // Asumiendo que removeImagenProducto llama a un endpoint DELETE
-    await removeImagenProducto(imagenId); 
-    setImagenesExistentes(prev => prev.filter(img => img.id !== imagenId));
-    toast.success("Imagen eliminada");
-  } catch (error) {
-    toast.error("No se pudo eliminar la imagen");
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleRemoveExistente = async (imagenId: string) => {
+    try {
+      setLoading(true);
+      // Asumiendo que removeImagenProducto llama a un endpoint DELETE
+      await removeImagenProducto(imagenId);
+      setImagenesExistentes(prev => prev.filter(img => img.id !== imagenId));
+      toast.success("Imagen eliminada");
+    } catch (error) {
+      toast.error("No se pudo eliminar la imagen");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl border shadow-sm text-black">
@@ -188,8 +196,8 @@ const handleRemoveExistente = async (imagenId: string) => {
                   type="button"
                   onClick={() => toggleSeccion(sec.id)}
                   className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${isSelected
-                      ? "bg-purple-600 text-white border-purple-600"
-                      : "bg-white text-gray-600 border-gray-300 hover:border-purple-400"
+                    ? "bg-purple-600 text-white border-purple-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-purple-400"
                     }`}
                 >
                   {sec.nombre}
@@ -219,76 +227,143 @@ const handleRemoveExistente = async (imagenId: string) => {
       </div>
 
       {/* Fila: Descripción */}
-<div className="space-y-1">
-  <label className="block text-sm font-bold">Descripción del Producto</label>
-  <Textarea
-    placeholder="Escribe una descripción detallada..."
-    value={descripcion}
-    onChange={(e) => setDescripcion(e.target.value)}
-    className="min-h-[120px] bg-white text-black"
-  />
-  
-</div>
+      <div className="space-y-1">
+        <label className="block text-sm font-bold text-gray-700">Descripción del Producto</label>
 
+        <div
+          // Esta propiedad hace que el DIV se comporte como un Input/Textarea
+          contentEditable={true}
+          // Pasamos el HTML que ya tenemos
+          dangerouslySetInnerHTML={{ __html: descripcion }}
+          // Cuando el usuario escribe, guardamos el contenido en el estado
+          onBlur={(e) => setDescripcion(e.currentTarget.innerHTML)}
+          className="min-h-[150px] p-3 bg-white text-black border rounded-md overflow-auto focus:outline-none focus:ring-2 focus:ring-[#7b5ca2] break-words leading-relaxed 
+               [&>ul]:list-disc [&>ul]:ml-5 [&>ol]:list-decimal [&>ol]:ml-5"
+        />
+        <p className="text-[10px] text-gray-400">Haz clic sobre el texto para editarlo directamente.</p>
+      </div>
       {/* Bloque: Imágenes con Preview */}
-     <div className="space-y-4">
-  <label className="block text-sm font-bold">Imágenes del Producto</label>
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-    
-    {/* 1. Imágenes Actuales (Galería guardada en DB) */}
-    {imagenesGaleria.map((img) => (
-      <div key={img.id} className="relative group border rounded-lg overflow-hidden h-32">
-        <img src={img.url} className="h-full w-full object-cover" alt="Actual" />
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <Button 
-            type="button" 
-            variant="destructive" 
-            size="sm" 
-            onClick={async () => {
-              try {
-                // Llama a tu servicio para eliminar de la DB
-                await removeImagenProducto(img.id);
-                // Filtra el estado para que desaparezca de la vista
-                setImagenesGaleria(prev => prev.filter(item => item.id !== img.id));
-                toast.success("Imagen quitada");
-              } catch (error) {
-                toast.error("Error al quitar imagen");
-              }
-            }}
-          >
-            Quitar
-          </Button>
+      <div className="space-y-4">
+        <label className="block text-sm font-bold">Imágenes del Producto</label>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+          {/* 1. Imágenes Actuales (Galería guardada en DB) */}
+          {imagenesGaleria.map((img) => (
+            <div key={img.id} className="relative group border rounded-lg overflow-hidden h-32">
+              <img src={img.url} className="h-full w-full object-cover" alt="Actual" />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      // Llama a tu servicio para eliminar de la DB
+                      await removeImagenProducto(img.id);
+                      // Filtra el estado para que desaparezca de la vista
+                      setImagenesGaleria(prev => prev.filter(item => item.id !== img.id));
+                      toast.success("Imagen quitada");
+                    } catch (error) {
+                      toast.error("Error al quitar imagen");
+                    }
+                  }}
+                >
+                  Quitar
+                </Button>
+              </div>
+            </div>
+          ))}
+
+          {/* 2. Previews Nuevas (Las que estás subiendo ahora) */}
+          {previewUrls.map((url, index) => (
+            <div key={index} className="relative group border rounded-lg overflow-hidden h-32">
+              <img src={url} className="h-full w-full object-cover" alt="Preview" />
+              <div className="absolute top-1 right-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+                    setImagenesNuevas(prev => prev.filter((_, i) => i !== index));
+                  }}
+                  className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-lg"
+                >
+                  X
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* 3. Botón Añadir */}
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 cursor-pointer hover:bg-gray-50 transition-colors">
+            <ImagePlus className="w-8 h-8 text-gray-400" />
+            <span className="text-[10px] text-gray-500 mt-1">Añadir más</span>
+            <input type="file" multiple className="hidden" onChange={handleImageChange} accept="image/*" />
+          </label>
         </div>
       </div>
-    ))}
 
-    {/* 2. Previews Nuevas (Las que estás subiendo ahora) */}
-    {previewUrls.map((url, index) => (
-      <div key={index} className="relative group border rounded-lg overflow-hidden h-32">
-        <img src={url} className="h-full w-full object-cover" alt="Preview" />
-        <div className="absolute top-1 right-1">
-          <button
-            type="button"
-            onClick={() => {
-              setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-              setImagenesNuevas(prev => prev.filter((_, i) => i !== index));
-            }}
-            className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-lg"
-          >
-            X
-          </button>
+      {/* VARIANTES: COLORES, TALLES, CORTES */}
+      <div className="space-y-4 border-t pt-4">
+        <h3 className="font-bold text-lg text-gray-700">Variantes de Prenda</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+          {/* Selector de Colores */}
+          <div>
+            <p className="text-sm font-medium mb-2">Colores</p>
+            <div className="border rounded-lg bg-white overflow-hidden shadow-sm">
+              <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+                {OPCIONES_COLORES.map((color) => (
+                  <label key={color} className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors ${coloresSel.includes(color) ? "bg-purple-50" : "hover:bg-gray-50"}`}>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={coloresSel.includes(color)}
+                      onChange={() => setColoresSel(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color])}
+                    />
+                    <div className="w-5 h-5 rounded-full border border-gray-300" style={{ backgroundColor: COLOR_MAP[color.toLowerCase()] || "#eee" }} />
+                    <span className={`text-sm ${coloresSel.includes(color) ? "font-bold text-purple-700" : "text-gray-600"}`}>{color}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Selector de Talles (Repetir lógica similar para talles) */}
+          <div>
+            <p className="text-sm font-medium mb-2">Talles</p>
+            <div className="border rounded-lg bg-white p-2 max-h-48 overflow-y-auto">
+              {OPCIONES_TALLES.map((talle) => (
+                <label key={talle} className="flex items-center gap-2 p-1">
+                  <input
+                    type="checkbox"
+                    checked={tallesSel.includes(talle)}
+                    onChange={() => setTallesSel(prev => prev.includes(talle) ? prev.filter(t => t !== talle) : [...prev, talle])}
+                  />
+                  <span className="text-sm">{talle}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Selector de Cortes (Repetir lógica similar para cortes) */}
+          <div>
+            <p className="text-sm font-medium mb-2">Estilos</p>
+            <div className="border rounded-lg bg-white p-2 max-h-48 overflow-y-auto">
+              {OPCIONES_CORTES.map((corte) => (
+                <label key={corte} className="flex items-center gap-2 p-1">
+                  <input
+                    type="checkbox"
+                    checked={cortesSel.includes(corte)}
+                    onChange={() => setCortesSel(prev => prev.includes(corte) ? prev.filter(c => c !== corte) : [...prev, corte])}
+                  />
+                  <span className="text-sm">{corte}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
         </div>
       </div>
-    ))}
-
-    {/* 3. Botón Añadir */}
-    <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 cursor-pointer hover:bg-gray-50 transition-colors">
-      <ImagePlus className="w-8 h-8 text-gray-400" />
-      <span className="text-[10px] text-gray-500 mt-1">Añadir más</span>
-      <input type="file" multiple className="hidden" onChange={handleImageChange} accept="image/*" />
-    </label>
-  </div>
-</div>
 
       {/* Botones de Acción */}
       <div className="flex gap-3 justify-end pt-4 border-t">
