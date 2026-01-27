@@ -40,7 +40,7 @@ export class PaymentsService {
                 failure: `${process.env.FRONTEND_URL}/payment-failure`,
                 pending: `${process.env.FRONTEND_URL}/payment-pending`,
             },
-            auto_return: 'approved',
+            //auto_return: 'approved',
             notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
             external_reference: orden.id,
         };
