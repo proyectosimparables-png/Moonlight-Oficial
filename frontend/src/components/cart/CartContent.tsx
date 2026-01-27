@@ -5,27 +5,13 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/hooks/useAuth"; // Importamos tu Auth
+import { useAuth } from "@/hooks/useAuth";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
 import { AddedToCartModal } from "./AddedToCartModal";
 
 /* ----------------------------------------------------
-   INTERFACES DE RESPUESTA DEL BACKEND
-------------------------------------------------------*/
-interface OrderResponse {
-  id: string;
-  total: number;
-  estado: string;
-}
-
-interface PreferenceResponse {
-  id: string;
-  init_point: string;
-}
-
-/* ----------------------------------------------------
-   MODAL CONFIRMACIÓN
+   MODAL CONFIRMACIÓN (Se mantiene igual)
 ------------------------------------------------------*/
 function ModalConfirm({
   open,
@@ -74,7 +60,7 @@ function ModalConfirm({
    COMPONENTE PRINCIPAL
 ------------------------------------------------------*/
 export default function CartContent() {
-  const { user, isAuthenticated } = useAuth(); // Obtenemos datos de auth
+  const { user, isAuthenticated } = useAuth();
   const {
     cart,
     removeItem,
@@ -91,7 +77,6 @@ export default function CartContent() {
   const [processingItems, setProcessingItems] = useState<
     Record<string, boolean>
   >({});
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [postalCode, setPostalCode] = useState("");
   const [initialCartLoaded, setInitialCartLoaded] = useState(false);
   const [modalDeleteId, setModalDeleteId] = useState<string | null>(null);
@@ -157,8 +142,8 @@ export default function CartContent() {
     setModalClearOpen(false);
   };
 
-  /* --- LÓGICA DE CHECKOUT SIN ANY --- */
-  const handleCheckout = async () => {
+  /* --- LÓGICA DE REDIRECCIÓN AL CHECKOUT ACTUALIZADA --- */
+  const handleCheckout = () => {
     if (!isAuthenticated || !user?.id) {
       toast.error("Debes iniciar sesión para comprar");
       router.push("/login");
@@ -170,57 +155,18 @@ export default function CartContent() {
       return;
     }
 
-    setIsCheckoutLoading(true);
-    const toastId = toast.loading("Iniciando compra...");
-
-    try {
-      // 1. Crear Orden
-      const orderRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/ordenes`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.id,
-            metodoEnvio: postalCode ? "Correo Argentino" : "A convenir",
-            costoEnvio: postalCode ? 6836 : 0,
-            direccionEnvio: user.address || "Dirección no especificada",
-          }),
-        },
-      );
-
-      if (!orderRes.ok) throw new Error("Error al crear la orden");
-      const order: OrderResponse = await orderRes.json();
-
-      // 2. Crear Preferencia de Pago
-      const paymentRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/payments/create-preference/${order.id}`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!paymentRes.ok) throw new Error("Error al generar el link de pago");
-      const payment: PreferenceResponse = await paymentRes.json();
-
-      // 3. Redirigir a Mercado Pago
-      toast.success("Redirigiendo...", { id: toastId });
-      window.location.href = payment.init_point;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Error desconocido";
-      toast.error(message, { id: toastId });
-    } finally {
-      setIsCheckoutLoading(false);
-    }
+    // Ya no creamos la orden aquí. Redirigimos al flujo de pasos.
+    toast.success("Iniciando proceso de Compra...");
+    router.push("/checkout"); // Asegúrate de que esta ruta renderice el CheckoutWizard
   };
 
   const totalPrice = cart.reduce(
     (acc, item) => acc + item.producto.precio * item.quantity,
     0,
   );
-  const shippingCost = postalCode ? 6836 : 0;
-  const finalTotal = totalPrice + shippingCost;
+
+  // El costo de envío ahora se manejará en el Step 2 del CheckoutWizard
+  const finalTotal = totalPrice;
 
   if (loading && cart.length === 0 && !initialCartLoaded) {
     return (
@@ -234,8 +180,8 @@ export default function CartContent() {
     <div className="min-h-screen flex flex-col bg-[#FAFCEF] text-[#6c5b7b] relative">
       <div className="p-6 flex-1 max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-1">
-          <h2 className="text-2xl font-bold text-center flex-1">
-            CARRITO DE COMPRAS
+          <h2 className="text-2xl font-bold text-center flex-1 uppercase">
+            Carrito de compras
           </h2>
           <button
             onClick={() => router.push("/")}
@@ -280,7 +226,7 @@ export default function CartContent() {
               handleCheckout={handleCheckout}
               router={router}
               openClearCartModal={() => setModalClearOpen(true)}
-              isLoading={isCheckoutLoading}
+              isLoading={false} // Ya no cargamos aquí porque es solo un redirect
             />
           </>
         )}

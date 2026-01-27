@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react"; // Opcional: para un spinner
 
 interface CartSummaryProps {
   totalPrice: number;
@@ -12,17 +11,17 @@ interface CartSummaryProps {
   handleCheckout: () => void;
   router: ReturnType<typeof useRouter>;
   openClearCartModal: () => void;
-  isLoading?: boolean; // Nueva prop
+  isLoading?: boolean;
 }
 
 export default function CartSummary({
   totalPrice,
   finalTotal,
-  postalCode,
-  setPostalCode,
+
   handleCheckout,
   router,
-  isLoading = false,
+
+  openClearCartModal, // Agregada a la desestructuración
 }: CartSummaryProps) {
   const formatPrice = (price: number) =>
     price.toLocaleString("es-AR", {
@@ -32,10 +31,23 @@ export default function CartSummary({
 
   return (
     <div className="mt-6 border-t pt-4 space-y-4">
-      {/* ... Subtotal y Medios de envío se mantienen igual ... */}
+      {/* Subtotal */}
+      <div className="flex justify-between items-center text-gray-600">
+        <span>Subtotal (sin envío)</span>
+        <span className="font-semibold">{formatPrice(totalPrice)}</span>
+      </div>
 
+      {/* Informativo de Envío */}
+      <div className="bg-gray-50 p-3 rounded-md border border-dashed border-gray-300">
+        <p className="text-xs text-gray-500 text-center">
+          El costo de envío y posibles descuentos se calcularán en el siguiente
+          paso.
+        </p>
+      </div>
+
+      {/* Total */}
       <div className="flex justify-between items-center text-lg font-bold">
-        <span>Total:</span>
+        <span>Total estimado:</span>
         <div className="text-right">
           <span>{formatPrice(finalTotal)}</span>
           {finalTotal > 0 && (
@@ -46,29 +58,32 @@ export default function CartSummary({
         </div>
       </div>
 
+      {/* Botón Principal */}
       <Button
-        className="w-full text-gray-800 bg-[#d8c4fa] hover:bg-[#cbb1f5] font-bold py-6"
-        disabled={isLoading || finalTotal === 0}
+        className="w-full text-gray-800 bg-[#d8c4fa] hover:bg-[#cbb1f5] font-bold py-6 uppercase tracking-wider"
+        disabled={finalTotal === 0}
         onClick={handleCheckout}
       >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            PROCESANDO...
-          </>
-        ) : (
-          "INICIAR COMPRA"
-        )}
+        Iniciar Compra
       </Button>
 
-      <Button
-        variant="outline"
-        className="w-full"
-        onClick={() => router.push("/")}
-        disabled={isLoading}
-      >
-        Ver más productos
-      </Button>
+      {/* Botones Secundarios */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          className="w-full text-xs"
+          onClick={() => router.push("/")}
+        >
+          Ver más productos
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full text-xs text-red-400 hover:text-red-500 hover:bg-red-50"
+          onClick={openClearCartModal}
+        >
+          Vaciar carrito
+        </Button>
+      </div>
     </div>
   );
 }

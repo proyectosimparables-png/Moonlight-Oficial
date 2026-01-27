@@ -32,7 +32,6 @@ export class PaymentsService {
                 currency_id: 'ARS',
             })),
             payer: {
-                // Usamos el email exacto de tu Buyer Test User
                 email: 'test_user_6490245370322727351@testuser.com',
             },
             back_urls: {
@@ -40,7 +39,6 @@ export class PaymentsService {
                 failure: `${process.env.FRONTEND_URL}/payment-failure`,
                 pending: `${process.env.FRONTEND_URL}/payment-pending`,
             },
-            //auto_return: 'approved',
             notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
             external_reference: orden.id,
         };
@@ -71,14 +69,37 @@ export class PaymentsService {
             if (!ordenId) return { success: false };
 
             if (payment.status === 'approved') {
-                await this.prisma.orden.update({
+                // 1. Buscamos la orden para saber de quién es
+                const orden = await this.prisma.orden.findUnique({
                     where: { id: ordenId },
-                    data: {
-                        estado: EstadoOrden.PAGADO,
-                        paymentId: String(paymentId),
-                    },
                 });
-                console.log(`✅ Pago aprobado para orden: ${ordenId}`);
+
+                if (orden) {
+                    // Usamos una transacción para asegurar que se actualice la orden Y se limpie el carrito
+                    await this.prisma.$transaction(async (tx) => {
+                        // 2. Marcamos la orden como PAGADA
+                        await tx.orden.update({
+                            where: { id: ordenId },
+                            data: {
+                                estado: EstadoOrden.PAGADO,
+                                paymentId: String(paymentId),
+                            },
+                        });
+
+                        // 3. Buscamos el carrito del usuario y borramos sus ítems
+                        const userCart = await tx.cart.findUnique({
+                            where: { userId: orden.userId },
+                        });
+
+                        if (userCart) {
+                            await tx.cartItem.deleteMany({
+                                where: { cartId: userCart.id },
+                            });
+                        }
+                    });
+
+                    console.log(`✅ Pago aprobado y carrito limpiado para usuario: ${orden.userId}`);
+                }
             }
 
             return { success: true };

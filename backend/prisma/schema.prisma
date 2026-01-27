@@ -8,23 +8,23 @@ datasource db {
 }
 
 model User {
-  id                      String       @id @default(uuid())
-  email                   String       @unique
-  name                    String?
-  password                String
-  isVerified              Boolean      @default(false)
-  verificationCode        String?
-  verificationCodeExpires DateTime?
-  role                    Role         @default(CLIENTE)
-  image                   String?
-  address                 String?
-  createdAt               DateTime     @default(now())
-  updatedAt               DateTime     @updatedAt
-  carrito                 Cart?
-  comentarios             Comentario[]
-  favoritos               Favorito[]
-  historial               Historial[]
-  ordenes                 Orden[]
+  id                        String      @id @default(uuid())
+  email                     String      @unique
+  name                      String?
+  password                  String
+  isVerified                Boolean     @default(false)
+  verificationCode          String?
+  verificationCodeExpires   DateTime?
+  role                      Role        @default(CLIENTE)
+  image                     String?
+  address                   String?
+  createdAt                 DateTime    @default(now())
+  updatedAt                 DateTime    @updatedAt
+  carrito                   Cart?
+  comentarios               Comentario[]
+  favoritos                 Favorito[]
+  historial                 Historial[]
+  ordenes                   Orden[]
 }
 
 model Producto {
@@ -99,22 +99,42 @@ model Comentario {
 }
 
 model Orden {
-  id                     String      @id @default(uuid())
-  userId                 String
-  total                  Float
-  estado                 EstadoOrden @default(PENDIENTE)
-  carritoAbandonadoEmail Boolean     @default(false)
-  carritoCreadoEn        DateTime    @default(now())
-  paymentId              String?
-  preferenceId          String?     // <--- ID de la preferencia de pago
-  merchantOrderId        String?
-  metodoEnvio            String?
-  costoEnvio             Float       @default(0)
-  direccionEnvio         String?
-  createdAt              DateTime    @default(now())
-  updatedAt              DateTime    @updatedAt
-  user                   User        @relation(fields: [userId], references: [id])
-  items                  OrdenItem[]
+  id                      String      @id @default(uuid())
+  userId                  String
+  total                   Float
+  estado                  EstadoOrden @default(PENDIENTE)
+  metodoPago              MetodoPago  @default(MERCADO_PAGO) // <--- Agregado para distinguir medios de pago
+  carritoAbandonadoEmail  Boolean     @default(false)
+  carritoCreadoEn         DateTime    @default(now())
+  
+  // Datos del Destinatario (Capturas 2 y 3)
+  emailContacto           String?     // Email ingresado en checkout
+  nombreDestinatario      String?
+  apellidoDestinatario    String?
+  dniDestinatario         String?
+  telefonoDestinatario    String?
+
+  // Datos de Envío (Captura 1 y 2)
+  metodoEnvio             String?     // Correo Argentino, Retiro, etc.
+  costoEnvio              Float       @default(0)
+  codigoPostal            String?
+  provincia               String?
+  localidad               String?
+  calle                   String?
+  numero                  String?
+  piso                    String?
+  departamento            String?
+  notasEntrega            String?     // Aclaraciones y comentarios
+
+  // Referencias de Pago
+  paymentId               String?
+  preferenceId            String?
+  merchantOrderId         String?
+  
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+  user                    User        @relation(fields: [userId], references: [id])
+  items                   OrdenItem[]
 
   @@index([userId])
 }
@@ -194,6 +214,12 @@ enum EstadoOrden {
   ENTREGADO
   REEMBOLSADO
   CANCELADO
+}
+
+enum MetodoPago {
+  MERCADO_PAGO
+  TRANSFERENCIA
+  EFECTIVO
 }
 
 enum Role {
