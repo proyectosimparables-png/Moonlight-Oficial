@@ -82,6 +82,12 @@ export default function CartContent() {
   const [modalDeleteId, setModalDeleteId] = useState<string | null>(null);
   const [modalClearOpen, setModalClearOpen] = useState(false);
 
+  // Estado para capturar la selección real del envío
+  const [shippingInfo, setShippingInfo] = useState({
+    nombre: "A convenir",
+    costo: 0,
+  });
+
   useEffect(() => {
     if (!loading) setInitialCartLoaded(true);
   }, [loading]);
@@ -142,7 +148,7 @@ export default function CartContent() {
     setModalClearOpen(false);
   };
 
-  /* --- LÓGICA DE REDIRECCIÓN AL CHECKOUT ACTUALIZADA --- */
+  /* --- LÓGICA DE REDIRECCIÓN AL CHECKOUT CORREGIDA --- */
   const handleCheckout = () => {
     if (!isAuthenticated || !user?.id) {
       toast.error("Debes iniciar sesión para comprar");
@@ -155,9 +161,15 @@ export default function CartContent() {
       return;
     }
 
-    // Ya no creamos la orden aquí. Redirigimos al flujo de pasos.
     toast.success("Iniciando proceso de Compra...");
-    router.push("/checkout"); // Asegúrate de que esta ruta renderice el CheckoutWizard
+
+    // Pasamos los datos reales del envío por URL para que el CheckoutWizard los reciba
+    const params = new URLSearchParams({
+      shippingCost: shippingInfo.costo.toString(),
+      shippingName: shippingInfo.nombre,
+    });
+
+    router.push(`/checkout?${params.toString()}`);
   };
 
   const totalPrice = cart.reduce(
@@ -165,7 +177,6 @@ export default function CartContent() {
     0,
   );
 
-  // El costo de envío ahora se manejará en el Step 2 del CheckoutWizard
   const finalTotal = totalPrice;
 
   if (loading && cart.length === 0 && !initialCartLoaded) {
@@ -177,15 +188,15 @@ export default function CartContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFCEF] text-[#6c5b7b] relative">
-      <div className="p-6 flex-1 max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-1">
-          <h2 className="text-2xl font-bold text-center flex-1 uppercase">
+    <div className="min-h-screen flex flex-col bg-white text-[#4A4A4A] relative font-sans">
+      <div className="p-4 flex-1 max-w-2xl mx-auto w-full">
+        <div className="flex justify-between items-center mb-6 border-b border-gray-300 pb-2">
+          <h2 className="text-lg font-light tracking-widest text-center flex-1 uppercase">
             Carrito de compras
           </h2>
           <button
             onClick={() => router.push("/")}
-            className="text-gray-500 hover:text-gray-800 text-3xl font-bold transition ml-4"
+            className="text-gray-400 hover:text-gray-800 text-2xl transition ml-4"
           >
             ×
           </button>
@@ -193,7 +204,7 @@ export default function CartContent() {
 
         {cart.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-400 mb-6">
               No tienes productos en el carrito.
             </p>
             <button
@@ -205,7 +216,7 @@ export default function CartContent() {
           </div>
         ) : (
           <>
-            <ul className="space-y-4">
+            <ul className="divide-y divide-gray-100">
               {cart.map((item) => (
                 <CartItem
                   key={item.id}
@@ -226,7 +237,10 @@ export default function CartContent() {
               handleCheckout={handleCheckout}
               router={router}
               openClearCartModal={() => setModalClearOpen(true)}
-              isLoading={false} // Ya no cargamos aquí porque es solo un redirect
+              // Capturamos el cambio de envío desde el componente hijo
+              onShippingChange={(nombre, costo) =>
+                setShippingInfo({ nombre, costo })
+              }
             />
           </>
         )}

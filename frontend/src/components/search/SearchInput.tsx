@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useSearchProducts, Product } from "./useSearchProducts"; // Importamos Product
+import { useSearchProducts, Product } from "./useSearchProducts";
 import Link from "next/link";
 
 export const SearchInput = () => {
@@ -16,7 +16,10 @@ export const SearchInput = () => {
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setShowSuggestions(false);
       }
     };
@@ -27,6 +30,7 @@ export const SearchInput = () => {
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (query.trim().length >= 3) {
+      // ✅ AJUSTE: Usamos 'q=' para que la página de búsqueda también use ese parámetro
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
       setQuery("");
       setShowSuggestions(false);
@@ -45,13 +49,12 @@ export const SearchInput = () => {
           }}
           onFocus={() => setShowSuggestions(true)}
           placeholder="Buscar productos..."
-          className="pl-10 w-full bg-white text-black border-gray-300 focus:ring-purple-500 text-base" // text-base evita zoom en iOS
+          className="pl-10 w-full bg-white text-black border-gray-300 focus:ring-purple-500 text-base"
         />
       </form>
 
       {showSuggestions && query.length >= 3 && (
         <div className="absolute top-full left-0 w-full bg-white border border-gray-200 rounded-lg mt-2 shadow-2xl z-[100] overflow-hidden">
-
           {loading && (
             <div className="p-2 space-y-2">
               {[1, 2, 3].map((i) => (
@@ -66,30 +69,41 @@ export const SearchInput = () => {
             </div>
           )}
 
-          {/* Cambiamos results.length por results.exactos.length */}
           {!loading && results.exactos.length > 0 && (
             <div className="max-h-[60vh] overflow-y-auto md:max-h-80">
-              {results.exactos.map((product: Product) => ( // Tipamos 'product'
-                <Link
-                  key={product.id}
-                  href={`/products/${product.id}`} 
-                  onClick={() => {
-                    setQuery("");
-                    setShowSuggestions(false);
-                  }}
-                  className="flex items-center gap-3 p-4 md:p-3 hover:bg-purple-50 transition-colors border-b last:border-0"
-                >
-                  <img
-                    src={product.imagenes?.[0]?.url || "/placeholder.png"}
-                    className="w-12 h-12 md:w-10 md:h-10 object-cover rounded shadow-sm"
-                    alt={product.nombre}
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-gray-800">{product.nombre}</span>
-                    <span className="text-xs text-purple-600 font-bold">{product.precio}</span>
-                  </div>
-                </Link>
-              ))}
+              {results.exactos.map((product: Product) => {
+                const imgSrc =
+                  typeof product.imagenes?.[0] === "string"
+                    ? product.imagenes[0]
+                    : product.imagenes?.[0]?.url || "/placeholder.png";
+
+                return (
+                  <Link
+                    key={product.id}
+                    // ✅ AJUSTE: Usamos /productos/ y slug para navegación amigable
+                    href={`/productos/${product.slug || product.id}`}
+                    onClick={() => {
+                      setQuery("");
+                      setShowSuggestions(false);
+                    }}
+                    className="flex items-center gap-3 p-4 md:p-3 hover:bg-purple-50 transition-colors border-b last:border-0"
+                  >
+                    <img
+                      src={imgSrc}
+                      className="w-12 h-12 md:w-10 md:h-10 object-cover rounded shadow-sm"
+                      alt={product.nombre}
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-gray-800">
+                        {product.nombre}
+                      </span>
+                      <span className="text-xs text-purple-600 font-bold">
+                        {product.precio}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
               <button
                 type="button"
                 onClick={() => handleSearch()}
@@ -97,12 +111,6 @@ export const SearchInput = () => {
               >
                 Ver todos los resultados
               </button>
-            </div>
-          )}
-
-          {!loading && results.exactos.length === 0 && (
-            <div className="p-6 text-center text-gray-400 text-sm">
-              No hay coincidencias para "{query}"
             </div>
           )}
         </div>

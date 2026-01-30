@@ -6,9 +6,9 @@ import { UnifiedAuthGuard } from 'src/auth/guards/supabase-auth.guard';
 
 @Controller('historial')
 export class HistorialController {
-  constructor(private historialService: HistorialService) {}
+  constructor(private historialService: HistorialService) { }
 
-  @UseGuards(UnifiedAuthGuard )
+  @UseGuards(UnifiedAuthGuard)
   @Get('mi-historial')
   async getMiHistorial(@Req() req: Request, @Res() res: Response) {
     try {
@@ -21,7 +21,7 @@ export class HistorialController {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: 'Error obteniendo historial',
+        message: 'Error obteniendo historial de compras',
         error: message,
       });
     }

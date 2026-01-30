@@ -11,8 +11,10 @@ import { useFavorites } from "@/context/FavoritesContext";
 import { useRouter } from "next/navigation";
 import { CartService } from "@/services/cartService";
 
+// ✅ Interfaz actualizada para incluir el slug
 interface ProductCardProps {
   id: string;
+  slug: string; // Agregado para el ruteo amigable
   imagenUrl?: string;
   imagenHoverUrl?: string;
   nombre: string;
@@ -21,6 +23,7 @@ interface ProductCardProps {
 
 const ProductCard = ({
   id,
+  slug,
   imagenUrl,
   imagenHoverUrl,
   nombre,
@@ -62,8 +65,12 @@ const ProductCard = ({
     }
   };
 
-  // 🔗 CAMBIO CLAVE: Nueva ruta unificada
-  const navigateToDetail = () => router.push(`/productos/${id}`);
+  // 🔗 NAVEGACIÓN CORREGIDA: Usa el slug para la URL
+  const navigateToDetail = () => {
+    // Si existe el slug lo usamos, sino usamos el id como fallback
+    const target = slug || id;
+    router.push(`/productos/${target}`);
+  };
 
   return (
     <Card className="group overflow-hidden bg-white border border-[#ddd] hover:shadow-xl transition-all duration-300 rounded-lg">
@@ -90,7 +97,7 @@ const ProductCard = ({
             sizes="(max-width: 768px) 100vw, 25vw"
           />
 
-          {/* Overlay "Ver Detalle" - RUTA ACTUALIZADA */}
+          {/* Overlay "Ver Detalle" */}
           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
             <Button
               variant="secondary"
@@ -129,7 +136,7 @@ const ProductCard = ({
           </Button>
         </div>
 
-        {/* Info del producto - RUTA ACTUALIZADA */}
+        {/* Info del producto */}
         <div className="p-4 cursor-pointer" onClick={navigateToDetail}>
           <h3 className="text-[#6c5b7b] font-medium mb-2 text-sm md:text-base line-clamp-2 min-h-[40px]">
             {nombre}

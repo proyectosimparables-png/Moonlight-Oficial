@@ -1,21 +1,21 @@
 'use client';
+
+import { useState, useEffect } from "react";
+
 export interface Product {
   id: string;
+  slug: string; // ✅ Aseguramos que el slug esté en la interfaz
   nombre: string;
-  imagenes: { url: string }[];
+  imagenes: { url: string }[] | string[];
   precio: string;
 }
 
-// El formato que viene del Backend ahora
 export interface SearchResponse {
   exactos: Product[];
   relacionados: Product[];
 }
 
-import { useState, useEffect } from "react";
-
 export function useSearchProducts(query: string, delay = 500) {
-  // Inicializamos con el objeto correcto
   const [results, setResults] = useState<SearchResponse>({ exactos: [], relacionados: [] });
   const [loading, setLoading] = useState(false);
 
@@ -28,6 +28,7 @@ export function useSearchProducts(query: string, delay = 500) {
     const handler = setTimeout(async () => {
       try {
         setLoading(true);
+        // ✅ AJUSTE: Usamos 'q=' porque así está en tu ProductoController
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/productos/search?q=${encodeURIComponent(query)}`
         );
@@ -36,6 +37,7 @@ export function useSearchProducts(query: string, delay = 500) {
           setResults(data);
         }
       } catch (err) {
+        console.error("Error en useSearchProducts:", err);
         setResults({ exactos: [], relacionados: [] });
       } finally {
         setLoading(false);

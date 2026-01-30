@@ -6,17 +6,38 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class HistorialService {
   constructor(private prisma: PrismaService) { }
 
-  // 🔹 Obtener historial de compras de un usuario
+  /**
+   * Obtiene el historial de compras consultando directamente la tabla de Ordenes.
+   * Filtra las órdenes en estado 'CARRITO' para mostrar solo compras iniciadas o finalizadas.
+   */
   async getUserHistorial(userId: string) {
-    const historial = await this.prisma.historial.findMany({
-      where: { userId, accion: 'comprado' },
-      orderBy: { fecha: 'desc' },
+    // 1. Buscamos las órdenes del usuario excluyendo el estado inicial 'CARRITO'
+    const ordenes = await this.prisma.orden.findMany({
+      where: {
+        userId: userId,
+        estado: {
+          not: 'CARRITO' // Ignora órdenes que aún no avanzaron al checkout/pago
+        }
+      },
+      include: {
+        items: true // Trae los productos (buzos, etc.) para el front
+      },
+      orderBy: {
+        createdAt: 'desc' // Lo más nuevo primero
+      },
     });
 
-    // 🔹 Calcular total y cantidad con seguridad
-    const total = historial.reduce((acc, item) => acc + (item.precio ?? 0), 0);
-    const cantidad = historial.length;
+    // 2. Calculamos el total acumulado solo de las órdenes visibles
+    const totalGastado = ordenes.reduce((acc, orden) => acc + (Number(orden.total) || 0), 0);
 
-    return { historial, total, cantidad };
+    // 3. Cantidad de pedidos reales (sin contar carritos abandonados)
+    const cantidadPedidos = ordenes.length;
+
+    // Retornamos la data limpia para el componente del Front
+    return {
+      historial: ordenes,
+      total: totalGastado,
+      cantidad: cantidadPedidos
+    };
   }
 }

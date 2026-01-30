@@ -23,7 +23,6 @@ model User {
   carrito                   Cart?
   comentarios               Comentario[]
   favoritos                 Favorito[]
-  historial                 Historial[]
   ordenes                   Orden[]
 }
 
@@ -150,17 +149,6 @@ model OrdenItem {
   orden      Orden   @relation(fields: [ordenId], references: [id])
 }
 
-model Historial {
-  id         String   @id @default(uuid())
-  userId     String
-  productoId String?
-  accion     String
-  fecha      DateTime @default(now())
-  imagenUrl  String?
-  nombre     String?
-  precio     Float?
-  user       User     @relation(fields: [userId], references: [id])
-}
 
 model Favorito {
   id         String   @id @default(uuid())

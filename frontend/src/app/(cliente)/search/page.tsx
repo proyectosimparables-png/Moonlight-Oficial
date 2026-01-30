@@ -5,16 +5,19 @@ import { SearchResults } from "@/components/search";
 export default async function SearchPage(props: {
   searchParams: { q?: string } | Promise<{ q?: string }>;
 }) {
-  const params = props.searchParams instanceof Promise ? await props.searchParams : props.searchParams;
+  const params =
+    props.searchParams instanceof Promise
+      ? await props.searchParams
+      : props.searchParams;
   const query = params.q || "";
-  
+
   // Ajustamos el estado inicial al objeto que devuelve el service
   let searchData = { exactos: [], relacionados: [] };
 
   if (query.length > 0) {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/productos/search?q=${encodeURIComponent(query)}`,
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
     if (res.ok) {
       searchData = await res.json();
@@ -28,7 +31,11 @@ export default async function SearchPage(props: {
       </h1>
 
       <p className="text-gray-600 mb-6">
-        Encontramos <span className="font-semibold text-[#7b5ca2]">{searchData.exactos.length}</span> resultados directos.
+        Encontramos{" "}
+        <span className="font-semibold text-[#7b5ca2]">
+          {searchData.exactos.length}
+        </span>{" "}
+        resultados directos.
       </p>
 
       {/* Le pasamos el objeto completo al componente */}

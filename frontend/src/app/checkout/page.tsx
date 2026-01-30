@@ -1,6 +1,6 @@
 // src/app/checkout/page.tsx
 
-import CheckoutContainer from "@/components/checkout/Prueba";
+import CheckoutContainer from "@/components/checkout/CheckoutContainer";
 
 export const metadata = {
   title: "Checkout | Moonlight",
@@ -9,20 +9,10 @@ export const metadata = {
 
 export default function CheckoutPage() {
   return (
-    <main className="min-h-screen bg-white">
-      {/* Header Estático y Simple */}
-      <div className="border-b py-6 bg-[#FAFCEF]">
-        <div className="container mx-auto px-4">
-          <h1 className="text-2xl font-bold text-center text-[#6c5b7b] tracking-widest uppercase">
-            Finalizar Compra
-          </h1>
-        </div>
-      </div>
-
-      <div className="py-10">
-        {/* Aquí renderizamos el componente que tiene toda la lógica */}
-        <CheckoutContainer />
-      </div>
+    // Aplicamos el color crema exacto que pediste (#faf5e5)
+    <main className="min-h-screen bg-[#faf5e5]">
+      {/* Eliminamos el py-10 extra para que el logo quede arriba como en la foto */}
+      <CheckoutContainer />
     </main>
   );
 }
