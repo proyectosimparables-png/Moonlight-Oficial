@@ -72,7 +72,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const optimisticUpdate = async (
     updateFn: () => void,
     apiCall: () => Promise<CartResponse>,
-    rollbackFn?: () => void
+    rollbackFn?: () => void,
   ) => {
     try {
       updateFn(); // actualizar localmente
@@ -99,8 +99,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.map((i) =>
           i.productoId === productoId
             ? { ...i, quantity: i.quantity + quantity }
-            : i
-        )
+            : i,
+        ),
       );
 
       // 3️⃣ Llamada al backend SIN BLOQUEAR LA UI
@@ -111,7 +111,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
           existingItem;
 
         setCart((prev) =>
-          prev.map((i) => (i.productoId === productoId ? updatedItem : i))
+          prev.map((i) => (i.productoId === productoId ? updatedItem : i)),
         );
       } catch (err) {
         console.error(err);
@@ -155,7 +155,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         await CartService.removeItem(itemId);
         return { items: [] };
       },
-      () => setCart(prevCart)
+      () => setCart(prevCart),
     );
   };
 
@@ -170,13 +170,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     await optimisticUpdate(
       () =>
         setCart((prev) =>
-          prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
+          prev.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
         ),
       async () => {
         await CartService.updateItemQuantity(itemId, quantity);
         return { items: [] };
       },
-      () => setCart(prevCart)
+      () => setCart(prevCart),
     );
   };
 
@@ -188,7 +188,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         await CartService.clearCart();
         return { items: [] };
       },
-      () => setCart(prevCart)
+      () => setCart(prevCart),
     );
   };
 

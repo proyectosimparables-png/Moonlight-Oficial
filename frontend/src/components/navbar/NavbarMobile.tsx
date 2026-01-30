@@ -2,9 +2,8 @@
 
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-
+import Link from "next/link";
+import { ChevronDown, ArrowLeft, Menu } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -16,6 +15,7 @@ import {
 import { AuthButton } from "./AuthButton";
 import { CartButton } from "./CartButton";
 import { SearchInput } from "../search/SearchInput";
+import { useState, useEffect } from "react";
 
 /* ───────────────────────────────────────────── */
 /* Types */
@@ -28,7 +28,7 @@ interface MenuItem {
 }
 
 /* ───────────────────────────────────────────── */
-/* Menu structure (MOBILE) */
+/* Menu structure */
 /* ───────────────────────────────────────────── */
 
 const MENU: MenuItem[] = [
@@ -45,27 +45,23 @@ const MENU: MenuItem[] = [
               {
                 label: "BTS",
                 sub: [
-                  { label: "RM", path: "/productos/bts/rm" },
-                  { label: "Jin", path: "/productos/bts/jin" },
-                  { label: "Suga", path: "/productos/bts/suga" },
-                  { label: "J-Hope", path: "/productos/bts/j-hope" },
-                  { label: "Jimin", path: "/productos/bts/jimin" },
-                  { label: "Taehyung", path: "/productos/bts/taehyung" },
-                  { label: "Jungkook", path: "/productos/bts/jungkook" },
-                  { label: "Rap Line", path: "/productos/bts/rap-line" },
-                  { label: "Vocal Line", path: "/productos/bts/vocal-line" },
+                  { label: "Ver todo BTS", path: "/productos/indumentaria/remeras/bts" },
+                  { label: "RM", path: "/productos/indumentaria/remeras/bts/rm" },
+                  { label: "Jin", path: "/productos/indumentaria/remeras/bts/jin" },
+                  { label: "Suga", path: "/productos/indumentaria/remeras/bts/suga" },
+                  { label: "J-Hope", path: "/productos/indumentaria/remeras/bts/j-hope" },
+                  { label: "Jimin", path: "/productos/indumentaria/remeras/bts/jimin" },
+                  { label: "Taehyung", path: "/productos/indumentaria/remeras/bts/taehyung" },
+                  { label: "Jungkook", path: "/productos/indumentaria/remeras/bts/jungkook" },
+                  { label: "Rap Line", path: "/productos/indumentaria/remeras/bts/rap-line" },
+                  { label: "Vocal Line", path: "/productos/indumentaria/remeras/bts/vocal-line" },
                 ],
               },
-              {
-                label: "Stray Kids",
-                path: "/productos/remeras/stray-kids",
-              },
-              { label: "The Rose", path: "/productos/remeras/the-rose" },
-              {
-                label: "Jonas Brothers",
-                path: "/productos/remeras/jonas-brothers",
-              },
-              { label: "New Jeans", path: "/productos/remeras/new-jeans" },
+              { label: "Stray Kids", path: "/productos/indumentaria/remeras/stray-kids" },
+              { label: "The Rose", path: "/productos/indumentaria/remeras/the-rose" },
+              { label: "Jonas Brothers", path: "/productos/indumentaria/remeras/jonas-brothers" },
+              { label: "New Jeans", path: "/productos/indumentaria/remeras/new-jeans" },
+              { label: "Ver todas las Remeras", path: "/productos/indumentaria/remeras" },
             ],
           },
           {
@@ -74,29 +70,20 @@ const MENU: MenuItem[] = [
               {
                 label: "Hoodies",
                 sub: [
-                  {
-                    label: "BTS",
-                    path: "/productos/abrigos/hoodies/bts",
-                  },
-                  {
-                    label: "Stray Kids",
-                    path: "/productos/abrigos/hoodies/stray-kids",
-                  },
+                  { label: "BTS", path: "/productos/indumentaria/abrigos/hoodies/bts" },
+                  { label: "Stray Kids", path: "/productos/indumentaria/abrigos/hoodies/stray-kids" },
+                  { label: "Ver todos los Hoodies", path: "/productos/indumentaria/abrigos/hoodies" },
                 ],
               },
               {
                 label: "Buzos",
                 sub: [
-                  {
-                    label: "BTS",
-                    path: "/productos/abrigos/buzos/bts",
-                  },
-                  {
-                    label: "Stray Kids",
-                    path: "/productos/abrigos/buzos/stray-kids",
-                  },
+                  { label: "BTS", path: "/productos/indumentaria/abrigos/buzos/bts" },
+                  { label: "Stray Kids", path: "/productos/indumentaria/abrigos/buzos/stray-kids" },
+                  { label: "Ver todos los Buzos", path: "/productos/indumentaria/abrigos/buzos" },
                 ],
               },
+              { label: "Ver todos los Abrigos", path: "/productos/indumentaria/abrigos" },
             ],
           },
         ],
@@ -104,50 +91,30 @@ const MENU: MenuItem[] = [
       {
         label: "Bangtan Limited Edition",
         sub: [
-          {
-            label: "Accesorios",
-            path: "/productos/bangtan-limited/accesorios",
-          },
-          {
-            label: "Bangtan Bags",
-            path: "/productos/bangtan-limited/bags",
-          },
-          {
-            label: "Bangtan Home",
-            path: "/productos/bangtan-limited/home",
-          },
+          { label: "Accesorios", path: "/productos/bangtan-limited-edition/accesorios" },
+          { label: "Bangtan Bags", path: "/productos/bangtan-limited-edition/bangtan-bags" },
+          { label: "Bangtan Home", path: "/productos/bangtan-limited-edition/bangtan-home" },
+          { label: "Ver todo Limited Edition", path: "/productos/bangtan-limited-edition" },
         ],
       },
       { label: "Gift Cards", path: "/productos/gift-cards" },
     ],
   },
-
   {
     label: "¿Cómo comprar?",
     sub: [
       { label: "Guía de Compra", path: "/como-comprar" },
-      {
-        label: "Políticas de Compra",
-        path: "/politicas-de-compras",
-      },
+      { label: "Políticas de Compra", path: "/politicas-de-compras" },
       { label: "Guía de Talles", path: "/guia-de-talles" },
       { label: "Mayoristas", path: "/mayoristas" },
-      {
-        label: "Preguntas Frecuentes",
-        path: "/preguntas-frecuentes",
-      },
+      { label: "Preguntas Frecuentes", path: "/preguntas-frecuentes" },
     ],
   },
-
   { label: "¿Quiénes Somos?", path: "/quienes-somos" },
   { label: "Experiencia Moonlight", path: "/comentar" },
   { label: "Army Club", path: "/" },
   { label: "Calendario Lunar", path: "/" },
 ];
-
-/* ───────────────────────────────────────────── */
-/* Component */
-/* ───────────────────────────────────────────── */
 
 export const NavbarMobile = () => {
   const router = useRouter();
@@ -156,14 +123,19 @@ export const NavbarMobile = () => {
   const [open, setOpen] = useState(false);
   const [menuStack, setMenuStack] = useState<MenuItem[][]>([MENU]);
 
+  useEffect(() => {
+    if (!open) {
+      setTimeout(() => setMenuStack([MENU]), 300);
+    }
+  }, [open]);
+
   const currentMenu = menuStack[menuStack.length - 1];
 
-  const goForward = (item: MenuItem) => {
+  const handleItemClick = (item: MenuItem) => {
     if (item.sub) {
       setMenuStack((prev) => [...prev, item.sub!]);
     } else if (item.path) {
       setOpen(false);
-      setMenuStack([MENU]);
       router.push(item.path);
     }
   };
@@ -176,62 +148,64 @@ export const NavbarMobile = () => {
 
   return (
     <div className="md:hidden">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3">
+      <div className="flex items-center justify-between px-4 py-3 bg-[#FAFCEF]">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button aria-label="Abrir menú">
-              <svg
-                className="h-6 w-6 text-[#7b5ca2]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+            <button aria-label="Abrir menú" className="p-1">
+              <Menu className="h-6 w-6 text-[#7b5ca2]" />
             </button>
           </SheetTrigger>
 
-          <SheetContent side="left" className="w-72 p-4 overflow-hidden">
-            <SheetHeader>
-              <SheetTitle className="text-lg text-[#7b5ca2]">
-                {menuStack.length > 1 && (
+          <SheetContent
+            side="left"
+            className="w-[300px] p-0 flex flex-col bg-white"
+          >
+            <SheetHeader className="p-4 border-b border-gray-100">
+              <SheetTitle className="text-[#7b5ca2] flex items-center gap-2">
+                {menuStack.length > 1 ? (
                   <button
                     onClick={goBack}
-                    className="mb-3 flex items-center gap-1 text-sm text-gray-500"
+                    className="flex items-center gap-2 text-sm font-bold"
                   >
-                    ← Volver
+                    <ArrowLeft className="h-4 w-4" /> Volver
                   </button>
+                ) : (
+                  "Menú"
                 )}
               </SheetTitle>
             </SheetHeader>
 
-            <SearchInput />
+            <div className="px-4 py-3">
+              <SearchInput />
+            </div>
 
-            {/* Menu */}
-            <div className="relative mt-4">
-              <ul key={menuStack.length} className="space-y-1 animate-slide-in">
+            <div className="flex-1 overflow-y-auto">
+              <ul className="divide-y divide-gray-50">
                 {currentMenu.map((item) => {
                   const isActive = item.path === pathname;
 
                   return (
                     <li key={item.label}>
-                      <button
-                        onClick={() => goForward(item)}
-                        className={`w-full flex items-center justify-between rounded-md px-3 py-2 text-left
-                          hover:bg-[#f3eefb]
-                          ${isActive ? "bg-[#f3eefb] font-medium" : ""}`}
-                      >
-                        <span>{item.label}</span>
-                        {item.sub && (
-                          <ChevronDown className="h-4 w-4 -rotate-90 text-gray-400" />
-                        )}
-                      </button>
+                      {!item.sub && item.path ? (
+                        <Link
+                          href={item.path}
+                          onClick={() => setOpen(false)}
+                          className={`flex items-center justify-between px-5 py-4 text-[#7b5ca2] transition-colors
+                            ${isActive ? "bg-[#f3eefb] font-bold" : "active:bg-[#f3eefb]"}`}
+                        >
+                          <span className="text-[16px]">{item.label}</span>
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => handleItemClick(item)}
+                          className="w-full flex items-center justify-between px-5 py-4 text-[#7b5ca2] active:bg-[#f3eefb] transition-colors"
+                        >
+                          <span className="text-[16px]">{item.label}</span>
+                          {item.sub && (
+                            <ChevronDown className="h-4 w-4 -rotate-90 opacity-50" />
+                          )}
+                        </button>
+                      )}
                     </li>
                   );
                 })}
@@ -240,41 +214,21 @@ export const NavbarMobile = () => {
           </SheetContent>
         </Sheet>
 
-        {/* Logo */}
-        <Image
-          src="/moonlight.png"
-          alt="Moonlight Logo"
-          width={120}
-          height={30}
-          priority
-          style={{ cursor: "pointer" }}
-          onClick={() => router.push("/")}
-        />
+        <Link href="/" className="flex-1 flex justify-center">
+          <Image
+            src="/moonlight.png"
+            alt="Moonlight Logo"
+            width={120}
+            height={30}
+            priority
+          />
+        </Link>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
           <AuthButton />
           <CartButton />
         </div>
       </div>
-
-      {/* animation */}
-      <style jsx>{`
-        .animate-slide-in {
-          animation: slideIn 0.2s ease-out;
-        }
-
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(12px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
     </div>
   );
 };

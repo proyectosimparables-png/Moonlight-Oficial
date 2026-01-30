@@ -72,7 +72,7 @@ export const SearchInput = () => {
               {results.exactos.map((product: Product) => ( // Tipamos 'product'
                 <Link
                   key={product.id}
-                  href={`/products/${product.id}`} 
+                  href={`/productos/${product.id}`} 
                   onClick={() => {
                     setQuery("");
                     setShowSuggestions(false);

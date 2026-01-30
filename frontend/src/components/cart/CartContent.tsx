@@ -1,4 +1,3 @@
-//frontend/src/components/cart/CartContent.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,12 +5,27 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/hooks/useAuth"; // Importamos tu Auth
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
 import { AddedToCartModal } from "./AddedToCartModal";
 
 /* ----------------------------------------------------
-   MODAL MODERNO — integrado en este mismo archivo
+   INTERFACES DE RESPUESTA DEL BACKEND
+------------------------------------------------------*/
+interface OrderResponse {
+  id: string;
+  total: number;
+  estado: string;
+}
+
+interface PreferenceResponse {
+  id: string;
+  init_point: string;
+}
+
+/* ----------------------------------------------------
+   MODAL CONFIRMACIÓN
 ------------------------------------------------------*/
 function ModalConfirm({
   open,
@@ -37,7 +51,6 @@ function ModalConfirm({
       <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md animate-scale-in">
         <h2 className="text-xl font-bold mb-2 text-gray-800">{title}</h2>
         <p className="text-gray-600 mb-6">{message}</p>
-
         <div className="flex justify-end space-x-3">
           <button
             onClick={onCancel}
@@ -45,7 +58,6 @@ function ModalConfirm({
           >
             {cancelText}
           </button>
-
           <button
             onClick={onConfirm}
             className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
@@ -62,6 +74,7 @@ function ModalConfirm({
    COMPONENTE PRINCIPAL
 ------------------------------------------------------*/
 export default function CartContent() {
+  const { user, isAuthenticated } = useAuth(); // Obtenemos datos de auth
   const {
     cart,
     removeItem,
@@ -71,14 +84,16 @@ export default function CartContent() {
     lastAddedItem,
     closeLastAddedModal,
   } = useCart();
+
   const router = useRouter();
 
+  // Estados locales
   const [processingItems, setProcessingItems] = useState<
     Record<string, boolean>
   >({});
+  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [postalCode, setPostalCode] = useState("");
   const [initialCartLoaded, setInitialCartLoaded] = useState(false);
-
   const [modalDeleteId, setModalDeleteId] = useState<string | null>(null);
   const [modalClearOpen, setModalClearOpen] = useState(false);
 
@@ -88,9 +103,7 @@ export default function CartContent() {
 
   useEffect(() => {
     if (lastAddedItem) {
-      const timer = setTimeout(() => {
-        closeLastAddedModal();
-      }, 3000);
+      const timer = setTimeout(() => closeLastAddedModal(), 3000);
       return () => clearTimeout(timer);
     }
   }, [lastAddedItem, closeLastAddedModal]);
@@ -99,116 +112,151 @@ export default function CartContent() {
     setProcessingItems((prev) => ({ ...prev, [id]: value }));
   };
 
-  const requireAuth = async (action: () => Promise<void>) => {
-    await action();
-  };
-
   const increment = async (id: string) => {
-    await requireAuth(async () => {
-      setProcessing(id, true);
-      try {
-        const currentQty = cart.find((i) => i.id === id)?.quantity ?? 0;
-        await updateItemQuantity(id, currentQty + 1);
-        toast.success("Cantidad actualizada", { position: "top-center" });
-      } catch {
-        toast.error("No se pudo actualizar la cantidad", {
-          position: "top-center",
-        });
-      } finally {
-        setProcessing(id, false);
-      }
-    });
+    const item = cart.find((i) => i.id === id);
+    if (!item) return;
+    setProcessing(id, true);
+    try {
+      await updateItemQuantity(id, item.quantity + 1);
+      toast.success("Cantidad actualizada");
+    } catch {
+      toast.error("Error al actualizar");
+    } finally {
+      setProcessing(id, false);
+    }
   };
 
   const decrement = async (id: string) => {
-    await requireAuth(async () => {
-      const item = cart.find((i) => i.id === id);
-      if (!item) return;
-
-      setProcessing(id, true);
-      try {
-        if (item.quantity <= 1) {
-          setModalDeleteId(id);
-        } else {
-          await updateItemQuantity(id, item.quantity - 1);
-          toast.success("Cantidad actualizada", { position: "top-center" });
-        }
-      } catch {
-        toast.error("No se pudo actualizar la cantidad", {
-          position: "top-center",
-        });
-      } finally {
-        setProcessing(id, false);
-      }
-    });
-  };
-
-  const handleRemoveRequest = (id: string) => {
-    setModalDeleteId(id);
+    const item = cart.find((i) => i.id === id);
+    if (!item) return;
+    if (item.quantity <= 1) {
+      setModalDeleteId(id);
+      return;
+    }
+    setProcessing(id, true);
+    try {
+      await updateItemQuantity(id, item.quantity - 1);
+      toast.success("Cantidad actualizada");
+    } catch {
+      toast.error("Error al actualizar");
+    } finally {
+      setProcessing(id, false);
+    }
   };
 
   const confirmRemove = async () => {
     if (!modalDeleteId) return;
     await removeItem(modalDeleteId);
-    toast.success("Producto eliminado", { position: "top-center" });
+    toast.success("Producto eliminado");
     setModalDeleteId(null);
-  };
-
-  const openClearCartModal = () => {
-    setModalClearOpen(true);
   };
 
   const confirmClearCart = async () => {
     await clearCart();
-    toast.success("Carrito vacío", { position: "top-center" });
+    toast.success("Carrito vacío");
     setModalClearOpen(false);
   };
 
+  /* --- LÓGICA DE CHECKOUT SIN ANY --- */
   const handleCheckout = async () => {
-    await requireAuth(async () => {
-      toast.success("Iniciando compra...", { position: "top-center" });
-    });
-  };
+    if (!isAuthenticated || !user?.id) {
+      toast.error("Debes iniciar sesión para comprar");
+      router.push("/login");
+      return;
+    }
 
-  if (loading && cart.length === 0 && !initialCartLoaded) {
-    return (
-      <>
-        <p className="p-6 text-center text-gray-500 animate-pulse">
-          Cargando tu carrito...
-        </p>
-      </>
-    );
-  }
+    if (cart.length === 0) {
+      toast.error("El carrito está vacío");
+      return;
+    }
+
+    setIsCheckoutLoading(true);
+    const toastId = toast.loading("Iniciando compra...");
+
+    try {
+      // 1. Crear Orden
+      const orderRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/ordenes`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: user.id,
+            metodoEnvio: postalCode ? "Correo Argentino" : "A convenir",
+            costoEnvio: postalCode ? 6836 : 0,
+            direccionEnvio: user.address || "Dirección no especificada",
+          }),
+        },
+      );
+
+      if (!orderRes.ok) throw new Error("Error al crear la orden");
+      const order: OrderResponse = await orderRes.json();
+
+      // 2. Crear Preferencia de Pago
+      const paymentRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/payments/create-preference/${order.id}`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!paymentRes.ok) throw new Error("Error al generar el link de pago");
+      const payment: PreferenceResponse = await paymentRes.json();
+
+      // 3. Redirigir a Mercado Pago
+      toast.success("Redirigiendo...", { id: toastId });
+      window.location.href = payment.init_point;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Error desconocido";
+      toast.error(message, { id: toastId });
+    } finally {
+      setIsCheckoutLoading(false);
+    }
+  };
 
   const totalPrice = cart.reduce(
     (acc, item) => acc + item.producto.precio * item.quantity,
-    0
+    0,
   );
   const shippingCost = postalCode ? 6836 : 0;
   const finalTotal = totalPrice + shippingCost;
 
+  if (loading && cart.length === 0 && !initialCartLoaded) {
+    return (
+      <p className="p-6 text-center text-gray-500 animate-pulse">
+        Cargando carrito...
+      </p>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFCEF] text-[#6c5b7b] relative">
       <div className="p-6 flex-1 max-w-4xl mx-auto">
-        {/* Título con cruz al lado */}
         <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-1">
           <h2 className="text-2xl font-bold text-center flex-1">
             CARRITO DE COMPRAS
           </h2>
-
           <button
             onClick={() => router.push("/")}
-            className="text-gray-500 hover:text-gray-800 text-3xl sm:text-4xl font-bold transition ml-4"
-            aria-label="Cerrar carrito"
+            className="text-gray-500 hover:text-gray-800 text-3xl font-bold transition ml-4"
           >
             ×
           </button>
         </div>
 
         {cart.length === 0 ? (
-          <p className="text-center text-gray-500">
-            No tienes productos en el carrito.
-          </p>
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-6">
+              No tienes productos en el carrito.
+            </p>
+            <button
+              onClick={() => router.push("/")}
+              className="text-purple-600 font-semibold underline"
+            >
+              Ir a la tienda
+            </button>
+          </div>
         ) : (
           <>
             <ul className="space-y-4">
@@ -219,7 +267,7 @@ export default function CartContent() {
                   processing={processingItems[item.id] || false}
                   increment={increment}
                   decrement={decrement}
-                  remove={handleRemoveRequest}
+                  remove={(id) => setModalDeleteId(id)}
                 />
               ))}
             </ul>
@@ -231,17 +279,17 @@ export default function CartContent() {
               setPostalCode={setPostalCode}
               handleCheckout={handleCheckout}
               router={router}
-              openClearCartModal={openClearCartModal}
+              openClearCartModal={() => setModalClearOpen(true)}
+              isLoading={isCheckoutLoading}
             />
           </>
         )}
       </div>
 
-      {/* Modales */}
       <ModalConfirm
         open={Boolean(modalDeleteId)}
         title="Eliminar producto"
-        message="¿Seguro que deseas eliminar este producto del carrito?"
+        message="¿Seguro que deseas eliminar este producto?"
         confirmText="Eliminar"
         onConfirm={confirmRemove}
         onCancel={() => setModalDeleteId(null)}
@@ -250,7 +298,7 @@ export default function CartContent() {
       <ModalConfirm
         open={modalClearOpen}
         title="Vaciar carrito"
-        message="¿Seguro que deseas vaciar todo tu carrito?"
+        message="¿Seguro que deseas vaciar todo el carrito?"
         confirmText="Vaciar"
         onConfirm={confirmClearCart}
         onCancel={() => setModalClearOpen(false)}

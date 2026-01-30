@@ -15,6 +15,7 @@ import { LocalAuthModule } from './auth/local/local.module';
 import { PuntoEntregaModule } from './punto-entrega/punto-entrega.module';
 import { OrdenesModule } from './ordenes/ordenes.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { PaymentsModule } from './payments/payments.module';
 
 
 @Module({
@@ -32,7 +33,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     MailModule,
     PurchaseModule,
      HistorialModule, 
-     LocalAuthModule, PuntoEntregaModule, OrdenesModule,
+     LocalAuthModule, PuntoEntregaModule, OrdenesModule, PaymentsModule,
 
   ],
 })
