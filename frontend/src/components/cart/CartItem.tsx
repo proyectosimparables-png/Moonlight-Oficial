@@ -1,7 +1,4 @@
-//frontend/src/components/cart/CartItem.tsx
 "use client";
-
-import { Button } from "@/components/ui/button";
 
 interface Producto {
   nombre: string;
@@ -30,59 +27,68 @@ export default function CartItem({
   decrement,
   remove,
 }: CartItemProps) {
+  // Formato de moneda Argentina con los decimales como en la foto
   const formatPrice = (price: number) =>
-    price.toLocaleString("es-CL", {
+    price.toLocaleString("es-AR", {
+      style: "currency",
+      currency: "ARS",
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
     });
 
   return (
-    <li className="flex justify-between items-center p-4 border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-center gap-4">
+    <li className="flex gap-4 py-6 border-b border-gray-100 relative group">
+      {/* Imagen del producto - Tamaño y estilo de la captura */}
+      <div className="w-24 h-24 flex-shrink-0">
         <img
           src={item.producto.imagenUrl ?? "/placeholder.png"}
           alt={item.producto.nombre}
-          className="w-20 h-20 object-cover rounded"
+          className="w-full h-full object-cover rounded-sm"
         />
-        <div>
-          <p className="font-semibold">{item.producto.nombre}</p>
-          <p className="text-gray-500">${formatPrice(item.producto.precio)}</p>
-        </div>
       </div>
 
-      {/* Contenedor vertical para eliminar y controles */}
-      <div className="flex flex-col items-center gap-3 min-w-[90px]">
-        {/* Botón eliminar */}
-        <Button
-          size="sm"
-          className="bg-[#d8c4fa] text-gray-800 hover:bg-[#cbb1f5] whitespace-nowrap"
-          onClick={() => remove(item.id)}
-          disabled={processing}
-        >
-          Eliminar
-        </Button>
+      {/* Información del Producto */}
+      <div className="flex flex-col flex-1 justify-between py-1">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-[15px] font-normal text-gray-500 mb-1">
+              {item.producto.nombre}
+            </h3>
+            <p className="text-base font-bold text-[#4A4A4A]">
+              {formatPrice(item.producto.precio)}
+            </p>
+          </div>
 
-        {/* Controles de cantidad */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-8 h-8 flex items-center justify-center rounded-full"
-            onClick={() => decrement(item.id)}
+          {/* Botón Borrar - Estilo link minimalista */}
+          <button
+            onClick={() => remove(item.id)}
             disabled={processing}
+            className="text-[11px] text-gray-400 underline hover:text-red-400 transition-colors uppercase tracking-tighter"
           >
-            -
-          </Button>
-          <span className="px-3 min-w-[20px] text-center">{item.quantity}</span>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-8 h-8 flex items-center justify-center rounded-full"
-            onClick={() => increment(item.id)}
-            disabled={processing}
-          >
-            +
-          </Button>
+            Borrar
+          </button>
+        </div>
+
+        {/* Selector de Cantidad - Recuadro gris minimalista */}
+        <div className="flex justify-end mt-2">
+          <div className="flex items-center border border-gray-200 rounded-sm overflow-hidden h-8">
+            <button
+              onClick={() => decrement(item.id)}
+              disabled={processing || item.quantity <= 1}
+              className="px-3 h-full text-gray-400 hover:bg-gray-50 transition-colors border-r border-gray-200 text-sm"
+            >
+              −
+            </button>
+            <span className="px-4 min-w-[32px] text-center text-sm font-light text-gray-600">
+              {item.quantity}
+            </span>
+            <button
+              onClick={() => increment(item.id)}
+              disabled={processing}
+              className="px-3 h-full text-gray-400 hover:bg-gray-50 transition-colors border-l border-gray-200 text-sm"
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
     </li>

@@ -12,6 +12,11 @@ export class OrdenesController {
     return this.ordenesService.findAll();
   }
 
+@Get(':id')
+findOne(@Param('id', ParseUUIDPipe) id: string) {
+  return this.ordenesService.findOne(id);
+}
+
   @Post()
   async create(@Body() createOrdeneDto: CreateOrdeneDto) {
     return this.ordenesService.crearOrden(createOrdeneDto);

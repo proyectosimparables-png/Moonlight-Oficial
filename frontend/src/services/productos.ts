@@ -209,7 +209,7 @@ export async function getCategorias(seccionId: string) {
 
 
 export async function getProductos() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos`);
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/admin`);
   if (!res.ok) throw new Error("Error cargando productos");
   return res.json();
 }

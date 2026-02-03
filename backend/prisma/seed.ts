@@ -116,7 +116,6 @@ async function main() {
 
   // ORDEN CORRECTO (evita errores P2003)
   await prisma.favorito.deleteMany();
-  await prisma.historial.deleteMany();
   await prisma.comentario.deleteMany();
 
   await prisma.ordenItem.deleteMany();

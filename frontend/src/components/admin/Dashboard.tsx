@@ -1,88 +1,61 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Package, ShoppingCart, Users, TrendingUp } from "lucide-react";
-import {
-  fetchOrdenesActivas,
-  fetchProductosPopulares,
-  fetchTotalProductos,
-  fetchUsuariosRegistrados,
-  fetchVentasDelMes,
-  fetchVentasRecientes,
-} from "@/services/dashboardAdmin";
+import { Package, ShoppingCart, Users, TrendingUp, Loader2 } from "lucide-react";
+import { fetchResumenGeneral } from "@/services/dashboardAdmin";
+ // Asegúrate de crear esta función
 
 const Dashboard = () => {
-  const { data: totalProductos, isLoading: loadingTotalProductos } = useQuery({
-    queryKey: ["totalProductos"],
-    queryFn: fetchTotalProductos,
+  // Una sola petición para todo el dashboard
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: fetchResumenGeneral,
   });
 
-  const { data: ordenesActivas, isLoading: loadingOrdenesActivas } = useQuery({
-    queryKey: ["ordenesActivas"],
-    queryFn: fetchOrdenesActivas,
-  });
-
-  const { data: usuariosRegistrados, isLoading: loadingUsuariosRegistrados } =
-    useQuery({
-      queryKey: ["usuariosRegistrados"],
-      queryFn: fetchUsuariosRegistrados,
-    });
-
-  const { data: ventasDelMes, isLoading: loadingVentasDelMes } = useQuery({
-    queryKey: ["ventasDelMes"],
-    queryFn: fetchVentasDelMes,
-  });
-
-  const { data: ventasRecientes, isLoading: loadingVentasRecientes } = useQuery(
-    {
-      queryKey: ["ventasRecientes"],
-      queryFn: fetchVentasRecientes,
-    },
-  );
-
-  const { data: productosPopulares, isLoading: loadingProductosPopulares } =
-    useQuery({
-      queryKey: ["productosPopulares"],
-      queryFn: fetchProductosPopulares,
-    });
-
-  if (
-    loadingTotalProductos ||
-    loadingOrdenesActivas ||
-    loadingUsuariosRegistrados ||
-    loadingVentasDelMes ||
-    loadingVentasRecientes ||
-    loadingProductosPopulares
-  ) {
-    return <div>Cargando datos...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-2">
+        <Loader2 className="h-10 w-10 animate-spin text-[var(--color-purple)]" />
+        <p className="text-sm font-medium">Cargando panel de control...</p>
+      </div>
+    );
   }
+
+  if (isError) return <div>Error al cargar las estadísticas.</div>;
 
   const statsCards = [
     {
       title: "Total Productos",
-      value: totalProductos ?? "N/A",
-      change: "+12% desde el mes pasado",
+      value: data.totalProductos,
+      change: "+2", // Puedes calcular esto en el backend si quieres
+      label: "nuevos esta semana",
       icon: Package,
+      trend: "up",
     },
     {
       title: "Órdenes Activas",
-      value: ordenesActivas ?? "N/A",
-      change: "+8% desde la semana pasada",
+      value: data.ordenesActivas,
+      change: "En curso",
+      label: "requieren atención",
       icon: ShoppingCart,
+      trend: "neutral",
     },
     {
       title: "Usuarios Registrados",
-      value: usuariosRegistrados ?? "N/A",
-      change: "+23% desde el mes pasado",
+      value: data.usuariosRegistrados,
+      change: "10%",
+      label: "vs. mes pasado",
       icon: Users,
+      trend: "up",
     },
     {
       title: "Ventas del Mes",
-      value: ventasDelMes ? `$${ventasDelMes.toLocaleString()}` : "N/A",
-      change: "+19% desde el mes pasado",
+      value: `$${data.ventasDelMes.toLocaleString("es-AR")}`,
+      change: "15%",
+      label: "promedio diario",
       icon: TrendingUp,
+      trend: "up",
     },
   ];
 
@@ -97,61 +70,56 @@ const Dashboard = () => {
         </p>
       </div>
 
-      {/* Estadísticas principales */}
+      {/* Grid de Cards de Estadísticas */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat) => (
-          <Card
-            key={stat.title}
-            className="overflow-hidden transition-all hover:shadow-lg border border-[var(--color-purple)] bg-[var(--color-cream)]"
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-[var(--text-heading)]">
-                {stat.title}
-              </CardTitle>
+          <Card key={stat.title} className="bg-[var(--color-cream)] border-[var(--color-purple)]/20 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
               <stat.icon className="h-4 w-4 text-[var(--color-purple)]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[var(--text-heading)]">
-                {stat.value}
-              </div>
-              <p className="text-xs text-[var(--color-dark-gray)]">
-                {stat.change}
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs mt-1">
+                <span className={
+                  stat.trend === "up" ? "text-green-600 font-bold" :
+                  stat.trend === "down" ? "text-red-600 font-bold" : "text-muted-foreground"
+                }>
+                  {stat.trend === "up" ? "↑ " : stat.trend === "down" ? "↓ " : ""}
+                  {stat.change}
+                </span>
+                {" "}{stat.label}
               </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Ventas recientes + Productos populares */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 border border-[var(--color-purple)] bg-[var(--color-cream)]">
+        {/* Ventas Recientes */}
+        <Card className="col-span-4 border border-[var(--color-purple)]/20 bg-[var(--color-cream)]">
           <CardHeader>
-            <CardTitle className="text-[var(--text-heading)]">
-              Ventas Recientes
-            </CardTitle>
+            <CardTitle>Ventas Recientes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {ventasRecientes?.map((orden) => (
+            <div className="space-y-6">
+              {data.ventasRecientes?.map((orden: any) => (
                 <div key={orden.id} className="flex items-center gap-4">
-                  <div className="h-9 w-9 rounded-full bg-[var(--color-purple)]/10 flex items-center justify-center">
-                    <ShoppingCart className="h-4 w-4 text-[var(--color-purple)]" />
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full border border-purple-100">
+                    <img
+                      src={orden.user?.imagenUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(orden.user?.name || "U")}&background=8b5cf6&color=fff`}
+                      alt="User"
+                      className="object-cover w-full h-full"
+                    />
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium text-[var(--text-heading)] leading-none">
-                      Orden #{orden.id.slice(0, 6).toUpperCase()}
-                    </p>
-                    <p className="text-sm text-[var(--color-dark-gray)]">
-                      Cliente {orden.user.name || orden.user.email} - Hace{" "}
-                      {Math.floor(
-                        (Date.now() - new Date(orden.createdAt).getTime()) /
-                          3600000,
-                      )}{" "}
-                      horas
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{orden.user?.name || "Usuario Anónimo"}</p>
+                    <p className="text-xs text-gray-500">
+                      ID: {orden.id.slice(-6).toUpperCase()} • {new Date(orden.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="text-sm font-medium text-[var(--text-heading)]">
-                    ${orden.total.toFixed(2)}
+                  <div className="text-sm font-bold text-[var(--color-purple)]">
+                    +${orden.total.toLocaleString()}
                   </div>
                 </div>
               ))}
@@ -159,24 +127,27 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="col-span-3 border border-[var(--color-purple)] bg-[var(--color-cream)]">
+        {/* Productos Populares */}
+        <Card className="col-span-3 border border-[var(--color-purple)]/20 bg-[var(--color-cream)]">
           <CardHeader>
-            <CardTitle className="text-[var(--text-heading)]">
-              Productos Populares
-            </CardTitle>
+            <CardTitle>Productos Populares</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {productosPopulares?.map((product) => (
-                <div key={product.nombre} className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-md bg-[var(--color-purple)]/10" />
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium text-[var(--text-heading)]">
-                      {product.nombre}
-                    </p>
-                    <p className="text-sm text-[var(--color-dark-gray)]">
+            <div className="space-y-6">
+              {data.productosPopulares?.map((product: any) => (
+                <div key={product.productoId} className="flex items-center gap-4">
+                  <div className="relative h-12 w-12 overflow-hidden rounded-md border bg-white flex-shrink-0">
+                    <img
+                      src={product.imagen || "/placeholder-product.png"}
+                      alt={product.nombre}
+                      className="object-contain p-1 w-full h-full"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold line-clamp-1">{product.nombre}</p>
+                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
                       {product.vendidos} vendidos
-                    </p>
+                    </span>
                   </div>
                 </div>
               ))}

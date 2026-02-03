@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2 } from "lucide-react";
+import { Trash2, Search } from "lucide-react";
 import { getComentarios, deleteComentario } from "@/services/comentarios";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import toast from "react-hot-toast";
@@ -36,6 +36,17 @@ const ComentariosAdmin = () => {
   const [comentarioAEliminar, setComentarioAEliminar] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Función para obtener la URL del avatar
+  const getAvatarUrl = (user: ComentarioType["user"]) => {
+    if (user.image) return user.image;
+    
+    // Si no hay imagen, usamos UI Avatars con el nombre (o el email como fallback)
+    const seed = user.name || user.email || "Usuario";
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      seed
+    )}&background=8b5cf6&color=fff&size=128`;
+  };
+
   const abrirModalEliminar = (id: string) => {
     setComentarioAEliminar(id);
     setModalOpen(true);
@@ -43,7 +54,7 @@ const ComentariosAdmin = () => {
 
   const fetchComentarios = async () => {
     try {
-      const data = await getComentarios(); // Devuelve todos los comentarios
+      const data = await getComentarios();
       setComentarios(data);
     } catch (error) {
       console.error("Error fetching comentarios:", error);
@@ -81,7 +92,7 @@ const ComentariosAdmin = () => {
   );
 
   return (
-    <div className="flex justify-center px-4">
+    <div className="flex justify-center px-4 py-8">
       <div className="space-y-6 w-full max-w-7xl">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
@@ -89,7 +100,9 @@ const ComentariosAdmin = () => {
             <p className="text-muted-foreground">Gestiona los comentarios de los usuarios</p>
           </div>
           <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              className="pl-8"
               placeholder="Buscar comentarios..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -97,48 +110,65 @@ const ComentariosAdmin = () => {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card overflow-x-auto">
-          <Table className="min-w-full">
-            <TableHeader>
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Usuario</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Avatar</TableHead>
-                <TableHead>Comentario</TableHead>
+                <TableHead className="min-w-[300px]">Comentario</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {filteredComentarios.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>{c.user.name}</TableCell>
-                  <TableCell>{c.user.email}</TableCell>
-                  <TableCell>
-                    <Image
-                      src={c.user.image || "/default-avatar.png"}
-                      alt={c.user.name}
-                      width={48}
-                      height={48}
-                      className="rounded-full object-cover"
-                    />
-                  </TableCell>
-                  <TableCell>{c.contenido}</TableCell>
-                  <TableCell>
-                    {new Date(c.createdAt).toLocaleString("es-ES")}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => abrirModalEliminar(c.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+              {filteredComentarios.length > 0 ? (
+                filteredComentarios.map((c) => (
+                  <TableRow key={c.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-9 w-9 shrink-0">
+                          <Image
+                            src={getAvatarUrl(c.user)}
+                            alt={c.user.name}
+                            fill
+                            className="rounded-full object-cover border border-border"
+                          />
+                        </div>
+                        <span className="font-medium">{c.user.name || "Sin nombre"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{c.user.email}</TableCell>
+                    <TableCell className="max-w-md italic text-foreground/80">
+                      "{c.contenido}"
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {new Date(c.createdAt).toLocaleDateString("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric"
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:text-destructive transition-colors"
+                        onClick={() => abrirModalEliminar(c.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    No se encontraron comentarios.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>

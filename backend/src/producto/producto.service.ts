@@ -39,7 +39,12 @@ private formatearProducto(producto: any) {
     // Mantenemos los precios como NÚMEROS para que el frontend no rompa al hacer cálculos
     precio: Number(producto.precio),
     precioPromocional: producto.precioPromocional ? Number(producto.precioPromocional) : null,
-
+    stock: Number(producto.stock || 0), // Aseguramos que sea número
+    published: Boolean(producto.published), // Aseguramos que sea booleano
+    
+    // IMPORTANTE: Mantenemos la estructura de objeto para que el frontend no rompa
+    
+    categoria: producto.categoria || null,
     // Aseguramos que los nuevos campos sean siempre arrays, incluso si vienen vacíos
     colores: producto.colores || [],
     talles: producto.talles || [],
@@ -53,7 +58,7 @@ private formatearProducto(producto: any) {
 
     imagenes: imagenesUrls,
     // Mapeamos las secciones para que el frontend reciba solo los nombres
-    secciones: producto.secciones?.map((s: any) => s.seccion?.nombre).filter(Boolean) || [],
+   secciones: producto.secciones?.map((s: any) => s.seccion?.nombre).filter(Boolean) || [],
   };
 }
 
@@ -196,17 +201,24 @@ async findAllAdmin(seccionId?: string, categoriaId?: string) {
   if (categoriaId) where.categoriaId = categoriaId;
   if (seccionId) where.secciones = { some: { seccionId } };
 
-  return this.prisma.producto.findMany({
+  const productos = await this.prisma.producto.findMany({
     where,
     include: {
-      categoria: { include: { parent: true } },
-      secciones: { include: { seccion: true } }, // <--- VITAL para ps.seccion.nombre
+      categoria: { 
+        include: { parent: true } // Trae el padre para armar el path "Ropa > Remeras"
+      },
+      secciones: { 
+        include: { seccion: true } 
+      },
       imagenes: true,
     },
     orderBy: { createdAt: 'desc' },
+    
   });
-}
 
+  // IMPORTANTE: Pasarlos por el formateador para normalizar precios y arrays
+  return productos.map(p => this.formatearProducto(p));
+}
 
  async findOneById(id: string) {
   const producto = await this.prisma.producto.findUnique({

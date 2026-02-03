@@ -18,4 +18,9 @@ export class PurchaseController {
   async finalize(@Param('id') id: string) {
     return this.purchaseService.finalizeOrder(id);
   }
+
+  @Patch(':id/despachar')
+async notifyShipment(@Param('id') id: string) {
+  return this.purchaseService.notifyShipment(id);
+}
 }

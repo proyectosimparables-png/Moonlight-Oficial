@@ -65,4 +65,27 @@ async sendVerificationCode(to: string, name: string, code: string) {
   `;
   return this.sendMail(to, `${code} es tu código de verificación`, html);
 }
+
+
+async sendShippingNotification(to: string, name: string, orderId: string) {
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+      <h2 style="color: #6a5acd; text-align: center;">¡Tu pedido va en camino! 🚀</h2>
+      <p>Hola <strong>${name}</strong>,</p>
+      <p>¡Buenas noticias! Tu orden <strong>#${orderId.split('-')[0].toUpperCase()}</strong> ya ha sido despachada y está en manos del correo.</p>
+      
+      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0; color: #555;">Muy pronto recibirás tus productos de Moonlight Estampas.</p>
+      </div>
+
+      <p>Gracias por confiar en nosotros. ¡Esperamos que disfrutes tu compra! 🌙</p>
+      
+      <p style="font-size: 0.8em; color: #999; border-top: 1px solid #eee; padding-top: 10px; margin-top: 20px;">
+        Equipo Moonlight Estampas
+      </p>
+    </div>
+  `;
+  return this.sendMail(to, `¡Tu pedido #${orderId.split('-')[0].toUpperCase()} ha sido enviado! 🚀`, html);
+}
+
 }

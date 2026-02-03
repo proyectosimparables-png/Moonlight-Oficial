@@ -223,29 +223,21 @@ const Productos = () => {
 
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        {/* Sección */}
-                        <Badge variant="secondary" className="w-fit">
+                        <div className="flex flex-wrap gap-1">
                           {producto.secciones?.length ? (
-                            producto.secciones.map((ps: any) => {
-                              // Si ps es un string (porque ya pasó por el formateador del service)
-                              if (typeof ps === "string") {
-                                return <Badge key={ps} variant="secondary">{ps}</Badge>;
-                              }
-
-                              // Si ps es un objeto (estructura de Prisma), protegemos el acceso a .seccion
-                              return (
-                                <Badge key={ps.seccion?.id || Math.random()} variant="secondary">
-                                  {ps.seccion?.nombre || "Cargando..."}
-                                </Badge>
-                              );
-                            })
+                            producto.secciones.map((ps: any, index: number) => (
+                              <Badge key={index} variant="secondary">
+                                {/* Manejamos si viene como objeto (prisma) o string (formateado) */}
+                                {ps.seccion?.nombre || (typeof ps === 'string' ? ps : "Sin nombre")}
+                              </Badge>
+                            ))
                           ) : (
-                            <Badge variant="secondary">Sin sección</Badge>
+                            <Badge variant="outline">Sin sección</Badge>
                           )}
-                        </Badge>
+                        </div>
 
-                        {/* Categoría jerárquica */}
-                        <span className="text-sm text-muted-foreground">
+                        {/* Categoría jerárquica: esto ahora funcionará porque incluimos el 'parent' en el backend */}
+                        <span className="text-xs text-muted-foreground mt-1">
                           {getCategoriaPath(producto.categoria)}
                         </span>
                       </div>
@@ -254,9 +246,7 @@ const Productos = () => {
                       {formatPrecio(producto.precio)}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={producto.stock > 50 ? "default" : "destructive"}
-                      >
+                      <Badge variant={producto.stock > 10 ? "outline" : "destructive"}>
                         {producto.stock} unidades
                       </Badge>
                     </TableCell>

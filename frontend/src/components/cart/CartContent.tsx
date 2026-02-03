@@ -5,27 +5,13 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/hooks/useAuth"; // Importamos tu Auth
+import { useAuth } from "@/hooks/useAuth";
 import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
 import { AddedToCartModal } from "./AddedToCartModal";
 
 /* ----------------------------------------------------
-   INTERFACES DE RESPUESTA DEL BACKEND
-------------------------------------------------------*/
-interface OrderResponse {
-  id: string;
-  total: number;
-  estado: string;
-}
-
-interface PreferenceResponse {
-  id: string;
-  init_point: string;
-}
-
-/* ----------------------------------------------------
-   MODAL CONFIRMACIÓN
+   MODAL CONFIRMACIÓN (Se mantiene igual)
 ------------------------------------------------------*/
 function ModalConfirm({
   open,
@@ -74,7 +60,7 @@ function ModalConfirm({
    COMPONENTE PRINCIPAL
 ------------------------------------------------------*/
 export default function CartContent() {
-  const { user, isAuthenticated } = useAuth(); // Obtenemos datos de auth
+  const { user, isAuthenticated } = useAuth();
   const {
     cart,
     removeItem,
@@ -91,11 +77,16 @@ export default function CartContent() {
   const [processingItems, setProcessingItems] = useState<
     Record<string, boolean>
   >({});
-  const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [postalCode, setPostalCode] = useState("");
   const [initialCartLoaded, setInitialCartLoaded] = useState(false);
   const [modalDeleteId, setModalDeleteId] = useState<string | null>(null);
   const [modalClearOpen, setModalClearOpen] = useState(false);
+
+  // Estado para capturar la selección real del envío
+  const [shippingInfo, setShippingInfo] = useState({
+    nombre: "A convenir",
+    costo: 0,
+  });
 
   useEffect(() => {
     if (!loading) setInitialCartLoaded(true);
@@ -157,8 +148,8 @@ export default function CartContent() {
     setModalClearOpen(false);
   };
 
-  /* --- LÓGICA DE CHECKOUT SIN ANY --- */
-  const handleCheckout = async () => {
+  /* --- LÓGICA DE REDIRECCIÓN AL CHECKOUT CORREGIDA --- */
+  const handleCheckout = () => {
     if (!isAuthenticated || !user?.id) {
       toast.error("Debes iniciar sesión para comprar");
       router.push("/login");
@@ -170,57 +161,23 @@ export default function CartContent() {
       return;
     }
 
-    setIsCheckoutLoading(true);
-    const toastId = toast.loading("Iniciando compra...");
+    toast.success("Iniciando proceso de Compra...");
 
-    try {
-      // 1. Crear Orden
-      const orderRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/ordenes`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.id,
-            metodoEnvio: postalCode ? "Correo Argentino" : "A convenir",
-            costoEnvio: postalCode ? 6836 : 0,
-            direccionEnvio: user.address || "Dirección no especificada",
-          }),
-        },
-      );
+    // Pasamos los datos reales del envío por URL para que el CheckoutWizard los reciba
+    const params = new URLSearchParams({
+      shippingCost: shippingInfo.costo.toString(),
+      shippingName: shippingInfo.nombre,
+    });
 
-      if (!orderRes.ok) throw new Error("Error al crear la orden");
-      const order: OrderResponse = await orderRes.json();
-
-      // 2. Crear Preferencia de Pago
-      const paymentRes = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/payments/create-preference/${order.id}`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!paymentRes.ok) throw new Error("Error al generar el link de pago");
-      const payment: PreferenceResponse = await paymentRes.json();
-
-      // 3. Redirigir a Mercado Pago
-      toast.success("Redirigiendo...", { id: toastId });
-      window.location.href = payment.init_point;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Error desconocido";
-      toast.error(message, { id: toastId });
-    } finally {
-      setIsCheckoutLoading(false);
-    }
+    router.push(`/checkout?${params.toString()}`);
   };
 
   const totalPrice = cart.reduce(
     (acc, item) => acc + item.producto.precio * item.quantity,
     0,
   );
-  const shippingCost = postalCode ? 6836 : 0;
-  const finalTotal = totalPrice + shippingCost;
+
+  const finalTotal = totalPrice;
 
   if (loading && cart.length === 0 && !initialCartLoaded) {
     return (
@@ -231,15 +188,15 @@ export default function CartContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFCEF] text-[#6c5b7b] relative">
-      <div className="p-6 flex-1 max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-1">
-          <h2 className="text-2xl font-bold text-center flex-1">
-            CARRITO DE COMPRAS
+    <div className="min-h-screen flex flex-col bg-white text-[#4A4A4A] relative font-sans">
+      <div className="p-4 flex-1 max-w-2xl mx-auto w-full">
+        <div className="flex justify-between items-center mb-6 border-b border-gray-300 pb-2">
+          <h2 className="text-lg font-light tracking-widest text-center flex-1 uppercase">
+            Carrito de compras
           </h2>
           <button
             onClick={() => router.push("/")}
-            className="text-gray-500 hover:text-gray-800 text-3xl font-bold transition ml-4"
+            className="text-gray-400 hover:text-gray-800 text-2xl transition ml-4"
           >
             ×
           </button>
@@ -247,7 +204,7 @@ export default function CartContent() {
 
         {cart.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-400 mb-6">
               No tienes productos en el carrito.
             </p>
             <button
@@ -259,7 +216,7 @@ export default function CartContent() {
           </div>
         ) : (
           <>
-            <ul className="space-y-4">
+            <ul className="divide-y divide-gray-100">
               {cart.map((item) => (
                 <CartItem
                   key={item.id}
@@ -280,7 +237,10 @@ export default function CartContent() {
               handleCheckout={handleCheckout}
               router={router}
               openClearCartModal={() => setModalClearOpen(true)}
-              isLoading={isCheckoutLoading}
+              // Capturamos el cambio de envío desde el componente hijo
+              onShippingChange={(nombre, costo) =>
+                setShippingInfo({ nombre, costo })
+              }
             />
           </>
         )}

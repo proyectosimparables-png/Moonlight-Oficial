@@ -189,4 +189,33 @@ export class PurchaseService {
       </div>
     `;
   }
+
+
+  async notifyShipment(ordenId: string) {
+  // 1. Buscamos la orden y los datos del usuario
+  const orden = await this.prisma.orden.findUnique({
+    where: { id: ordenId },
+    include: { user: true }
+  });
+
+  if (!orden) throw new NotFoundException('Orden no encontrada');
+
+  // 2. Actualizamos el estado a ENVIADO
+  const ordenActualizada = await this.prisma.orden.update({
+    where: { id: ordenId },
+    data: { 
+      estado: EstadoOrden.ENVIADO, // Asegúrate de que este valor exista en tu Enum
+      updatedAt: new Date() 
+    },
+  });
+
+  // 3. Enviamos el correo
+  await this.mailService.sendShippingNotification(
+    orden.user.email,
+    orden.user.name || 'Cliente',
+    orden.id
+  );
+
+  return ordenActualizada;
+}
 }

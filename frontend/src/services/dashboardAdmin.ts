@@ -37,3 +37,9 @@ export async function fetchProductosPopulares(): Promise<ProductoPopular[]> {
   if (!res.ok) throw new Error("Error fetching productos populares");
   return res.json();
 }
+
+export async function fetchResumenGeneral() {
+  const res = await fetch(`${API_BASE_URL}/dashboard/resumen`);
+  if (!res.ok) throw new Error("Error al obtener resumen");
+  return res.json();
+}

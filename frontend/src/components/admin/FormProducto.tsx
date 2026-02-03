@@ -105,7 +105,7 @@ export default function FormProducto() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+   setLoading(true);
     if (!imagenes.length) return toast.error("Agregá al menos una imagen");
     if (!seccionesSeleccionadas.length) return toast.error("Seleccioná al menos una sección");
     if (categoriasSeleccionadas.length === 0) return toast.error("Seleccioná al menos una categoría");
