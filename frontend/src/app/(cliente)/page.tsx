@@ -1,12 +1,9 @@
 import Home from "@/components/home/Home";
-import ParticlesStarfieldPremium from "@/components/ParticlesStarfieldPremium";
-
 
 export default function Page() {
   return (
     <>
-    
-     <ParticlesStarfieldPremium />
+      {/* El fondo ya vive en el Layout, así que aquí solo llamamos al contenido */}
       <Home />
     </>
   );

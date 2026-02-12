@@ -1,7 +1,7 @@
-import ComoComprar from "@/components/info-para-losClients/ComoComprar"
+import ComoComprar from "@/components/info-para-los-clientes/ComoComprar";
 
 const ComoComprarPage = () => {
-    return <ComoComprar />
-}
+  return <ComoComprar />;
+};
 
-export default ComoComprarPage
+export default ComoComprarPage;

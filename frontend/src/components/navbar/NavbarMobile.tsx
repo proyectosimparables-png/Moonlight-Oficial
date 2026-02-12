@@ -17,19 +17,11 @@ import { CartButton } from "./CartButton";
 import { SearchInput } from "../search/SearchInput";
 import { useState, useEffect } from "react";
 
-/* ───────────────────────────────────────────── */
-/* Types */
-/* ───────────────────────────────────────────── */
-
 interface MenuItem {
   label: string;
   path?: string;
   sub?: MenuItem[];
 }
-
-/* ───────────────────────────────────────────── */
-/* Menu structure */
-/* ───────────────────────────────────────────── */
 
 const MENU: MenuItem[] = [
   {
@@ -45,23 +37,68 @@ const MENU: MenuItem[] = [
               {
                 label: "BTS",
                 sub: [
-                  { label: "Ver todo BTS", path: "/productos/indumentaria/remeras/bts" },
-                  { label: "RM", path: "/productos/indumentaria/remeras/bts/rm" },
-                  { label: "Jin", path: "/productos/indumentaria/remeras/bts/jin" },
-                  { label: "Suga", path: "/productos/indumentaria/remeras/bts/suga" },
-                  { label: "J-Hope", path: "/productos/indumentaria/remeras/bts/j-hope" },
-                  { label: "Jimin", path: "/productos/indumentaria/remeras/bts/jimin" },
-                  { label: "Taehyung", path: "/productos/indumentaria/remeras/bts/taehyung" },
-                  { label: "Jungkook", path: "/productos/indumentaria/remeras/bts/jungkook" },
-                  { label: "Rap Line", path: "/productos/indumentaria/remeras/bts/rap-line" },
-                  { label: "Vocal Line", path: "/productos/indumentaria/remeras/bts/vocal-line" },
+                  {
+                    label: "Ver todo BTS",
+                    path: "/productos/indumentaria/remeras/bts",
+                  },
+                  {
+                    label: "RM",
+                    path: "/productos/indumentaria/remeras/bts/rm",
+                  },
+                  {
+                    label: "Jin",
+                    path: "/productos/indumentaria/remeras/bts/jin",
+                  },
+                  {
+                    label: "Suga",
+                    path: "/productos/indumentaria/remeras/bts/suga",
+                  },
+                  {
+                    label: "J-Hope",
+                    path: "/productos/indumentaria/remeras/bts/j-hope",
+                  },
+                  {
+                    label: "Jimin",
+                    path: "/productos/indumentaria/remeras/bts/jimin",
+                  },
+                  {
+                    label: "Taehyung",
+                    path: "/productos/indumentaria/remeras/bts/taehyung",
+                  },
+                  {
+                    label: "Jungkook",
+                    path: "/productos/indumentaria/remeras/bts/jungkook",
+                  },
+                  {
+                    label: "Rap Line",
+                    path: "/productos/indumentaria/remeras/bts/rap-line",
+                  },
+                  {
+                    label: "Vocal Line",
+                    path: "/productos/indumentaria/remeras/bts/vocal-line",
+                  },
                 ],
               },
-              { label: "Stray Kids", path: "/productos/indumentaria/remeras/stray-kids" },
-              { label: "The Rose", path: "/productos/indumentaria/remeras/the-rose" },
-              { label: "Jonas Brothers", path: "/productos/indumentaria/remeras/jonas-brothers" },
-              { label: "New Jeans", path: "/productos/indumentaria/remeras/new-jeans" },
-              { label: "Ver todas las Remeras", path: "/productos/indumentaria/remeras" },
+              {
+                label: "Stray Kids",
+                path: "/productos/indumentaria/remeras/stray-kids",
+              },
+              {
+                label: "The Rose",
+                path: "/productos/indumentaria/remeras/the-rose",
+              },
+              {
+                label: "Jonas Brothers",
+                path: "/productos/indumentaria/remeras/jonas-brothers",
+              },
+              {
+                label: "New Jeans",
+                path: "/productos/indumentaria/remeras/new-jeans",
+              },
+              {
+                label: "Ver todas las Remeras",
+                path: "/productos/indumentaria/remeras",
+              },
             ],
           },
           {
@@ -70,20 +107,41 @@ const MENU: MenuItem[] = [
               {
                 label: "Hoodies",
                 sub: [
-                  { label: "BTS", path: "/productos/indumentaria/abrigos/hoodies/bts" },
-                  { label: "Stray Kids", path: "/productos/indumentaria/abrigos/hoodies/stray-kids" },
-                  { label: "Ver todos los Hoodies", path: "/productos/indumentaria/abrigos/hoodies" },
+                  {
+                    label: "BTS",
+                    path: "/productos/indumentaria/abrigos/hoodies/bts",
+                  },
+                  {
+                    label: "Stray Kids",
+                    path: "/productos/indumentaria/abrigos/hoodies/stray-kids",
+                  },
+                  {
+                    label: "Ver todos los Hoodies",
+                    path: "/productos/indumentaria/abrigos/hoodies",
+                  },
                 ],
               },
               {
                 label: "Buzos",
                 sub: [
-                  { label: "BTS", path: "/productos/indumentaria/abrigos/buzos/bts" },
-                  { label: "Stray Kids", path: "/productos/indumentaria/abrigos/buzos/stray-kids" },
-                  { label: "Ver todos los Buzos", path: "/productos/indumentaria/abrigos/buzos" },
+                  {
+                    label: "BTS",
+                    path: "/productos/indumentaria/abrigos/buzos/bts",
+                  },
+                  {
+                    label: "Stray Kids",
+                    path: "/productos/indumentaria/abrigos/buzos/stray-kids",
+                  },
+                  {
+                    label: "Ver todos los Buzos",
+                    path: "/productos/indumentaria/abrigos/buzos",
+                  },
                 ],
               },
-              { label: "Ver todos los Abrigos", path: "/productos/indumentaria/abrigos" },
+              {
+                label: "Ver todos los Abrigos",
+                path: "/productos/indumentaria/abrigos",
+              },
             ],
           },
         ],
@@ -91,10 +149,22 @@ const MENU: MenuItem[] = [
       {
         label: "Bangtan Limited Edition",
         sub: [
-          { label: "Accesorios", path: "/productos/bangtan-limited-edition/accesorios" },
-          { label: "Bangtan Bags", path: "/productos/bangtan-limited-edition/bangtan-bags" },
-          { label: "Bangtan Home", path: "/productos/bangtan-limited-edition/bangtan-home" },
-          { label: "Ver todo Limited Edition", path: "/productos/bangtan-limited-edition" },
+          {
+            label: "Accesorios",
+            path: "/productos/bangtan-limited-edition/accesorios",
+          },
+          {
+            label: "Bangtan Bags",
+            path: "/productos/bangtan-limited-edition/bangtan-bags",
+          },
+          {
+            label: "Bangtan Home",
+            path: "/productos/bangtan-limited-edition/bangtan-home",
+          },
+          {
+            label: "Ver todo Limited Edition",
+            path: "/productos/bangtan-limited-edition",
+          },
         ],
       },
       { label: "Gift Cards", path: "/productos/gift-cards" },
@@ -112,8 +182,8 @@ const MENU: MenuItem[] = [
   },
   { label: "¿Quiénes Somos?", path: "/quienes-somos" },
   { label: "Experiencia Moonlight", path: "/comentar" },
-  { label: "Army Club", path: "/" },
-  { label: "Calendario Lunar", path: "/" },
+  { label: "Army Club", path: "/army-club" },
+  { label: "Calendario Lunar", path: "/calendario-lunar" },
 ];
 
 export const NavbarMobile = () => {
@@ -125,7 +195,8 @@ export const NavbarMobile = () => {
 
   useEffect(() => {
     if (!open) {
-      setTimeout(() => setMenuStack([MENU]), 300);
+      const timer = setTimeout(() => setMenuStack([MENU]), 300);
+      return () => clearTimeout(timer);
     }
   }, [open]);
 
@@ -151,21 +222,21 @@ export const NavbarMobile = () => {
       <div className="flex items-center justify-between px-4 py-3 bg-[#FAFCEF]">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button aria-label="Abrir menú" className="p-1">
+            <button aria-label="Abrir menú" className="p-1 outline-none">
               <Menu className="h-6 w-6 text-[#7b5ca2]" />
             </button>
           </SheetTrigger>
 
           <SheetContent
             side="left"
-            className="w-[300px] p-0 flex flex-col bg-white"
+            className="w-75 p-0 flex flex-col bg-white border-none"
           >
             <SheetHeader className="p-4 border-b border-gray-100">
               <SheetTitle className="text-[#7b5ca2] flex items-center gap-2">
                 {menuStack.length > 1 ? (
                   <button
                     onClick={goBack}
-                    className="flex items-center gap-2 text-sm font-bold"
+                    className="flex items-center gap-2 text-sm font-bold outline-none"
                   >
                     <ArrowLeft className="h-4 w-4" /> Volver
                   </button>
@@ -176,7 +247,8 @@ export const NavbarMobile = () => {
             </SheetHeader>
 
             <div className="px-4 py-3">
-              <SearchInput />
+              {/* ✅ Corregido: Ahora el menú se cierra al buscar o seleccionar un producto */}
+              <SearchInput onResultClick={() => setOpen(false)} />
             </div>
 
             <div className="flex-1 overflow-y-auto">
@@ -198,7 +270,7 @@ export const NavbarMobile = () => {
                       ) : (
                         <button
                           onClick={() => handleItemClick(item)}
-                          className="w-full flex items-center justify-between px-5 py-4 text-[#7b5ca2] active:bg-[#f3eefb] transition-colors"
+                          className="w-full flex items-center justify-between px-5 py-4 text-[#7b5ca2] active:bg-[#f3eefb] transition-colors outline-none"
                         >
                           <span className="text-[16px]">{item.label}</span>
                           {item.sub && (

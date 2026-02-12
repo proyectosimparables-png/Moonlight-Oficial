@@ -184,7 +184,31 @@ export async function getProductoAdminById(id: string) {
   return res.json();
 }
 
+export async function getProductoBySlug(slug: string): Promise<Producto | null> {
+  if (!slug) return null;
 
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/slug/${slug}`, {
+      cache: "no-store",
+    });
+
+    // Si el backend no lo encuentra, retornamos null silenciosamente
+    if (res.status === 404) return null;
+
+    if (!res.ok) return null;
+
+    const contentType = res.headers.get("content-type");
+    // Si lo que viene no es JSON (es decir, es el HTML del error), abortamos
+    if (!contentType || !contentType.includes("application/json")) {
+      return null;
+    }
+
+    return await res.json();
+  } catch (error) {
+    // Error de red o parseo, no bloqueamos la ejecución
+    return null;
+  }
+}
 
 //Categorias en arbol para el formulario//////////////////////////////////////////////////////////////////////////////
 export async function getCategoriasTree(seccionId: string) {

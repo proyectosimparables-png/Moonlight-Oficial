@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ChevronDown } from "lucide-react";
@@ -11,10 +10,7 @@ import { SearchInput } from "../search/SearchInput";
 import { useState } from "react";
 
 export const NavbarDesktop = () => {
-  const router = useRouter();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
-
-  // Estados para controlar el cierre manual de los menús principales
   const [productsOpen, setProductsOpen] = useState(false);
   const [howToBuyOpen, setHowToBuyOpen] = useState(false);
 
@@ -26,7 +22,6 @@ export const NavbarDesktop = () => {
     setOpenMenus((prev) => ({ ...prev, [menu]: false }));
   };
 
-  // Función para cerrar todos los dropdowns al hacer click
   const closeAll = () => {
     setProductsOpen(false);
     setHowToBuyOpen(false);
@@ -34,13 +29,13 @@ export const NavbarDesktop = () => {
   };
 
   return (
-    <div className="hidden md:block">
-      {/* Parte superior */}
-      <div className="bg-[#FAFCEF]">
+    <div className="hidden md:block w-full relative z-50">
+      {/* PARTE SUPERIOR */}
+      <div className="bg-[#fafcef]/80 backdrop-blur-md border-b border-white/20 relative z-30">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20 relative">
+          <div className="flex items-center justify-between h-24 relative">
             <div className="hidden md:flex items-center gap-2">
-              <SearchInput placeholder="Buscar productos..." />
+              <SearchInput />
             </div>
 
             <div className="absolute left-1/2 transform -translate-x-1/2">
@@ -48,15 +43,15 @@ export const NavbarDesktop = () => {
                 <Image
                   src="/moonlight.png"
                   alt="Moonlight Logo"
-                  width={140}
-                  height={40}
+                  width={160}
+                  height={50}
                   priority
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:scale-105 transition-transform duration-300"
                 />
               </Link>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <AuthButton />
               <CartButton />
             </div>
@@ -64,28 +59,29 @@ export const NavbarDesktop = () => {
         </div>
       </div>
 
-      {/* Barra inferior de navegación */}
-      <div className="bg-[#FAFCEF] justify-center items-center gap-6 py-3 text-[17px] text-[#7b5ca2] font-[var(--font-love-story)] tracking-wide flex">
-        {/* DROPDOWN PRODUCTOS */}
+      {/* BARRA DE NAVEGACIÓN */}
+      <nav className="bg-[#fafcef]/90 backdrop-blur-sm justify-center items-center gap-8 py-3 text-[17px] text-[#7b5ca2] font-love-ya tracking-wide flex shadow-sm relative z-20">
         <DropdownMenu.Root open={productsOpen} onOpenChange={setProductsOpen}>
           <DropdownMenu.Trigger asChild>
-            <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-105 outline-none">
+            <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-110 outline-none">
               Productos <ChevronDown className="ml-1 h-4 w-4" />
             </button>
           </DropdownMenu.Trigger>
 
           <DropdownMenu.Content
-            className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px] z-50 animate-in fade-in zoom-in-95 duration-200"
-            sideOffset={5}
+            className="bg-[#fafcef] backdrop-blur-xl shadow-xl rounded-md py-2 text-sm text-[#7b5ca2] min-w-64 z-60 animate-in fade-in zoom-in-95 duration-200 border border-purple-50"
+            sideOffset={8}
           >
             <DropdownMenu.Item className="outline-none" onClick={closeAll}>
               <Link
                 href="/productos"
-                className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-semibold"
+                className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold text-[#4e3f73]"
               >
                 Ver todos los productos
               </Link>
             </DropdownMenu.Item>
+
+            <DropdownMenu.Separator className="h-px bg-purple-100/50 my-1" />
 
             {/* --- INDUMENTARIA --- */}
             <DropdownMenu.Sub
@@ -98,12 +94,11 @@ export const NavbarDesktop = () => {
                 onMouseEnter={() => handleMouseEnter("indumentaria")}
                 onMouseLeave={() => handleMouseLeave("indumentaria")}
               >
-                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
+                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none font-medium text-[#4e3f73]">
                   Indumentaria{" "}
                   <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                 </DropdownMenu.SubTrigger>
-
-                <DropdownMenu.SubContent className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px] animate-in fade-in slide-in-from-left-1">
+                <DropdownMenu.SubContent className="bg-[#fafcef] shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-56 border border-purple-50">
                   {/* REMERAS */}
                   <DropdownMenu.Sub
                     open={openMenus["remeras"]}
@@ -119,7 +114,7 @@ export const NavbarDesktop = () => {
                         Remeras{" "}
                         <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                       </DropdownMenu.SubTrigger>
-                      <DropdownMenu.SubContent className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px]">
+                      <DropdownMenu.SubContent className="bg-[#fafcef] shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-52 border border-purple-50">
                         {/* BTS en Remeras */}
                         <DropdownMenu.Sub
                           open={openMenus["bts-rem"]}
@@ -131,11 +126,23 @@ export const NavbarDesktop = () => {
                             onMouseEnter={() => handleMouseEnter("bts-rem")}
                             onMouseLeave={() => handleMouseLeave("bts-rem")}
                           >
-                            <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
+                            <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none font-semibold">
                               BTS{" "}
                               <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                             </DropdownMenu.SubTrigger>
-                            <DropdownMenu.SubContent className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[180px]">
+                            <DropdownMenu.SubContent className="bg-[#fafcef] shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-44 border border-purple-50">
+                              <DropdownMenu.Item
+                                className="outline-none"
+                                onClick={closeAll}
+                              >
+                                <Link
+                                  href="/productos/indumentaria/remeras/bts"
+                                  className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold"
+                                >
+                                  Ver todo BTS
+                                </Link>
+                              </DropdownMenu.Item>
+                              <DropdownMenu.Separator className="h-px bg-purple-50 my-1" />
                               {[
                                 "RM",
                                 "Taehyung",
@@ -160,18 +167,6 @@ export const NavbarDesktop = () => {
                                   </Link>
                                 </DropdownMenu.Item>
                               ))}
-                              <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
-                              <DropdownMenu.Item
-                                className="outline-none font-bold"
-                                onClick={closeAll}
-                              >
-                                <Link
-                                  href="/productos/indumentaria/remeras/bts"
-                                  className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
-                                >
-                                  Ver todo BTS Remeras
-                                </Link>
-                              </DropdownMenu.Item>
                             </DropdownMenu.SubContent>
                           </div>
                         </DropdownMenu.Sub>
@@ -195,16 +190,16 @@ export const NavbarDesktop = () => {
                             </Link>
                           </DropdownMenu.Item>
                         ))}
-                        <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
+                        <DropdownMenu.Separator className="h-px bg-purple-100/50 my-1" />
                         <DropdownMenu.Item
-                          className="outline-none font-bold"
+                          className="outline-none"
                           onClick={closeAll}
                         >
                           <Link
                             href="/productos/indumentaria/remeras"
-                            className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
+                            className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold italic"
                           >
-                            Ver todo en Remeras
+                            Ver todas las Remeras
                           </Link>
                         </DropdownMenu.Item>
                       </DropdownMenu.SubContent>
@@ -226,7 +221,7 @@ export const NavbarDesktop = () => {
                         Abrigos{" "}
                         <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                       </DropdownMenu.SubTrigger>
-                      <DropdownMenu.SubContent className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px]">
+                      <DropdownMenu.SubContent className="bg-[#fafcef] shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-52 border border-purple-50">
                         {["Hoodies", "Buzos"].map((type) => (
                           <DropdownMenu.Sub
                             key={type}
@@ -239,11 +234,11 @@ export const NavbarDesktop = () => {
                               onMouseEnter={() => handleMouseEnter(type)}
                               onMouseLeave={() => handleMouseLeave(type)}
                             >
-                              <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
+                              <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none font-medium">
                                 {type}{" "}
                                 <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                               </DropdownMenu.SubTrigger>
-                              <DropdownMenu.SubContent className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[180px]">
+                              <DropdownMenu.SubContent className="bg-[#fafcef] shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-44 border border-purple-50">
                                 {["BTS", "Stray Kids"].map((g) => (
                                   <DropdownMenu.Item
                                     key={g}
@@ -258,32 +253,32 @@ export const NavbarDesktop = () => {
                                     </Link>
                                   </DropdownMenu.Item>
                                 ))}
-                                <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
+                                <DropdownMenu.Separator className="h-px bg-purple-50 my-1" />
                                 <DropdownMenu.Item
-                                  className="outline-none font-bold"
+                                  className="outline-none"
                                   onClick={closeAll}
                                 >
                                   <Link
                                     href={`/productos/indumentaria/abrigos/${type.toLowerCase()}`}
-                                    className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
+                                    className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold"
                                   >
-                                    Ver todo en {type}
+                                    Ver todos los {type}
                                   </Link>
                                 </DropdownMenu.Item>
                               </DropdownMenu.SubContent>
                             </div>
                           </DropdownMenu.Sub>
                         ))}
-                        <DropdownMenu.Separator className="h-px bg-gray-100 my-1" />
+                        <DropdownMenu.Separator className="h-px bg-purple-100/50 my-1" />
                         <DropdownMenu.Item
-                          className="outline-none font-bold"
+                          className="outline-none"
                           onClick={closeAll}
                         >
                           <Link
                             href="/productos/indumentaria/abrigos"
-                            className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
+                            className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold italic"
                           >
-                            Ver todo en Abrigos
+                            Ver todos los Abrigos
                           </Link>
                         </DropdownMenu.Item>
                       </DropdownMenu.SubContent>
@@ -304,11 +299,11 @@ export const NavbarDesktop = () => {
                 onMouseEnter={() => handleMouseEnter("bangtan")}
                 onMouseLeave={() => handleMouseLeave("bangtan")}
               >
-                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none">
+                <DropdownMenu.SubTrigger className="px-4 py-2 hover:bg-[#f3eefb] cursor-pointer flex justify-between items-center outline-none font-semibold text-[#4e3f73]">
                   Bangtan Limited Edition{" "}
                   <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                 </DropdownMenu.SubTrigger>
-                <DropdownMenu.SubContent className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[200px]">
+                <DropdownMenu.SubContent className="bg-[#fafcef] shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-52 border border-purple-50">
                   {["Accesorios", "Bangtan Bags", "Bangtan Home"].map(
                     (item) => (
                       <DropdownMenu.Item
@@ -325,6 +320,18 @@ export const NavbarDesktop = () => {
                       </DropdownMenu.Item>
                     ),
                   )}
+                  <DropdownMenu.Separator className="h-px bg-purple-100/50 my-1" />
+                  <DropdownMenu.Item
+                    className="outline-none"
+                    onClick={closeAll}
+                  >
+                    <Link
+                      href="/productos/bangtan-limited-edition"
+                      className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold"
+                    >
+                      Ver todo Limited Edition
+                    </Link>
+                  </DropdownMenu.Item>
                 </DropdownMenu.SubContent>
               </div>
             </DropdownMenu.Sub>
@@ -340,27 +347,36 @@ export const NavbarDesktop = () => {
           </DropdownMenu.Content>
         </DropdownMenu.Root>
 
-        {/* BOTONES DIRECTOS */}
-        <Link
-          href="/quienes-somos"
-          className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-        >
-          ¿Quiénes Somos?
-        </Link>
+        {/* Links directos */}
+        {[
+          { n: "¿Quiénes Somos?", h: "/quienes-somos" },
+          { n: "Experiencia Moonlight", h: "/comentar" },
+          { n: "Army Club", h: "/army-club" },
+          { n: "Calendario Lunar", h: "/calendario-lunar" },
+        ].map((link) => (
+          <Link
+            key={link.h}
+            href={link.h}
+            className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-110"
+          >
+            {link.n}
+          </Link>
+        ))}
 
+        {/* Cómo comprar */}
         <DropdownMenu.Root open={howToBuyOpen} onOpenChange={setHowToBuyOpen}>
           <DropdownMenu.Trigger asChild>
-            <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-105 outline-none">
+            <button className="flex items-center hover:text-[#4e3f73] transition-all duration-200 hover:scale-110 outline-none">
               ¿Cómo comprar? <ChevronDown className="ml-1 h-4 w-4" />
             </button>
           </DropdownMenu.Trigger>
-          <DropdownMenu.Content className="bg-white shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-[180px] z-50 animate-in fade-in zoom-in-95 duration-200">
+          <DropdownMenu.Content className="bg-[#fafcef] shadow-xl rounded-md py-2 text-sm text-[#7b5ca2] min-w-52 z-50 border border-purple-50">
             {[
               { l: "Guía de Compra", h: "/como-comprar" },
-              { l: "Políticas de Compra", h: "/politicas-de-compras" },
+              { l: "Políticas", h: "/politicas-de-compras" },
               { l: "Guía de Talles", h: "/guia-de-talles" },
               { l: "Mayoristas", h: "/mayoristas" },
-              { l: "Preguntas Frecuentes", h: "/preguntas-frecuentes" },
+              { l: "Preguntas", h: "/preguntas-frecuentes" },
             ].map((i) => (
               <DropdownMenu.Item
                 key={i.h}
@@ -377,28 +393,7 @@ export const NavbarDesktop = () => {
             ))}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
-
-        <Link
-          href="/comentar"
-          className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-        >
-          Experiencia Moonlight
-        </Link>
-
-        <Link
-          href="/army-club"
-          className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-        >
-          Army Club
-        </Link>
-
-        <Link
-          href="/calendario-lunar"
-          className="hover:text-[#4e3f73] transition-all duration-200 hover:scale-105"
-        >
-          Calendario Lunar
-        </Link>
-      </div>
+      </nav>
     </div>
   );
 };

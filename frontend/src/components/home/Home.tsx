@@ -31,9 +31,9 @@ const Home = () => {
     const fetchSections = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`);
+          `${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`,
+        );
         if (!res.ok) throw new Error("Error al obtener secciones");
-
 
         const data: Section[] = await res.json();
 
@@ -42,7 +42,7 @@ const Home = () => {
           .sort(
             (a, b) =>
               visibleSections.indexOf(a.nombre) -
-              visibleSections.indexOf(b.nombre)
+              visibleSections.indexOf(b.nombre),
           );
 
         setSections(filteredAndSorted);
@@ -70,20 +70,16 @@ const Home = () => {
                 precio: p.precio,
                 // Aquí está el truco: enviamos el array de imágenes
                 // Si p.imagenes no existe, enviamos un array con el placeholder
-                imagenes: p.imagenes && p.imagenes.length > 0
-                  ? p.imagenes
-                  : ["/images/placeholder.png"]
+                imagenes:
+                  p.imagenes && p.imagenes.length > 0
+                    ? p.imagenes
+                    : ["/images/placeholder.png"],
               }))}
             />
-
-
 
             {/* 🌙 Banner entre Novedades y Los más elegidos */}
             {section.nombre === "Novedades" && <MoonlightClubBanner />}
           </div>
-
-
-
         ))}
       </main>
 

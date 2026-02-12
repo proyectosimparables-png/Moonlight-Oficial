@@ -20,7 +20,6 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 
 import { ProductoService } from './producto.service';
-
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { CreateSeccionDto } from './dto/create-seccion.dto';
 import { CloudinaryService } from 'src/claudinary/cloudinary.service';
@@ -30,11 +29,11 @@ export class ProductoController {
   constructor(
     private readonly productoService: ProductoService,
     private readonly cloudinaryService: CloudinaryService,
-  ) {}
+  ) { }
 
-  // =======================
-  // 🔍 GET – PÚBLICO
-  // =======================
+  // ==========================================
+  // 1. 🔍 RUTAS FIJAS / BÚSQUEDA (Prioridad Alta)
+  // ==========================================
 
   @Get()
   findAllPublic(
@@ -50,18 +49,16 @@ export class ProductoController {
     return this.productoService.searchProducts(query.trim());
   }
 
-  @Get('seccion/:slug')
-  async getSeccionPorSlug(@Param('slug') slug: string) {
-    const seccion = await this.productoService.getSeccionConProductos(slug);
-    if (!seccion) {
-      throw new NotFoundException(`No se encontró la sección con slug "${slug}"`);
-    }
-    return seccion;
+  @Get('secciones')
+  getSecciones() {
+    return this.productoService.getSecciones();
   }
 
-  // =======================
-  // 🔍 GET – ADMIN
-  // =======================
+  @Get('categorias')
+  getCategorias(@Query('seccionId') seccionId?: string) {
+    if (!seccionId) return this.productoService.getTodasLasCategorias();
+    return this.productoService.getCategoriasPorSeccion(seccionId);
+  }
 
   @Get('admin')
   findAllAdmin(
@@ -71,18 +68,52 @@ export class ProductoController {
     return this.productoService.findAllAdmin(seccionId, categoriaId);
   }
 
+  // ==========================================
+  // 2. 🔍 RUTAS CON PREFIJOS (Slug / Tree)
+  // ==========================================
+
+  // ✅ Para obtener un PRODUCTO individual por su slug
+  @Get('slug/:slug')
+  async findBySlug(@Param('slug') slug: string) {
+    return this.productoService.findBySlug(slug);
+  }
+
+  // ✅ Para obtener una SECCIÓN con sus productos
+  @Get('seccion/:slug')
+  async getSeccionPorSlug(@Param('slug') slug: string) {
+    const seccion = await this.productoService.getSeccionConProductos(slug);
+    if (!seccion) {
+      throw new NotFoundException(`No se encontró la sección con slug "${slug}"`);
+    }
+    return seccion;
+  }
+
+  @Get('tree/por-seccion/:seccionId')
+  getTreePorSeccion(@Param('seccionId') seccionId: string) {
+    return this.productoService.getCategoriasTreePorSeccion(seccionId);
+  }
+
+  // ==========================================
+  // 3. 📦 RUTAS CON ID (Prioridad Baja)
+  // ==========================================
+
   @Get('admin/:id')
   findOneAdmin(@Param('id') id: string) {
     return this.productoService.findOneById(id);
   }
 
-  // =======================
-  // 📦 SECCIONES / CATEGORÍAS
-  // =======================
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.productoService.findOne(id);
+  }
 
-  @Get('secciones')
-  getSecciones() {
-    return this.productoService.getSecciones();
+  // ==========================================
+  // ➕ POST – CREACIÓN
+  // ==========================================
+
+  @Post()
+  create(@Body() dto: CreateProductoDto) {
+    return this.productoService.create(dto);
   }
 
   @Post('secciones')
@@ -90,62 +121,11 @@ export class ProductoController {
     return this.productoService.crearSeccion(data);
   }
 
-  @Put('secciones/:id')
-  actualizarSeccion(
-    @Param('id') id: string,
-    @Body() data: Partial<CreateSeccionDto>,
-  ) {
-    return this.productoService.actualizarSeccion(id, data);
-  }
-
-  @Delete('secciones/:id')
-  eliminarSeccion(@Param('id') id: string) {
-    return this.productoService.eliminarSeccion(id);
-  }
-
-  @Get('categorias')
-  getCategorias(@Query('seccionId') seccionId?: string) {
-    if (!seccionId) return this.productoService.getTodasLasCategorias();
-    return this.productoService.getCategoriasPorSeccion(seccionId);
-  }
-
-  @Get('tree/por-seccion/:seccionId')
-  getTreePorSeccion(@Param('seccionId') seccionId: string) {
-    return this.productoService.getCategoriasTreePorSeccion(seccionId);
-  }
-//get para obtener producto por id
-@Get(':id') // Esto permite /productos/3d89...
-findOne(@Param('id') id: string) {
-  return this.productoService.findOne(id);
-}
-
   @Post('categorias')
   crearCategoria(
     @Body() data: { nombre: string; seccionSlug: string; parentId?: string },
   ) {
     return this.productoService.crearCategoria(data);
-  }
-
-  @Patch('categorias/:id')
-  actualizarCategoria(
-    @Param('id') id: string,
-    @Body() data: { nombre?: string; seccionId?: string },
-  ) {
-    return this.productoService.actualizarCategoria(id, data);
-  }
-
-  @Delete('categorias/:id')
-  eliminarCategoria(@Param('id') id: string) {
-    return this.productoService.eliminarCategoria(id);
-  }
-
-  // =======================
-  // ➕ POST – PRODUCTO
-  // =======================
-
-  @Post()
-  create(@Body() dto: CreateProductoDto) {
-    return this.productoService.create(dto);
   }
 
   @Post('upload-producto')
@@ -158,29 +138,39 @@ findOne(@Param('id') id: string) {
     if (!files?.length) {
       throw new BadRequestException('Debes subir al menos una imagen');
     }
-
     const imagenesUrls: string[] = [];
     for (const file of files) {
       imagenesUrls.push(await this.cloudinaryService.uploadImage(file));
     }
-
     return this.productoService.create(body, imagenesUrls);
   }
 
+  // ==========================================
+  // ✏️ PUT / PATCH – ACTUALIZACIÓN
+  // ==========================================
 
+  @Put('secciones/:id')
+  actualizarSeccion(
+    @Param('id') id: string,
+    @Body() data: Partial<CreateSeccionDto>,
+  ) {
+    return this.productoService.actualizarSeccion(id, data);
+  }
 
-
-
-  // =======================
-  // ✏️ PUT – ADMIN
-  // =======================
+  @Patch('categorias/:id')
+  actualizarCategoria(
+    @Param('id') id: string,
+    @Body() data: { nombre?: string; seccionId?: string },
+  ) {
+    return this.productoService.actualizarCategoria(id, data);
+  }
 
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: CreateProductoDto) {
     return this.productoService.updateProductoFlexible(id, dto);
   }
 
- @Put(':id/upload')
+  @Put(':id/upload')
   @UseInterceptors(FilesInterceptor('files'))
   async updateProductoWithImages(
     @Param('id') id: string,
@@ -206,9 +196,19 @@ findOne(@Param('id') id: string) {
     return this.productoService.publicar(id);
   }
 
-  // =======================
-  // 🗑 DELETE – ADMIN
-  // =======================
+  // ==========================================
+  // 🗑 DELETE – ELIMINACIÓN
+  // ==========================================
+
+  @Delete('secciones/:id')
+  eliminarSeccion(@Param('id') id: string) {
+    return this.productoService.eliminarSeccion(id);
+  }
+
+  @Delete('categorias/:id')
+  eliminarCategoria(@Param('id') id: string) {
+    return this.productoService.eliminarCategoria(id);
+  }
 
   @Delete(':id')
   remove(@Param('id') id: string) {

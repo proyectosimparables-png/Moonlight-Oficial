@@ -1,7 +1,7 @@
-import PreguntasFrecuentes from "@/components/info-para-losClients/PreguntasFrecuentes"
+import PreguntasFrecuentes from "@/components/info-para-los-clientes/PreguntasFrecuentes";
 
 const PreguntasFrecuentesPage = () => {
-    return <PreguntasFrecuentes />
-}
+  return <PreguntasFrecuentes />;
+};
 
-export default PreguntasFrecuentesPage
+export default PreguntasFrecuentesPage;

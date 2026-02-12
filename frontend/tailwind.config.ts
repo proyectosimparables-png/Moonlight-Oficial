@@ -20,7 +20,6 @@ export default {
     extend: {
       fontFamily: {
         sans: ["var(--font-montserrat)", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
         decorative: ["var(--font-love-story)", "cursive"],
         script: ["var(--font-dancing-script)", "cursive"],
       },

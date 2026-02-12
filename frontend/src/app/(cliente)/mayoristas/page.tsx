@@ -1,7 +1,7 @@
-import Mayoristas from "@/components/info-para-losClients/Mayoristas"
+import Mayoristas from "@/components/info-para-los-clientes/Mayoristas";
 
 const MayoristasPage = () => {
-    return <Mayoristas />
-}
+  return <Mayoristas />;
+};
 
-export default MayoristasPage
+export default MayoristasPage;

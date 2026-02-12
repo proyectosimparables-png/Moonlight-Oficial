@@ -1,7 +1,7 @@
-import GuiaDeTalles from "@/components/info-para-losClients/GuiaDeTalles"
+import GuiaDeTalles from "@/components/info-para-los-clientes/GuiaDeTalles";
 
 const GuiaDeTallesPage = () => {
-    return <GuiaDeTalles />
-}
+  return <GuiaDeTalles />;
+};
 
-export default GuiaDeTallesPage
+export default GuiaDeTallesPage;

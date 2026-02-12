@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌙 Moonlight – Ecommerce Full Stack & ARMY Community
 
-## Getting Started
+**Moonlight** es una plataforma de e-commerce personalizada, diseñada para transformar la experiencia de compra de indumentaria en una vivencia interactiva para la comunidad fan. Este proyecto migra la operativa de una tienda real desde Tienda Nube hacia una solución propia, permitiendo total libertad creativa y optimización de costos operativos.
 
-First, run the development server:
+## 🚀 Stack Tecnológico
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Frontend
+
+- **Framework:** [Next.js 15](https://nextjs.org/) (App Router) con Turbopack.
+- **Estilos:** Tailwind CSS + Lucide React (iconografía).
+- **UI Components:** Radix UI + Sonner + Framer Motion (microinteracciones).
+- **Estado & Fetching:** TanStack Query (React Query) + React Hot Toast.
+
+### Backend
+
+- **Framework:** [NestJS 11](https://nestjs.com/) (Node.js).
+- **Base de Datos:** PostgreSQL alojada en [Supabase](https://supabase.com/).
+- **ORM:** [Prisma](https://www.prisma.io/).
+- **Validación:** Class-validator & Class-transformer.
+- **Seguridad:** Bcrypt (Hashing) + JWT (Autenticación).
+
+### Servicios Externos e Infraestructura
+
+- **Imágenes:** [Cloudinary](https://cloudinary.com/) (Upload dinámico vía Multer).
+- **Pagos:** Mercado Pago SDK, Ualá Go Cuotas (Integración vía Webhooks).
+- **Mailing:** Nodemailer + NestJS Schedule (Automatización de carritos abandonados).
+- **Infraestructura:** Cloud VPS (Ubuntu) con Nginx (Reverse Proxy) y PM2.
+
+---
+
+## 📂 Estructura del Proyecto (Monorepo)
+
+```text
+moonlight-oficial/
+├── backend/           # API Rest con NestJS (Lógica de negocio y DB)
+│   ├── prisma/        # Esquema de datos, variantes (talles/colores) y seeds
+│   └── src/           # Módulos, Servicios y Controladores
+├── frontend/          # Interfaz de usuario con Next.js 15
+│   ├── src/           # Components, Hooks, Contexts y App Router
+│   └── public/        # Recursos estáticos
+└── .env               # Configuración de producción
+
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🗓 Roadmap de Desarrollo
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Fase 1: MVP & Gestión Administrativa
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Setup de Monorepo:** Configuración de NestJS 11 y Next.js 15.
+- **Modelado de datos:** Prisma (Usuarios, Productos, Variantes, Órdenes).
+- **Panel Admin:** Dashboard para gestión de productos, stock y categorías.
+- **Multimedia:** Integración de Cloudinary para manejo de archivos.
+- **Pagos:** Implementación de Pasarelas (Mercado Pago / Ualá).
 
-## Learn More
+### Fase 2: Experiencia e Interacción
 
-To learn more about Next.js, take a look at the following resources:
+- **Mascota Puchi:** Sistema de guía y onboarding interactivo.
+- **Quiz Lunar:** Recomendaciones personalizadas de productos.
+- **Sección ARMY:** Acceso a contenido exclusivo y descargables post-compra.
+- **UX Avanzada:** Animaciones con Framer Motion.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Fase 3: Automatización y Lanzamiento
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Marketing Tools:** Automatización de mails (Nodemailer + Schedule).
+- **Muro de Constelaciones:** Módulo de feedback y comunidad.
+- **Deploy:** Configuración de entorno de producción en VPS con SSL.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠️ Instalación
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Clona el repo.
+2. `npm install` en /frontend y /backend.
+3. Configura los `.env`.
+4. `npm run dev`.
+
+---
+
+## ✨ Autoras
+
+Proyecto desarrollado con ❤️ para **Moonlight** por:
+
+- **Macarena** — [GitHub](https://github.com/MacarenaAliberti-web) • [LinkedIn](https://www.linkedin.com/in/macarena-aliberti-440b03373/)
+- **Natalia** — [GitHub](https://github.com/Russ) • [LinkedIn](https://www.linkedin.com/in/russ-villalba/)
+
+---

@@ -5,10 +5,12 @@ import { NavbarMobile } from "./NavbarMobile";
 
 const Navbar = () => {
   return (
-    <header className="w-full sticky top-0 z-50 bg-white shadow-sm">
+    <header className="w-full sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm transition-all duration-300">
       <TopBanner />
-      <NavbarDesktop />
-      <NavbarMobile />
+      <div className="relative">
+        <NavbarDesktop />
+        <NavbarMobile />
+      </div>
     </header>
   );
 };

@@ -1,7 +1,7 @@
-import PoliticasCompra from "@/components/info-para-losClients/Politicas-de-Compra";
+import PoliticasCompra from "@/components/info-para-los-clientes/Politicas-de-Compra";
 
 const PoliticasCompraPage = () => {
-    return<PoliticasCompra />;
+  return <PoliticasCompra />;
 };
 
 export default PoliticasCompraPage;

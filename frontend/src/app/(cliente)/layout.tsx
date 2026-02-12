@@ -1,5 +1,3 @@
-"use client";
-
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/home/Footer";
 import WhatsAppFloat from "@/components/home/Whatsapp";
@@ -10,15 +8,13 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative z-10 min-h-screen text-[#4c3a6d]">
+    <>
       <Navbar />
-
-      <main className="flex-1 bg-transparent">
+      <main className="flex-1 w-full bg-transparent flex flex-col m-0 p-0">
         {children}
       </main>
-
       <Footer />
       <WhatsAppFloat />
-    </div>
+    </>
   );
 }

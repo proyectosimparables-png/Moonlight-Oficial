@@ -6,8 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useSearchProducts, Product } from "./useSearchProducts";
 import Link from "next/link";
+import Image from "next/image";
 
-export const SearchInput = () => {
+interface SearchInputProps {
+  onResultClick?: () => void;
+}
+
+export const SearchInput = ({ onResultClick }: SearchInputProps) => {
   const [query, setQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { results, loading } = useSearchProducts(query, 300);
@@ -30,11 +35,17 @@ export const SearchInput = () => {
   const handleSearch = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (query.trim().length >= 3) {
-      // ✅ AJUSTE: Usamos 'q=' para que la página de búsqueda también use ese parámetro
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
       setQuery("");
       setShowSuggestions(false);
+      if (onResultClick) onResultClick(); // Cierra el menú en mobile
     }
+  };
+
+  const handleSelectProduct = () => {
+    setQuery("");
+    setShowSuggestions(false);
+    if (onResultClick) onResultClick(); // Cierra el menú en mobile
   };
 
   return (
@@ -59,10 +70,10 @@ export const SearchInput = () => {
             <div className="p-2 space-y-2">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center gap-3 p-2">
-                  <div className="w-12 h-12 bg-purple-100 animate-pulse rounded-lg"></div>
+                  <div className="w-12 h-12 bg-purple-100 animate-pulse rounded-lg" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-purple-100 animate-pulse rounded w-3/4"></div>
-                    <div className="h-2 bg-purple-50 animate-pulse rounded w-1/2"></div>
+                    <div className="h-3 bg-purple-100 animate-pulse rounded w-3/4" />
+                    <div className="h-2 bg-purple-50 animate-pulse rounded w-1/2" />
                   </div>
                 </div>
               ))}
@@ -71,31 +82,30 @@ export const SearchInput = () => {
 
           {!loading && results.exactos.length > 0 && (
             <div className="max-h-[60vh] overflow-y-auto md:max-h-80">
-
               {results.exactos.map((product: Product) => {
                 const imgSrc =
-                  typeof product.imagenes?.[0] === "string"
-                    ? product.imagenes[0]
-                    : product.imagenes?.[0]|| "/placeholder.png";
+                  product.imagenUrl ||
+                  product.imagenes?.[0] ||
+                  "/placeholder.png";
 
                 return (
                   <Link
                     key={product.id}
-                    // ✅ AJUSTE: Usamos /productos/ y slug para navegación amigable
                     href={`/productos/${product.slug || product.id}`}
-                    onClick={() => {
-                      setQuery("");
-                      setShowSuggestions(false);
-                    }}
+                    onClick={handleSelectProduct}
                     className="flex items-center gap-3 p-4 md:p-3 hover:bg-purple-50 transition-colors border-b last:border-0"
                   >
-                    <img
-                      src={imgSrc}
-                      className="w-12 h-12 md:w-10 md:h-10 object-cover rounded shadow-sm"
-                      alt={product.nombre}
-                    />
+                    <div className="relative w-12 h-12 md:w-10 md:h-10 shrink-0">
+                      <Image
+                        src={imgSrc}
+                        alt={product.nombre}
+                        fill
+                        sizes="(max-width: 768px) 48px, 40px"
+                        className="object-cover rounded shadow-sm"
+                      />
+                    </div>
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-gray-800">
+                      <span className="text-sm font-semibold text-gray-800 line-clamp-1">
                         {product.nombre}
                       </span>
                       <span className="text-xs text-purple-600 font-bold">
@@ -108,10 +118,16 @@ export const SearchInput = () => {
               <button
                 type="button"
                 onClick={() => handleSearch()}
-                className="w-full p-4 text-center text-sm text-purple-700 bg-purple-50/50 hover:bg-purple-100 font-bold"
+                className="w-full p-4 text-center text-sm text-purple-700 bg-purple-50/50 hover:bg-purple-100 font-bold transition-colors"
               >
                 Ver todos los resultados
               </button>
+            </div>
+          )}
+
+          {!loading && results.exactos.length === 0 && (
+            <div className="p-4 text-center text-sm text-gray-500">
+              No se encontraron coincidencias
             </div>
           )}
         </div>

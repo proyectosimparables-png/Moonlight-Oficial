@@ -29,6 +29,7 @@ model User {
 model Producto {
   id                String            @id @default(uuid())
   nombre            String
+  slug              String?  @unique
   descripcion       String?
   precio            Float
   precioPromocional Float?

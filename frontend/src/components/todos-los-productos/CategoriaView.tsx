@@ -10,6 +10,7 @@ interface Producto {
   imagenUrl: string;
   imagenHoverUrl?: string;
   categoriaId?: string;
+  slug: string;
 }
 
 interface CategoriaTree {
@@ -80,7 +81,7 @@ export const CategoriaView = ({
       productosAMostrar: filtrados,
     };
   }, [categoriaPath, initialTree, initialProducts]);
-
+  console.log("Primer producto:", productosAMostrar[0]);
   return (
     <div className="container mx-auto px-4 py-10 min-h-screen">
       <header className="mb-12 text-center">
@@ -101,7 +102,12 @@ export const CategoriaView = ({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-20">
         {productosAMostrar.length > 0 ? (
           productosAMostrar.map((p) => (
-            <ProductCard key={p.id} {...p} id={p.id.toString()} />
+            <ProductCard
+              key={p.id}
+              {...p}
+              id={p.id} // Este es el UUID para el carrito/favoritos
+              slug={p.slug} // Este es para la URL
+            />
           ))
         ) : (
           <div className="col-span-full text-center py-32 text-gray-400">

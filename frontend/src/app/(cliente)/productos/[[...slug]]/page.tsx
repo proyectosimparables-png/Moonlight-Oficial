@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { CategoriaView } from "@/components/todos-los-productos/CategoriaView";
 import { ProductGridView } from "@/components/todos-los-productos/ProductGridView";
 import DetailsProducts from "@/components/DetailsProducts";
@@ -5,6 +6,7 @@ import {
   getCategoriasTree,
   getProductosPublicosFiltrados,
   getProductosPublicos,
+  getProductoBySlug,
 } from "@/services/productos";
 
 interface CategoriaNode {
@@ -16,25 +18,34 @@ interface CategoriaNode {
 
 const SECCION_INDUMENTARIA_ID = "4cb075af-f5c6-43c3-91c6-a3b51f4f7d0e";
 const SECCION_BANGTAN_ID = "f658f354-3122-41d8-93e4-929023d61260";
+const ROOT_SLUGS = ["indumentaria", "bangtan-limited-edition"];
 
+/**
+ * Busca una categoría dentro del árbol recursivo comparando slugs
+ */
 function findCategoriaByPath(
   categorias: CategoriaNode[],
   path: string[],
 ): CategoriaNode | null {
-  const rootSlugs = ["indumentaria", "bangtan-limited-edition"];
-  const searchPath = rootSlugs.includes(path[0]) ? path.slice(1) : path;
+  // Si la URL empieza con una raíz (indumentaria/...), la ignoramos para buscar en el árbol
+  const searchPath = ROOT_SLUGS.includes(path[0]) ? path.slice(1) : path;
   if (searchPath.length === 0) return null;
+
   let currentLevel: CategoriaNode[] = categorias;
   let foundCategory: CategoriaNode | null = null;
+
   for (const segment of searchPath) {
     const decodedSegment = decodeURIComponent(segment).toLowerCase();
+
     const found: CategoriaNode | undefined = currentLevel.find((c) => {
+      if (!c.slug) return false;
       const normalizedSlug = c.slug.toLowerCase();
       return (
         normalizedSlug === decodedSegment ||
         normalizedSlug === decodedSegment.replace(/\s+/g, "-")
       );
     });
+
     if (!found) return null;
     foundCategory = found;
     currentLevel = found.subcategorias || [];
@@ -49,6 +60,7 @@ export default async function ProductosPage({
 }) {
   const { slug = [] } = await params;
 
+  // 1. Caso base: /productos
   if (slug.length === 0) {
     const allProducts = await getProductosPublicos();
     return (
@@ -60,31 +72,35 @@ export default async function ProductosPage({
   }
 
   const lastPart = slug[slug.length - 1];
-
-  // OPTIMIZACIÓN 1: El detalle del producto se busca en paralelo con la posibilidad de que sea categoría
-  // Pero para simplificar, lo dejamos así o lo movemos a una ruta dinámica [id].
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/productos/${lastPart}`,
-      {
-        next: { revalidate: 3600 }, // Aumentamos caché a 1 hora
-      },
-    );
-    if (res.ok) {
-      const product = await res.json();
-      return <DetailsProducts initialProduct={product} />;
-    }
-  } catch (e) {}
-
   const isBangtan = slug[0] === "bangtan-limited-edition";
   const seccionId = isBangtan ? SECCION_BANGTAN_ID : SECCION_INDUMENTARIA_ID;
 
-  // OPTIMIZACIÓN 2: Paralelismo y uso de caché
-  // Traemos el árbol primero porque lo necesitamos para el ID
-  const tree: CategoriaNode[] = await getCategoriasTree(seccionId);
+  // --- SOLUCIÓN: Intentar producto sin romper el flujo ---
+  let product = null;
+  if (!ROOT_SLUGS.includes(lastPart)) {
+    try {
+      product = await getProductoBySlug(lastPart);
+    } catch (e) {
+      // Si no es un producto, simplemente guardamos null y seguimos
+      product = null;
+    }
+  }
+
+  // 2. Si es un producto, mostrar detalle
+  if (product) {
+    return <DetailsProducts initialProduct={product} />;
+  }
+
+  // 3. Si no fue producto, cargar el árbol y buscar categoría
+  const tree = await getCategoriasTree(seccionId);
   const categoriaEncontrada = findCategoriaByPath(tree, slug);
 
-  // OPTIMIZACIÓN 3: Solo pedimos los productos necesarios
+  // 4. Si no es categoría ni raíz válida, 404
+  if (!categoriaEncontrada && !ROOT_SLUGS.includes(slug[0])) {
+    return notFound();
+  }
+
+  // 5. Cargar productos de la categoría o sección
   const products = await getProductosPublicosFiltrados({
     seccionId,
     categoriaId: categoriaEncontrada?.id,
