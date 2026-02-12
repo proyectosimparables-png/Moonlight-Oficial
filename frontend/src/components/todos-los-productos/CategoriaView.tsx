@@ -96,7 +96,7 @@ export const CategoriaView = ({
             {categoriaPath.join(" / ").replace(/-/g, " ")}
           </span>
         </div>
-        <div className="mt-6 w-16 h-[2px] bg-[#d8c4fa] mx-auto"></div>
+        <div className="mt-6 w-16 h-0.5 bg-[#d8c4fa] mx-auto"></div>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-20">
