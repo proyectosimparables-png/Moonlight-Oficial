@@ -5,6 +5,7 @@ import { CheckoutProvider, useCheckout } from "@/context/CheckoutContext";
 import Step1Datos from "./Step1Datos";
 import Step2Pago from "./Step2Pago";
 import OrderSummary from "./OrderSummary";
+import Image from "next/image";
 
 const CheckoutContent: React.FC = () => {
   const { step } = useCheckout();
@@ -13,12 +14,18 @@ const CheckoutContent: React.FC = () => {
     <div className="min-h-screen bg-[#FAFCEF] font-sans text-[#4A4A4A]">
       <header className="py-10 flex flex-col items-center bg-transparent">
         <div className="mb-10">
-          <img src="/moonlight.png" alt="Moonlight" className="h-10 w-auto" />
+          <Image
+            src="/moonlight.png"
+            alt="Moonlight"
+            width={120}
+            height={40}
+            className="h-10 w-auto"
+          />
         </div>
 
         {/* Stepper Visual */}
         <div className="relative flex items-center justify-between w-full max-w-md px-6">
-          <div className="absolute top-[16px] left-10 right-10 h-[1px] bg-gray-300 -z-0"></div>
+          <div className="absolute top-4 left-10 right-10 h-px bg-gray-300 z-0"></div>
 
           {[
             { label: "Carrito", icon: "✓" },

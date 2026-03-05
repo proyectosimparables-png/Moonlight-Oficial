@@ -202,7 +202,7 @@ const Step2Pago: React.FC = () => {
           {showNotes && (
             <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
               <textarea
-                className="w-full p-4 border border-gray-200 text-[14px] focus:outline-none focus:border-gray-400 min-h-[100px] bg-[#fafafa] resize-none rounded-sm"
+                className="w-full p-4 border border-gray-200 text-[14px] focus:outline-none focus:border-gray-400 min-h-25 bg-[#fafafa] resize-none rounded-sm"
                 placeholder="¿Algo que debamos saber?"
                 autoFocus
                 value={formData.notasEntrega}

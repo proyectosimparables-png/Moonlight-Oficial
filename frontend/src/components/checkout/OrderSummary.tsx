@@ -3,6 +3,7 @@
 import React from "react";
 import { useCart } from "@/context/CartContext";
 import { useCheckout } from "@/context/CheckoutContext"; // 👈 Importamos el nuevo contexto
+import Image from "next/image";
 
 const OrderSummary: React.FC = () => {
   const { cart } = useCart();
@@ -47,11 +48,12 @@ const OrderSummary: React.FC = () => {
             className="flex justify-between items-center gap-4"
           >
             <div className="flex items-center gap-3">
-              <div className="relative w-14 h-14 flex-shrink-0 border border-gray-100 rounded-sm overflow-hidden bg-gray-50">
-                <img
+              <div className="relative w-14 h-14 shrink-0 border border-gray-100 rounded-sm overflow-hidden bg-gray-50">
+                <Image
                   src={item.producto.imagenUrl ?? "/placeholder.png"}
                   alt={item.producto.nombre}
-                  className="object-cover w-full h-full"
+                  fill
+                  className="object-cover"
                 />
                 <span className="absolute -top-1 -right-1 bg-[#4A4A4A] text-white text-[9px] w-5 h-5 rounded-full flex items-center justify-center font-bold border-2 border-white">
                   {item.quantity}
