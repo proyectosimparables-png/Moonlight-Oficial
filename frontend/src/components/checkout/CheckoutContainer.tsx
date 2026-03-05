@@ -11,6 +11,7 @@ export default function CheckoutContainer() {
 
   useEffect(() => {
     // Si el carrito está vacío y ya terminó de cargar, lo devolvemos al inicio
+    // Esto evita que entren al checkout por URL si no tienen nada que comprar
     if (!loading && cart.length === 0) {
       router.push("/");
     }
@@ -18,11 +19,16 @@ export default function CheckoutContainer() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-purple-600 animate-pulse font-medium">Cargando...</p>
+      <div className="flex justify-center items-center h-screen bg-[#faf5e5]">
+        <p className="text-[#A186ED] animate-pulse font-medium tracking-widest uppercase text-xs">
+          Cargando tu pedido...
+        </p>
       </div>
     );
   }
+
+  // Si no hay productos, no renderizamos nada mientras el useEffect hace el redirect
+  if (cart.length === 0) return null;
 
   return <CheckoutWizard />;
 }

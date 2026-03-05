@@ -1,15 +1,12 @@
 "use client";
 
 import React from "react";
-import { CheckoutFormData } from "./CheckoutWizard";
 import { useCart } from "@/context/CartContext";
+import { useCheckout } from "@/context/CheckoutContext"; // 👈 Importamos el nuevo contexto
 
-interface SummaryProps {
-  formData: CheckoutFormData;
-}
-
-const OrderSummary: React.FC<SummaryProps> = ({ formData }) => {
+const OrderSummary: React.FC = () => {
   const { cart } = useCart();
+  const { formData } = useCheckout(); // 👈 Consumimos los datos directamente
 
   // 1. Cálculo del subtotal base (productos)
   const subtotal = cart.reduce(
@@ -24,7 +21,7 @@ const OrderSummary: React.FC<SummaryProps> = ({ formData }) => {
       minimumFractionDigits: 2,
     });
 
-  // 2. Lógica de Envío: Ya viene conectada desde el CheckoutWizard
+  // 2. Lógica de Envío (Ya no depende de props, viene del contexto)
   const tieneEnvioCargado = typeof formData.costoEnvio === "number";
   const costoEnvioReal = tieneEnvioCargado ? formData.costoEnvio : 0;
   const esEnvioGratis = tieneEnvioCargado && formData.costoEnvio === 0;
@@ -33,7 +30,7 @@ const OrderSummary: React.FC<SummaryProps> = ({ formData }) => {
   const esTransferencia = formData.metodoPago === "TRANSFERENCIA";
   const descuentoTransferencia = esTransferencia ? subtotal * 0.1 : 0;
 
-  // 4. Total Final: (Subtotal - Descuento) + Envío
+  // 4. Total Final
   const totalFinal = subtotal - descuentoTransferencia + costoEnvioReal;
 
   return (
@@ -85,7 +82,7 @@ const OrderSummary: React.FC<SummaryProps> = ({ formData }) => {
           </span>
         </div>
 
-        {/* Costo de Envío Dinámico (REAL) */}
+        {/* Costo de Envío Dinámico */}
         <div className="flex justify-between text-[13px]">
           <span className="text-gray-500 font-normal">
             Envío ({formData.metodoEnvio || "A convenir"})
@@ -115,7 +112,7 @@ const OrderSummary: React.FC<SummaryProps> = ({ formData }) => {
           </button>
         </div>
 
-        {/* Total Final Calculado con datos reales */}
+        {/* Total Final */}
         <div className="flex justify-between items-baseline pt-4 mt-2 border-t border-gray-200">
           <span className="text-sm font-bold uppercase tracking-wider text-[#4A4A4A]">
             Total

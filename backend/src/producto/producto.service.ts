@@ -221,10 +221,10 @@ export class ProductoService {
         colores: data.colores ?? [],
         talles: data.talles ?? [],
         cortes: data.cortes ?? [],
-        peso: data.peso ?? null,
-        profundidad: data.profundidad ?? null,
-        ancho: data.ancho ?? null,
-        alto: data.alto ?? null,
+        peso: data.peso,
+        profundidad: data.profundidad,
+        ancho: data.ancho,
+        alto: data.alto,
         published: data.published ?? false,
         categoriaId: data.categoriaId,
         secciones: {
@@ -261,13 +261,20 @@ export class ProductoService {
       updateData.slug = this.generarSlug(data.nombre);
     }
 
-    ['precio', 'precioPromocional', 'peso', 'profundidad', 'ancho', 'alto', 'stock'].forEach(
+    ['precio', 'precioPromocional', 'profundidad', 'ancho', 'alto', 'stock'].forEach(
       (campo) => {
         if (campo in updateData && typeof updateData[campo] === 'string') {
           updateData[campo] = updateData[campo] === '' ? null : parseFloat(updateData[campo]);
         }
       },
     );
+
+    // Manejo especial para el PESO (convertir Kg de input a Gramos de DB)
+    if ('peso' in updateData && updateData.peso !== '') {
+      // Si viene del frontend como "1.5", lo pasamos a 1500
+      const pesoKg = parseFloat(updateData.peso);
+      updateData.peso = Math.round(pesoKg * 1000);
+    }
 
     if (categoriaId) {
       await this.validarCategoria(categoriaId);

@@ -17,6 +17,8 @@ export interface OrderPayload {
     dniDestinatario: string;
     telefonoDestinatario: string;
     metodoEnvio: string;
+    productType?: string;      // 👈 agregar
+    deliveredType?: string;    // 👈 agregar
     costoEnvio: number;
     codigoPostal: string;
     provincia: string;

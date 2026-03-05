@@ -36,10 +36,10 @@ model Producto {
   stock             Int
 
   // Envíos - peso y dimensiones
-  peso              Float?     
-  profundidad       Int?       
-  ancho             Int?       
-  alto              Int?       
+  peso              Int               // Peso en GRAMOS (Ej: 500)
+  profundidad       Int               // Profundidad en CM (largo)
+  ancho             Int               // Ancho en CM
+  alto              Int               // Alto en CM    
   imagenUrl         String?
   createdAt         DateTime          @default(now())
   published         Boolean           @default(false)
@@ -128,6 +128,12 @@ model Orden {
   departamento            String?
   notasEntrega            String?     // Aclaraciones y comentarios
 
+  // Datos técnicos Correo
+  productType             String?   // CP o EP
+  deliveredType           String?   // S o D
+  trackingCode            String?
+  shipmentId              String?
+
   // Referencias de Pago
   paymentId               String?
   preferenceId            String?
@@ -147,6 +153,7 @@ model OrdenItem {
   nombre     String
   precio     Float
   cantidad   Int
+  peso       Int?    // Peso unitario al momento de la compra
   productoId String?
   imagenUrl  String?
   orden      Orden   @relation(fields: [ordenId], references: [id])

@@ -64,6 +64,8 @@ export class OrdenesService {
           dniDestinatario: dto.dniDestinatario,
           telefonoDestinatario: dto.telefonoDestinatario,
           metodoEnvio: dto.metodoEnvio,
+          productType: dto.productType,
+          deliveredType: dto.deliveredType,
           costoEnvio: dto.costoEnvio,
           codigoPostal: dto.codigoPostal,
           provincia: dto.provincia,
@@ -142,27 +144,27 @@ export class OrdenesService {
 
 
   async cancelarOrden(id: string) {
-  const orden = await this.prisma.orden.findUnique({ where: { id } });
-  if (!orden) throw new NotFoundException('La orden no existe');
+    const orden = await this.prisma.orden.findUnique({ where: { id } });
+    if (!orden) throw new NotFoundException('La orden no existe');
 
-  // Si quieres que al cancelar se devuelva el stock (opcional pero recomendado)
-  // deberías iterar los items y sumarlos al producto.
+    // Si quieres que al cancelar se devuelva el stock (opcional pero recomendado)
+    // deberías iterar los items y sumarlos al producto.
 
-  return this.prisma.orden.update({
-    where: { id },
-    data: { estado: EstadoOrden.CANCELADO },
-  });
-}
+    return this.prisma.orden.update({
+      where: { id },
+      data: { estado: EstadoOrden.CANCELADO },
+    });
+  }
 
   async findOne(id: string) {
-  const orden = await this.prisma.orden.findUnique({
-    where: { id },
-    include: {
-      user: true,
-      items: true, // Esto trae nombre, precio, cantidad e imagenUrl
-    },
-  });
-  if (!orden) throw new NotFoundException('Orden no encontrada');
-  return orden;
-}
+    const orden = await this.prisma.orden.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        items: true, // Esto trae nombre, precio, cantidad e imagenUrl
+      },
+    });
+    if (!orden) throw new NotFoundException('Orden no encontrada');
+    return orden;
+  }
 }

@@ -26,22 +26,22 @@ export class CreateProductoDto {
   @Type(() => Number)
   @IsOptional()
   @IsNumber()
-  peso?: number;
+  peso: number;
 
   @Type(() => Number)
   @IsOptional()
   @IsNumber()
-  profundidad?: number;
+  profundidad: number;
 
   @Type(() => Number)
   @IsOptional()
   @IsNumber()
-  ancho?: number;
+  ancho: number;
 
   @Type(() => Number)
   @IsOptional()
   @IsNumber()
-  alto?: number;
+  alto: number;
 
   @IsString()
   categoriaId: string;

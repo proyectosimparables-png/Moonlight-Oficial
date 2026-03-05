@@ -35,11 +35,21 @@ export const AuthButton = () => {
     );
   }
 
-  const handleLogout = () => {
-    logout();
-    toast.success("Sesión cerrada correctamente 👋", {
-      position: "top-center",
-    });
+  // ✅ Modificado para redirigir a Home siempre
+  const handleLogout = async () => {
+    try {
+      await logout();
+
+      // Primero mandamos al home para evitar que el middleware nos mande al login
+      router.push("/");
+
+      toast.success("Sesión cerrada correctamente 👋", {
+        position: "top-center",
+      });
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
+      toast.error("No se pudo cerrar la sesión");
+    }
   };
 
   const name =

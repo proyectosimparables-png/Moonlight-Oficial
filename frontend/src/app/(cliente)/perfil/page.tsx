@@ -1,14 +1,13 @@
 import Perfil from "@/components/home/Perfil";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/components/protected-route/ProtectedRoute";
 
-const UserProfile = () => { 
-    return (
+const UserProfile = () => {
+  return (
     <>
       <ProtectedRoute>
-      <Perfil/>
+        <Perfil />
       </ProtectedRoute>
-    
     </>
-    )
-}
+  );
+};
 export default UserProfile;

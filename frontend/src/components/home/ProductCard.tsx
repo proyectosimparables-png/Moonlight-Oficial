@@ -4,14 +4,10 @@ import Image from "next/image";
 import { ShoppingCart, Star, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/hooks/useAuth";
-import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/useAuth"; // Reintegrado
 import { useFavorites } from "@/context/FavoritesContext";
 import { useRouter } from "next/navigation";
-import { CartService } from "@/services/cartService";
 
-// ✅ Interfaz actualizada para incluir el slug
 interface ProductCardProps {
   id: string;
   slug: string;
@@ -23,31 +19,29 @@ interface ProductCardProps {
 
 const ProductCard = ({
   id,
-  slug: slugFromProps, // Renombrado para la lógica de fallback
+  slug: slugFromProps,
   imagenUrl,
   imagenHoverUrl,
   nombre,
   precio,
 }: ProductCardProps) => {
-  const { addItem } = useCart();
-  const { isAuthenticated, user } = useAuth();
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { user } = useAuth(); // Obtenemos el usuario
   const router = useRouter();
 
-  // 🛡️ LÓGICA DE FALLBACK PARA SLUG: Si no viene del back, lo generamos del nombre
-  // Esto evita que la URL use el ID y cause el error 404
+  // Lógica de Fallback para Slug
   const slug =
     slugFromProps ||
     nombre
       .toLowerCase()
       .trim()
       .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "") // Quita acentos
-      .replace(/\s+/g, "-") // Espacios por guiones
-      .replace(/[^\w-]+/g, "") // Quita caracteres especiales
-      .replace(/--+/g, "-"); // Evita guiones dobles
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/[^\w-]+/g, "")
+      .replace(/--+/g, "-");
 
-  // 💰 Lógica de Precios
+  // Lógica de Precios
   const numericPrice =
     typeof precio === "number"
       ? precio
@@ -59,32 +53,17 @@ const ProductCard = ({
   const formatARS = (value: number) =>
     value.toLocaleString("es-AR", { minimumFractionDigits: 0 });
 
-  // 🛒 Manejo de Carrito
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isAuthenticated) {
-      toast.error("Debes iniciar sesión para agregar productos", {
-        position: "top-center",
-      });
-      router.push("/login");
-      return;
-    }
-    try {
-      addItem(id, 1);
-      if (user?.id) {
-        await CartService.syncWithBackend(user.id, [
-          { productoId: id, cantidad: 1 },
-        ]);
-      }
-      toast.success("Producto agregado al carrito", { position: "top-center" });
-    } catch (error) {
-      console.error("Error al sincronizar carrito:", error);
-    }
-  };
+  // VALIDACIÓN DE NAVEGACIÓN
+  const handleProtectedNavigation = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
 
-  // 🔗 NAVEGACIÓN BLINDADA: Siempre usará un slug válido
-  const navigateToDetail = () => {
-    router.push(`/productos/${slug}`);
+    if (!user) {
+      // Si no hay usuario, al login
+      router.push("/login");
+    } else {
+      // Si hay usuario, al detalle
+      router.push(`/productos/${slug}`);
+    }
   };
 
   return (
@@ -92,9 +71,9 @@ const ProductCard = ({
       <CardContent className="p-0">
         <div
           className="relative aspect-square overflow-hidden bg-gray-100 cursor-pointer"
-          onClick={navigateToDetail}
+          onClick={() => handleProtectedNavigation()}
         >
-          {/* IMAGEN 2 (Hover) */}
+          {/* IMAGENES */}
           {imagenHoverUrl && (
             <Image
               src={imagenHoverUrl}
@@ -105,7 +84,6 @@ const ProductCard = ({
             />
           )}
 
-          {/* IMAGEN 1 (Principal) */}
           <Image
             src={imagenUrl || "/images/placeholder.png"}
             alt={nombre}
@@ -116,7 +94,7 @@ const ProductCard = ({
             sizes="(max-width: 768px) 100vw, 25vw"
           />
 
-          {/* Overlay */}
+          {/* Overlay Ver Detalle */}
           <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
             <Button
               variant="secondary"
@@ -131,6 +109,7 @@ const ProductCard = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              if (!user) return router.push("/login"); // También protegemos favoritos
               toggleFavorite(id);
             }}
             className="absolute top-3 right-3 z-20 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
@@ -140,18 +119,21 @@ const ProductCard = ({
             />
           </button>
 
-          {/* Carrito Rápido */}
+          {/* 🛒 Carrito Rápido: Redirige con validación */}
           <Button
             size="icon"
             className="absolute bottom-3 right-3 z-20 bg-[#7b5ca2] hover:bg-[#665ca2] text-white shadow-lg rounded-full"
-            onClick={handleAddToCart}
+            onClick={handleProtectedNavigation}
           >
             <ShoppingCart className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Info del producto */}
-        <div className="p-4 cursor-pointer" onClick={navigateToDetail}>
+        <div
+          className="p-4 cursor-pointer"
+          onClick={() => handleProtectedNavigation()}
+        >
           <h3 className="text-sm font-medium text-gray-900 truncate mb-1">
             {nombre}
           </h3>

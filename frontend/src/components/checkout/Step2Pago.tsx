@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckoutFormData } from "./CheckoutWizard";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useCheckout, MetodoPago } from "@/context/CheckoutContext";
 import toast from "react-hot-toast";
 import {
   createOrder,
@@ -21,21 +21,10 @@ import {
   FileText,
 } from "lucide-react";
 
-type MetodoPago = "MERCADO_PAGO" | "TRANSFERENCIA" | "GO_CUOTAS" | "UALA";
-
-interface Step3Props {
-  formData: CheckoutFormData;
-  setFormData: React.Dispatch<React.SetStateAction<CheckoutFormData>>;
-  prevStep: () => void;
-}
-
-const Step3Pago: React.FC<Step3Props> = ({
-  formData,
-  setFormData,
-  prevStep,
-}) => {
+const Step2Pago: React.FC = () => {
   const { user } = useAuth();
   const { cart, clearCart } = useCart();
+  const { formData, updateFormData, prevStep } = useCheckout();
   const [loading, setLoading] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
 
@@ -45,10 +34,7 @@ const Step3Pago: React.FC<Step3Props> = ({
   );
 
   const handlePaymentSelect = (metodo: MetodoPago) => {
-    setFormData((prev) => ({
-      ...prev,
-      metodoPago: metodo as CheckoutFormData["metodoPago"],
-    }));
+    updateFormData({ metodoPago: metodo });
   };
 
   const finalizarCompra = async () => {
@@ -59,7 +45,6 @@ const Step3Pago: React.FC<Step3Props> = ({
     const toastId = toast.loading("Procesando pedido...");
 
     try {
-      // Preparamos el payload con el tipo estricto OrderPayload
       const orderPayload: OrderPayload = {
         userId: user.id,
         emailContacto: formData.email,
@@ -85,27 +70,17 @@ const Step3Pago: React.FC<Step3Props> = ({
         })),
       };
 
-      // 1. Crear Orden mediante el servicio
       const order = await createOrder(orderPayload);
 
-      // 2. Manejo de lógica según medio de pago
       if (formData.metodoPago === "MERCADO_PAGO") {
         const payment = await createMPPreference(order.id);
         toast.success("Redirigiendo a Mercado Pago...", { id: toastId });
         window.location.href = payment.init_point;
       } else {
-      /* else if (formData.metodoPago === "GO_CUOTAS") {
-        const res = await createGoCuotasLink(order.id);
-        window.location.href = res.url;
-      }
-      else if (formData.metodoPago === "UALA") {
-        const res = await createUalaLink(order.id);
-        window.location.href = res.url;
-      } 
-      */
-        // Caso Transferencia
+        // Caso Transferencia / Otros
         toast.success("¡Pedido realizado con éxito!", { id: toastId });
         await clearCart();
+        // Opcional: router.push('/gracias')
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -149,7 +124,7 @@ const Step3Pago: React.FC<Step3Props> = ({
   ];
 
   return (
-    <div className="w-full animate-fade-in text-[#4A4A4A] font-sans pb-10">
+    <div className="w-full animate-in fade-in duration-500 text-[#4A4A4A] font-sans pb-10">
       <div className="border border-gray-300 rounded-sm mb-8 bg-white overflow-hidden shadow-sm">
         {/* Email */}
         <div className="flex items-center gap-4 p-5 border-b border-gray-200">
@@ -212,7 +187,7 @@ const Step3Pago: React.FC<Step3Props> = ({
             <div className="flex items-center gap-4">
               <MessageSquare className="w-5 h-5 text-gray-500 stroke-[1.5]" />
               <span className="text-[13px] font-bold uppercase tracking-wider text-gray-700">
-                Aclaraciones y comentarios
+                Aclaraciones
               </span>
             </div>
             {!showNotes && (
@@ -224,26 +199,22 @@ const Step3Pago: React.FC<Step3Props> = ({
               </button>
             )}
           </div>
-
           {showNotes && (
             <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
               <textarea
                 className="w-full p-4 border border-gray-200 text-[14px] focus:outline-none focus:border-gray-400 min-h-[100px] bg-[#fafafa] resize-none rounded-sm"
-                placeholder="¿Algo que debamos saber sobre tu pedido?"
+                placeholder="¿Algo que debamos saber?"
                 autoFocus
                 value={formData.notasEntrega}
                 onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    notasEntrega: e.target.value,
-                  }))
+                  updateFormData({ notasEntrega: e.target.value })
                 }
               />
               <button
                 onClick={() => setShowNotes(false)}
                 className="mt-2 text-[11px] text-gray-400 uppercase hover:text-gray-600 font-bold"
               >
-                Guardar y cerrar
+                Guardar
               </button>
             </div>
           )}
@@ -266,11 +237,7 @@ const Step3Pago: React.FC<Step3Props> = ({
           >
             <div className="flex items-center gap-4 flex-1">
               <div
-                className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                  formData.metodoPago === medio.id
-                    ? "border-black bg-black"
-                    : "border-gray-300"
-                }`}
+                className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${formData.metodoPago === medio.id ? "border-black bg-black" : "border-gray-300"}`}
               >
                 {formData.metodoPago === medio.id && (
                   <div className="w-1.5 h-1.5 bg-white rounded-full" />
@@ -308,4 +275,4 @@ const Step3Pago: React.FC<Step3Props> = ({
   );
 };
 
-export default Step3Pago;
+export default Step2Pago;

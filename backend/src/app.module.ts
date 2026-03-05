@@ -16,6 +16,9 @@ import { PuntoEntregaModule } from './punto-entrega/punto-entrega.module';
 import { OrdenesModule } from './ordenes/ordenes.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { PaymentsModule } from './payments/payments.module';
+import { CorreoModule } from './correo/correo.module';
+import { ConfigModule } from '@nestjs/config';
+
 
 
 @Module({
@@ -25,15 +28,17 @@ import { PaymentsModule } from './payments/payments.module';
     ProductoModule,
     AuthModule,
     CloudinaryModule,
-   DashboardModule,
+    DashboardModule,
     TestModule,
     CartModule,
     ComentariosModule,
     FavoritoModule,
     MailModule,
     PurchaseModule,
-     HistorialModule, 
-     LocalAuthModule, PuntoEntregaModule, OrdenesModule, PaymentsModule,
+    HistorialModule,
+    LocalAuthModule, PuntoEntregaModule, OrdenesModule, PaymentsModule, CorreoModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+
 
   ],
 })

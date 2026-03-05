@@ -25,7 +25,12 @@ export interface CartResponse {
 interface CartContextType {
   cart: CartItem[];
   loading: boolean;
-  addItem: (productoId: string, quantity?: number) => Promise<void>;
+  // ✅ Firma mejorada para recibir datos del producto y evitar el modal vacío
+  addItem: (
+    productoId: string,
+    quantity?: number,
+    productData?: { nombre: string; imagenUrl?: string },
+  ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   updateItemQuantity: (itemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -43,7 +48,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   const { isAuthenticated } = useAuth();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null); // Nuevo
+  const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
   const refreshCart = async () => {
     if (!isAuthenticated) {
@@ -68,22 +73,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     refreshCart();
   }, [isAuthenticated]);
 
-  // 🔹 Optimistic UI helper
   const optimisticUpdate = async (
     updateFn: () => void,
     apiCall: () => Promise<CartResponse>,
     rollbackFn?: () => void,
   ) => {
     try {
-      updateFn(); // actualizar localmente
-      await apiCall(); // enviar al backend
+      updateFn();
+      await apiCall();
     } catch (err) {
       console.error(err);
-      rollbackFn?.(); // revertir si falla
+      rollbackFn?.();
     }
   };
 
-  const addItem = async (productoId: string, quantity = 1) => {
+  const addItem = async (
+    productoId: string,
+    quantity = 1,
+    productData?: { nombre: string; imagenUrl?: string },
+  ) => {
+    console.log("Estado del carrito antes de agregar el producto:", cart);
     const existingItem = cart.find((i) => i.productoId === productoId);
 
     if (existingItem) {
@@ -93,7 +102,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         quantity: existingItem.quantity + quantity,
       });
 
-      // 2️⃣ Actualización optimista instantánea
+      // 2️⃣ Actualización optimista
       const prevCart = [...cart];
       setCart((prev) =>
         prev.map((i) =>
@@ -103,19 +112,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         ),
       );
 
-      // 3️⃣ Llamada al backend SIN BLOQUEAR LA UI
       try {
-        const response = await CartService.addItem(productoId, quantity);
-        const updatedItem =
-          response.items.find((it) => it.productoId === productoId) ??
-          existingItem;
-
-        setCart((prev) =>
-          prev.map((i) => (i.productoId === productoId ? updatedItem : i)),
-        );
+        await CartService.addItem(productoId, quantity);
       } catch (err) {
         console.error(err);
-        setCart(prevCart); // rollback si falla
+        setCart(prevCart);
       }
     } else {
       // Item nuevo
@@ -124,10 +125,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         id: tempId,
         productoId,
         quantity,
-        producto: { id: productoId, nombre: "", precio: 0, loading: true },
+        producto: {
+          id: productoId,
+          nombre: productData?.nombre || "Cargando...", // ✅ Usamos el nombre pasado por prop
+          precio: 0,
+          imagenUrl: productData?.imagenUrl, // ✅ Usamos la imagen pasada por prop
+          loading: true,
+        },
       };
-
-      // 1️⃣ MOSTRAR MODAL INMEDIATAMENTE
+      console.log(
+        "Estado del carrito antes de agregar el producto temporal:",
+        cart,
+      );
+      // 1️⃣ MOSTRAR MODAL INMEDIATAMENTE (Ya no estará vacío)
       setLastAddedItem(tempItem);
 
       // 2️⃣ Optimistic add instantáneo
@@ -142,7 +152,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         setCart((prev) => prev.map((i) => (i.id === tempId ? addedItem : i)));
       } catch (err) {
         console.error(err);
-        setCart(prevCart); // rollback
+        setCart(prevCart);
       }
     }
   };
@@ -192,7 +202,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  const closeLastAddedModal = () => setLastAddedItem(null); // Nuevo
+  const closeLastAddedModal = () => setLastAddedItem(null);
 
   return (
     <CartContext.Provider

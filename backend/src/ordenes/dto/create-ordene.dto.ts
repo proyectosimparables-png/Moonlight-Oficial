@@ -2,74 +2,80 @@ import { IsString, IsNumber, IsOptional, IsUUID, IsEmail, IsNotEmpty, IsEnum } f
 import { EstadoOrden, MetodoPago } from '@prisma/client';
 
 export class CreateOrdeneDto {
-    @IsUUID()
-    userId: string;
+  @IsUUID()
+  userId: string;
 
-    // Datos de Contacto y Destinatario
-    @IsEmail()
-    emailContacto: string;
+  // Datos de Contacto y Destinatario
+  @IsEmail()
+  emailContacto: string;
 
-    @IsString()
-    @IsNotEmpty()
-    nombreDestinatario: string;
+  @IsString()
+  @IsNotEmpty()
+  nombreDestinatario: string;
 
-    @IsString()
-    @IsNotEmpty()
-    apellidoDestinatario: string;
+  @IsString()
+  @IsNotEmpty()
+  apellidoDestinatario: string;
 
-    @IsString()
-    @IsNotEmpty()
-    dniDestinatario: string;
+  @IsString()
+  @IsNotEmpty()
+  dniDestinatario: string;
 
-    @IsString()
-    @IsNotEmpty()
-    telefonoDestinatario: string;
+  @IsString()
+  @IsNotEmpty()
+  telefonoDestinatario: string;
 
-    // Datos de Envío
-    @IsString()
-    @IsNotEmpty()
-    metodoEnvio: string; // Ej: "Correo Argentino Clásico"
+  // Datos de Envío
+  @IsString()
+  @IsNotEmpty()
+  metodoEnvio: string; // Ej: "Correo Argentino Clásico"
 
-    @IsNumber()
-    costoEnvio: number;
+  @IsOptional()
+  @IsString()
+  productType?: string;
 
-    @IsString()
-    @IsNotEmpty()
-    codigoPostal: string;
+  @IsOptional()
+  @IsString()
+  deliveredType?: string;
 
-    @IsString()
-    @IsNotEmpty()
-    provincia: string;
+  @IsNumber()
+  costoEnvio: number;
 
-    @IsString()
-    @IsNotEmpty()
-    localidad: string;
+  @IsString()
+  @IsNotEmpty()
+  codigoPostal: string;
 
-    @IsString()
-    @IsNotEmpty()
-    calle: string;
+  @IsString()
+  @IsNotEmpty()
+  provincia: string;
 
-    @IsString()
-    @IsNotEmpty()
-    numero: string;
+  @IsString()
+  @IsNotEmpty()
+  localidad: string;
 
-    @IsOptional()
-    @IsString()
-    piso?: string;
+  @IsString()
+  @IsNotEmpty()
+  calle: string;
 
-    @IsOptional()
-    @IsString()
-    departamento?: string;
+  @IsString()
+  @IsNotEmpty()
+  numero: string;
 
-    @IsOptional()
-    @IsString()
-    notasEntrega?: string;
+  @IsOptional()
+  @IsString()
+  piso?: string;
 
-    // Pago
-    @IsEnum(MetodoPago)
-    metodoPago: MetodoPago;
+  @IsOptional()
+  @IsString()
+  departamento?: string;
 
-@IsEnum(EstadoOrden)
-  nuevoEstado: EstadoOrden;
+  @IsOptional()
+  @IsString()
+  notasEntrega?: string;
+
+  // Pago
+  @IsEnum(MetodoPago)
+  metodoPago: MetodoPago;
+
 
 }

@@ -3,8 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { Truck, Store } from "lucide-react";
+import { Truck, Store, Loader2 } from "lucide-react";
 import { getPuntosEntrega } from "@/services/entregas";
+import { getShippingRates } from "@/services/correo/correoService";
+// 1. Importamos la interfaz oficial para evitar el error de tipos
+import { CartItem } from "@/context/CartContext";
+
+// --- INTERFACES ---
 
 interface PuntoEntrega {
   id: string;
@@ -13,6 +18,17 @@ interface PuntoEntrega {
   costo: number;
   demora?: string;
 }
+
+interface CorreoRate {
+  nombre: string;
+  precio: number;
+  productType: string;
+  deliveredType: "D" | "S";
+  plazoMin: number;
+  plazoMax: number;
+}
+
+// Borramos la interfaz CartItem local que estaba aquí antes
 
 interface CartSummaryProps {
   totalPrice: number;
@@ -23,8 +39,17 @@ interface CartSummaryProps {
   router: ReturnType<typeof useRouter>;
   openClearCartModal: () => void;
   isLoading?: boolean;
-  onShippingChange?: (nombre: string, costo: number) => void;
+  items: CartItem[];
+  onShippingChange?: (
+    nombre: string,
+    costo: number,
+    deliveredType: "HOME_DELIVERY" | "PICKUP",
+  ) => void;
 }
+
+type SeleccionEnvio =
+  | (PuntoEntrega & { precio?: never })
+  | (CorreoRate & { id?: never; costo?: never });
 
 export default function CartSummary({
   totalPrice,
@@ -33,10 +58,13 @@ export default function CartSummary({
   setPostalCode,
   handleCheckout,
   onShippingChange,
+  items,
 }: CartSummaryProps) {
   const [puntos, setPuntos] = useState<PuntoEntrega[]>([]);
+  const [correoRates, setCorreoRates] = useState<CorreoRate[]>([]);
+  const [loadingCorreo, setLoadingCorreo] = useState(false);
   const [puntoSeleccionado, setPuntoSeleccionado] =
-    useState<PuntoEntrega | null>(null);
+    useState<SeleccionEnvio | null>(null);
 
   useEffect(() => {
     async function loadPuntos() {
@@ -50,10 +78,37 @@ export default function CartSummary({
     loadPuntos();
   }, []);
 
+  const handleCalculateShipping = async () => {
+    // Validamos que haya items antes de llamar a la API
+    if (postalCode.length < 4 || !items || items.length === 0) {
+      console.warn("No hay productos para calcular el envío o el CP es corto");
+      return;
+    }
+
+    setLoadingCorreo(true);
+    try {
+      // Ahora 'items' llega correctamente desde el padre
+      const rates: CorreoRate[] = await getShippingRates(postalCode, items);
+      setCorreoRates(rates);
+    } catch (error) {
+      console.error("Error calculando envío:", error);
+    } finally {
+      setLoadingCorreo(false);
+    }
+  };
+
   const handleSelectPunto = (punto: PuntoEntrega) => {
     setPuntoSeleccionado(punto);
     if (onShippingChange) {
-      onShippingChange(punto.nombre, punto.costo);
+      onShippingChange(punto.nombre, punto.costo, "PICKUP");
+    }
+  };
+
+  const handleSelectCorreo = (rate: CorreoRate) => {
+    setPuntoSeleccionado(rate);
+    if (onShippingChange) {
+      const type = rate.deliveredType === "D" ? "HOME_DELIVERY" : "PICKUP";
+      onShippingChange(rate.nombre, rate.precio, type);
     }
   };
 
@@ -64,10 +119,14 @@ export default function CartSummary({
       minimumFractionDigits: 2,
     });
 
-  const totalConEnvio = finalTotal + (puntoSeleccionado?.costo || 0);
-  const transferPrice = totalConEnvio * 0.9;
+  const currentShippingCost = puntoSeleccionado
+    ? "precio" in puntoSeleccionado
+      ? puntoSeleccionado.precio
+      : puntoSeleccionado.costo
+    : 0;
 
-  // 🔹 VALIDACIÓN: El botón solo se habilita si hay un punto seleccionado
+  const totalConEnvio = finalTotal + currentShippingCost;
+  const transferPrice = totalConEnvio * 0.9;
   const isReadyToCheckout = finalTotal > 0 && puntoSeleccionado !== null;
 
   return (
@@ -86,7 +145,6 @@ export default function CartSummary({
         </h3>
 
         <div className="relative mb-2">
-          {/* Línea gris clara para el input */}
           <div className="relative border-b border-gray-200 transition-colors">
             <input
               type="text"
@@ -95,7 +153,12 @@ export default function CartSummary({
               onChange={(e) => setPostalCode(e.target.value)}
               className="w-full bg-transparent py-2 pr-20 focus:outline-none text-sm placeholder-gray-300"
             />
-            <button className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold hover:text-black transition-colors">
+            <button
+              onClick={handleCalculateShipping}
+              disabled={loadingCorreo}
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold hover:text-black transition-colors flex items-center gap-2"
+            >
+              {loadingCorreo && <Loader2 className="w-3 h-3 animate-spin" />}
               CALCULAR
             </button>
           </div>
@@ -109,20 +172,66 @@ export default function CartSummary({
           </a>
         </div>
 
+        {/* --- CORREO ARGENTINO --- */}
         <div className="mb-6 mt-4">
           <p className="text-[13px] font-bold mb-3 flex items-center gap-2">
             <Truck className="w-4 h-4 text-gray-400" /> Envío a domicilio
           </p>
-          <div className="border border-gray-200 rounded-sm p-5 bg-[#F9F9F9] border-dashed">
-            <p className="text-[11px] text-gray-400 text-center uppercase tracking-widest leading-relaxed">
-              Próximamente integración con <br />
-              <span className="font-bold text-gray-500">
-                API de Correo Argentino
-              </span>
-            </p>
-          </div>
+
+          {correoRates.length > 0 ? (
+            <div className="border border-gray-300 rounded-sm overflow-hidden bg-white shadow-sm">
+              {correoRates.map((rate, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handleSelectCorreo(rate)}
+                  className={`p-4 border-b border-gray-100 last:border-b-0 cursor-pointer flex items-start gap-3 transition-all ${
+                    puntoSeleccionado?.nombre === rate.nombre
+                      ? "bg-gray-50"
+                      : "hover:bg-gray-50/30"
+                  }`}
+                >
+                  <div
+                    className={`mt-1 w-4 h-4 border flex items-center justify-center transition-all ${
+                      puntoSeleccionado?.nombre === rate.nombre
+                        ? "border-black bg-black"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {puntoSeleccionado?.nombre === rate.nombre && (
+                      <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start w-full">
+                      <span
+                        className={`text-[13px] leading-tight ${puntoSeleccionado?.nombre === rate.nombre ? "font-bold" : "font-medium"}`}
+                      >
+                        {rate.nombre}
+                      </span>
+                      <span className="text-[13px] text-black font-bold ml-2">
+                        {formatPrice(rate.precio)}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      Llega entre {rate.plazoMin} y {rate.plazoMax} días hábiles
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-sm p-5 bg-[#F9F9F9] border-dashed">
+              <p className="text-[11px] text-gray-400 text-center uppercase tracking-widest leading-relaxed">
+                Ingresá tu CP para ver <br />
+                <span className="font-bold text-gray-500">
+                  opciones de Correo Argentino
+                </span>
+              </p>
+            </div>
+          )}
         </div>
 
+        {/* --- PUNTOS PROPIOS --- */}
         <div className="mb-4">
           <p className="text-[13px] font-bold mb-3 flex items-center gap-2">
             <Store className="w-4 h-4 text-gray-400" /> Retirar por
@@ -149,7 +258,6 @@ export default function CartSummary({
                     <div className="w-1.5 h-1.5 bg-white rounded-full" />
                   )}
                 </div>
-
                 <div className="flex-1">
                   <div className="flex justify-between items-start w-full">
                     <span
@@ -171,6 +279,7 @@ export default function CartSummary({
         </div>
       </div>
 
+      {/* --- TOTALES --- */}
       <div className="pt-6 border-t border-gray-100 space-y-1 text-right">
         <div className="flex justify-between items-end">
           <span className="text-lg font-light text-gray-400 tracking-[0.2em] uppercase">
@@ -195,7 +304,9 @@ export default function CartSummary({
         disabled={!isReadyToCheckout}
         onClick={handleCheckout}
       >
-        {puntoSeleccionado ? "Iniciar Compra" : "Seleccioná un punto de retiro"}
+        {puntoSeleccionado
+          ? "Iniciar Compra"
+          : "Seleccioná un punto de envío o retiro"}
       </Button>
     </div>
   );

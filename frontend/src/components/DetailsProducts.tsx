@@ -26,7 +26,6 @@ export default function DetailsProducts({
   const [selectedColor, setSelectedColor] = useState<string>("");
 
   // 1. FORMATEADOR DE PRECIOS ROBUSTO
-  // Maneja: "1500.00", "$ 1.500", 1500 o null
   const formatPriceClean = (
     value: string | number | null | undefined,
   ): string => {
@@ -34,7 +33,6 @@ export default function DetailsProducts({
 
     let numericValue: number;
     if (typeof value === "string") {
-      // Limpia puntos, símbolos y toma la parte entera antes de la coma
       const cleanString = value
         .replace(/\./g, "")
         .replace(/\$/g, "")
@@ -54,7 +52,7 @@ export default function DetailsProducts({
     }).format(numericValue);
   };
 
-  // 2. GESTIÓN DE IMÁGENES (Evita duplicados y limpia URLs)
+  // 2. GESTIÓN DE IMÁGENES
   const allImages: string[] = [
     ...(product.imagenUrl ? [product.imagenUrl] : []),
     ...(Array.isArray(product.imagenes) ? product.imagenes : []),
@@ -74,6 +72,7 @@ export default function DetailsProducts({
     }
   };
 
+  // --- CORRECCIÓN AQUÍ ---
   const handleAddToCart = async () => {
     if (product.talles?.length && !selectedTalle) {
       return alert("Por favor, selecciona un talle");
@@ -84,14 +83,19 @@ export default function DetailsProducts({
 
     setProcessing(true);
     try {
-      // Pasamos el ID y la cantidad, pero también podrías pasar talle/color si tu carrito lo soporta
-      await addItem(String(product.id), quantity);
+      // ✅ Pasamos el ID, la cantidad y el objeto con la data para el modal
+      await addItem(String(product.id), quantity, {
+        nombre: product.nombre,
+        imagenUrl:
+          product.imagenUrl || allImages[0] || "/images/placeholder.png",
+      });
     } catch (err) {
       console.error("Error al agregar al carrito:", err);
     } finally {
       setProcessing(false);
     }
   };
+  // -----------------------
 
   // 3. GENERACIÓN DE VARIANTES DE TALLE + CORTE
   const todasLasVariantesDeTalle =
