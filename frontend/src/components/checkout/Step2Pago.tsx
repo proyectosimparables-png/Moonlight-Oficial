@@ -8,13 +8,13 @@ import toast from "react-hot-toast";
 import {
   createOrder,
   createMPPreference,
+  createGoCuotasPayment,
   OrderPayload,
 } from "@/services/paymentService";
 import {
   ChevronRight,
   Mail,
   MessageSquare,
-  CreditCard,
   Wallet,
   ExternalLink,
   Store,
@@ -70,17 +70,24 @@ const Step2Pago: React.FC = () => {
         })),
       };
 
+      // 1. Crear la orden en la base de datos
       const order = await createOrder(orderPayload);
 
+      // 2. Procesar según el método de pago seleccionado
       if (formData.metodoPago === "MERCADO_PAGO") {
         const payment = await createMPPreference(order.id);
         toast.success("Redirigiendo a Mercado Pago...", { id: toastId });
         window.location.href = payment.init_point;
+      } else if (formData.metodoPago === "GO_CUOTAS") {
+        // 👈 Lógica de GoCuotas agregada
+        const payment = await createGoCuotasPayment(order.id);
+        toast.success("Redirigiendo a GoCuotas...", { id: toastId });
+        window.location.href = payment.url;
       } else {
-        // Caso Transferencia / Otros
+        // Caso Transferencia u otros manuales
         toast.success("¡Pedido realizado con éxito!", { id: toastId });
         await clearCart();
-        // Opcional: router.push('/gracias')
+        // Aquí podrías redirigir a una página de éxito propia: router.push('/gracias')
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -108,18 +115,12 @@ const Step2Pago: React.FC = () => {
     {
       id: "GO_CUOTAS" as MetodoPago,
       label: "Cuotas con DÉBITO",
-      extra: "Próximamente",
+      extra: "HASTA 4 CUOTAS SIN INTERÉS",
       icon: (
         <div className="text-[10px] font-bold border border-pink-500 text-pink-500 px-1 rounded leading-none">
           GO
         </div>
       ),
-    },
-    {
-      id: "UALA" as MetodoPago,
-      label: "Ualá Bis",
-      extra: "Próximamente",
-      icon: <CreditCard className="w-5 h-5 text-pink-400" />,
     },
   ];
 

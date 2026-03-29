@@ -1,4 +1,4 @@
-export async function getComentarios(limit = 5) {
+export async function getComentarios(limit = 15) {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comentarios?limit=${limit}`, {
       credentials: "include",
@@ -13,14 +13,14 @@ export async function getComentarios(limit = 5) {
   }
 }
 
-
-export async function createComentario(contenido: string) {
+// CORREGIDO: Ahora acepta contenido y nombre
+export async function createComentario(contenido: string, nombre?: string) {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comentarios`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include", // 👈 las cookies llevan la sesión
-      body: JSON.stringify({ contenido }),
+      credentials: "include",
+      body: JSON.stringify({ contenido, nombre }), // Se envían ambos al backend
     });
 
     if (!res.ok) {
@@ -35,8 +35,7 @@ export async function createComentario(contenido: string) {
   }
 }
 
-// Eliminar comentario (nuevo)
-export const deleteComentario = async (id: string): Promise<void> => {
+export const deleteComentario = async (id: string | number): Promise<void> => {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/comentarios/${id}`, {
       method: "DELETE",

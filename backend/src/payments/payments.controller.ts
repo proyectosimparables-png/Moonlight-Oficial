@@ -25,4 +25,21 @@ export class PaymentsController {
 
         return { received: true };
     }
+
+    @Post('create-gocuotas/:orderId')
+    async createGoCuotas(@Param('orderId') orderId: string) {
+        return await this.paymentsService.createGoCuotasCheckout(orderId);
+    }
+
+    // El webhook de Go Cuotas (lo configuraremos en el siguiente paso)
+    @Post('webhook-gocuotas')
+    async handleGoCuotasWebhook(@Body() body: any) {
+        console.log('🔔 Webhook Go Cuotas:', body);
+        return await this.paymentsService.handleGoCuotasWebhook(body);
+    }
+
 }
+
+
+
+

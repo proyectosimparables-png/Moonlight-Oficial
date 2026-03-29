@@ -101,27 +101,21 @@ export async function createMPPreference(orderId: string): Promise<MPPreferenceR
     }
 }
 
-/* // --- Implementaciones Futuras ---
+export const createGoCuotasPayment = async (orderId) => {
+    try {
+        const response = await fetch(`http://localhost:3000/payments/create-gocuotas/${orderId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
 
-export async function createGoCuotasLink(orderId: string) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/payments/go-cuotas/${orderId}`, {
-    method: "POST",
-    headers: { ...headers },
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Error en GO cuotas");
-  return res.json();
-}
+        if (!response.ok) throw new Error('Error al crear el pago');
 
-export async function createUalaLink(orderId: string) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/payments/uala/${orderId}`, {
-    method: "POST",
-    headers: { ...headers },
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error("Error en Ualá Bis");
-  return res.json();
-}
-*/
+        const data = await response.json();
+        return data; // Esto trae { url: "https://test.gocuotas..." }
+    } catch (error) {
+        console.error("Error GoCuotas:", error);
+        throw error;
+    }
+};

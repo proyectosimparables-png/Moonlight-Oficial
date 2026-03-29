@@ -218,6 +218,7 @@ enum MetodoPago {
   MERCADO_PAGO
   TRANSFERENCIA
   EFECTIVO
+  GO_CUOTAS
 }
 
 enum Role {
