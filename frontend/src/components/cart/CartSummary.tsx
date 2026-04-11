@@ -2,15 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { Truck, Store, Loader2 } from "lucide-react";
+import { Store, Loader2 } from "lucide-react";
 import { getPuntosEntrega } from "@/services/entregas";
 import { getShippingRates } from "@/services/correo/correoService";
-// 1. Importamos la interfaz oficial para evitar el error de tipos
 import { CartItem } from "@/context/CartContext";
 
 // --- INTERFACES ---
-
 interface PuntoEntrega {
   id: string;
   nombre: string;
@@ -28,17 +25,14 @@ interface CorreoRate {
   plazoMax: number;
 }
 
-// Borramos la interfaz CartItem local que estaba aquí antes
-
 interface CartSummaryProps {
-  totalPrice: number;
-  finalTotal: number;
+  subtotal: number;
+  descuento: number;
+  totalPrice: number; // Este es el totalFinal que viene del context
   postalCode: string;
   setPostalCode: (val: string) => void;
   handleCheckout: () => void;
-  router: ReturnType<typeof useRouter>;
   openClearCartModal: () => void;
-  isLoading?: boolean;
   items: CartItem[];
   onShippingChange?: (
     nombre: string,
@@ -47,24 +41,29 @@ interface CartSummaryProps {
   ) => void;
 }
 
-type SeleccionEnvio =
-  | (PuntoEntrega & { precio?: never })
-  | (CorreoRate & { id?: never; costo?: never });
+// Unificamos el tipo para que sea más fácil de manejar en la UI
+type SeleccionEnvio = {
+  nombre: string;
+  precioFinal: number;
+  tipo: "HOME_DELIVERY" | "PICKUP";
+  idRef?: string; // Para distinguir puntos propios
+};
 
 export default function CartSummary({
+  subtotal,
+  descuento,
   totalPrice,
-  finalTotal,
   postalCode,
   setPostalCode,
   handleCheckout,
+  openClearCartModal,
   onShippingChange,
   items,
 }: CartSummaryProps) {
   const [puntos, setPuntos] = useState<PuntoEntrega[]>([]);
   const [correoRates, setCorreoRates] = useState<CorreoRate[]>([]);
   const [loadingCorreo, setLoadingCorreo] = useState(false);
-  const [puntoSeleccionado, setPuntoSeleccionado] =
-    useState<SeleccionEnvio | null>(null);
+  const [seleccion, setSeleccion] = useState<SeleccionEnvio | null>(null);
 
   useEffect(() => {
     async function loadPuntos() {
@@ -79,15 +78,9 @@ export default function CartSummary({
   }, []);
 
   const handleCalculateShipping = async () => {
-    // Validamos que haya items antes de llamar a la API
-    if (postalCode.length < 4 || !items || items.length === 0) {
-      console.warn("No hay productos para calcular el envío o el CP es corto");
-      return;
-    }
-
+    if (postalCode.length < 4 || !items || items.length === 0) return;
     setLoadingCorreo(true);
     try {
-      // Ahora 'items' llega correctamente desde el padre
       const rates: CorreoRate[] = await getShippingRates(postalCode, items);
       setCorreoRates(rates);
     } catch (error) {
@@ -98,54 +91,78 @@ export default function CartSummary({
   };
 
   const handleSelectPunto = (punto: PuntoEntrega) => {
-    setPuntoSeleccionado(punto);
-    if (onShippingChange) {
-      onShippingChange(punto.nombre, punto.costo, "PICKUP");
-    }
+    const nuevaSeleccion: SeleccionEnvio = {
+      nombre: punto.nombre,
+      precioFinal: punto.costo,
+      tipo: "PICKUP",
+      idRef: punto.id,
+    };
+    setSeleccion(nuevaSeleccion);
+    onShippingChange?.(punto.nombre, punto.costo, "PICKUP");
   };
 
   const handleSelectCorreo = (rate: CorreoRate) => {
-    setPuntoSeleccionado(rate);
-    if (onShippingChange) {
-      const type = rate.deliveredType === "D" ? "HOME_DELIVERY" : "PICKUP";
-      onShippingChange(rate.nombre, rate.precio, type);
-    }
+    const type = rate.deliveredType === "D" ? "HOME_DELIVERY" : "PICKUP";
+    const nuevaSeleccion: SeleccionEnvio = {
+      nombre: rate.nombre,
+      precioFinal: rate.precio,
+      tipo: type,
+    };
+    setSeleccion(nuevaSeleccion);
+    onShippingChange?.(rate.nombre, rate.precio, type);
   };
 
   const formatPrice = (price: number) =>
     price.toLocaleString("es-AR", {
       style: "currency",
       currency: "ARS",
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
     });
 
-  const currentShippingCost = puntoSeleccionado
-    ? "precio" in puntoSeleccionado
-      ? puntoSeleccionado.precio
-      : puntoSeleccionado.costo
-    : 0;
+  const currentShippingCost = seleccion?.precioFinal ?? 0;
+  const totalFinalConEnvio = totalPrice + currentShippingCost;
 
-  const totalConEnvio = finalTotal + currentShippingCost;
-  const transferPrice = totalConEnvio * 0.9;
-  const isReadyToCheckout = finalTotal > 0 && puntoSeleccionado !== null;
+  // El 10% de descuento por transferencia suele ser sobre el total de productos,
+  // pero aquí lo calculamos sobre el total con envío según tu lógica actual.
+  const transferPrice = totalFinalConEnvio * 0.9;
+
+  const isReadyToCheckout = totalPrice > 0 && seleccion !== null;
 
   return (
     <div className="mt-8 space-y-6 border-t border-gray-100 pt-4 font-sans text-[#4A4A4A]">
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-bold">
-          Subtotal{" "}
-          <span className="font-normal text-gray-400">(sin envío) :</span>
-        </span>
-        <span className="text-base font-bold">{formatPrice(totalPrice)}</span>
+      {/* SECCIÓN DESGLOSE DE PRECIOS */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-500">Subtotal</span>
+          <span className="font-medium">{formatPrice(subtotal)}</span>
+        </div>
+
+        {descuento > 0 && (
+          <div className="flex justify-between items-center text-sm text-[#A186ED] font-bold">
+            <span>Descuentos promocionales</span>
+            <span>-{formatPrice(descuento)}</span>
+          </div>
+        )}
+
+        {seleccion && (
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-500">Envío ({seleccion.nombre})</span>
+            <span className="font-medium">
+              {seleccion.precioFinal === 0
+                ? "Gratis"
+                : formatPrice(seleccion.precioFinal)}
+            </span>
+          </div>
+        )}
       </div>
 
+      {/* MEDIOS DE ENVÍO (Misma lógica de inputs que ya tenías...) */}
       <div className="border-t border-gray-200 pt-6">
         <h3 className="text-sm font-bold mb-4 uppercase tracking-tight">
           Medios de envío
         </h3>
-
         <div className="relative mb-2">
-          <div className="relative border-b border-gray-200 transition-colors">
+          <div className="relative border-b border-gray-200">
             <input
               type="text"
               placeholder="Tu código postal"
@@ -162,116 +179,59 @@ export default function CartSummary({
               CALCULAR
             </button>
           </div>
-          <a
-            href="https://www.correoargentino.com.ar/formularios/cpa"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] text-gray-400 underline mt-1 block hover:text-gray-600"
-          >
-            No sé mi código postal
-          </a>
         </div>
 
-        {/* --- CORREO ARGENTINO --- */}
-        <div className="mb-6 mt-4">
-          <p className="text-[13px] font-bold mb-3 flex items-center gap-2">
-            <Truck className="w-4 h-4 text-gray-400" /> Envío a domicilio
-          </p>
-
-          {correoRates.length > 0 ? (
-            <div className="border border-gray-300 rounded-sm overflow-hidden bg-white shadow-sm">
-              {correoRates.map((rate, idx) => (
+        {/* Listado Correo Argentino */}
+        {correoRates.length > 0 && (
+          <div className="mb-6 mt-4 border border-gray-300 rounded-sm overflow-hidden bg-white">
+            {correoRates.map((rate, idx) => (
+              <div
+                key={idx}
+                onClick={() => handleSelectCorreo(rate)}
+                className="p-4 border-b border-gray-100 cursor-pointer flex items-start gap-3"
+              >
                 <div
-                  key={idx}
-                  onClick={() => handleSelectCorreo(rate)}
-                  className={`p-4 border-b border-gray-100 last:border-b-0 cursor-pointer flex items-start gap-3 transition-all ${
-                    puntoSeleccionado?.nombre === rate.nombre
-                      ? "bg-gray-50"
-                      : "hover:bg-gray-50/30"
-                  }`}
+                  className={`mt-1 w-4 h-4 border flex items-center justify-center ${seleccion?.nombre === rate.nombre ? "border-black bg-black" : "border-gray-300"}`}
                 >
-                  <div
-                    className={`mt-1 w-4 h-4 border flex items-center justify-center transition-all ${
-                      puntoSeleccionado?.nombre === rate.nombre
-                        ? "border-black bg-black"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {puntoSeleccionado?.nombre === rate.nombre && (
-                      <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start w-full">
-                      <span
-                        className={`text-[13px] leading-tight ${puntoSeleccionado?.nombre === rate.nombre ? "font-bold" : "font-medium"}`}
-                      >
-                        {rate.nombre}
-                      </span>
-                      <span className="text-[13px] text-black font-bold ml-2">
-                        {formatPrice(rate.precio)}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      Llega entre {rate.plazoMin} y {rate.plazoMax} días hábiles
-                    </p>
-                  </div>
+                  {seleccion?.nombre === rate.nombre && (
+                    <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="border border-gray-200 rounded-sm p-5 bg-[#F9F9F9] border-dashed">
-              <p className="text-[11px] text-gray-400 text-center uppercase tracking-widest leading-relaxed">
-                Ingresá tu CP para ver <br />
-                <span className="font-bold text-gray-500">
-                  opciones de Correo Argentino
-                </span>
-              </p>
-            </div>
-          )}
-        </div>
+                <div className="flex-1 flex justify-between">
+                  <span className="text-[13px]">{rate.nombre}</span>
+                  <span className="text-[13px] font-bold">
+                    {formatPrice(rate.precio)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* --- PUNTOS PROPIOS --- */}
+        {/* Retiro en puntos propios */}
         <div className="mb-4">
           <p className="text-[13px] font-bold mb-3 flex items-center gap-2">
-            <Store className="w-4 h-4 text-gray-400" /> Retirar por
+            <Store className="w-4 h-4" /> Retirar por
           </p>
-          <div className="border border-gray-300 rounded-sm overflow-hidden bg-white shadow-sm">
+          <div className="border border-gray-300 rounded-sm overflow-hidden">
             {puntos.map((punto) => (
               <div
                 key={punto.id}
                 onClick={() => handleSelectPunto(punto)}
-                className={`p-4 border-b border-gray-100 last:border-b-0 cursor-pointer flex items-start gap-3 transition-all ${
-                  puntoSeleccionado?.id === punto.id
-                    ? "bg-gray-50"
-                    : "hover:bg-gray-50/30"
-                }`}
+                className="p-4 border-b border-gray-100 cursor-pointer flex items-start gap-3 hover:bg-gray-50"
               >
                 <div
-                  className={`mt-1 w-4 h-4 border flex items-center justify-center transition-all ${
-                    puntoSeleccionado?.id === punto.id
-                      ? "border-black bg-black"
-                      : "border-gray-300"
-                  }`}
+                  className={`mt-1 w-4 h-4 border flex items-center justify-center ${seleccion?.idRef === punto.id ? "border-black bg-black" : "border-gray-300"}`}
                 >
-                  {puntoSeleccionado?.id === punto.id && (
+                  {seleccion?.idRef === punto.id && (
                     <div className="w-1.5 h-1.5 bg-white rounded-full" />
                   )}
                 </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start w-full">
-                    <span
-                      className={`text-[13px] leading-tight ${puntoSeleccionado?.id === punto.id ? "font-bold" : "font-medium"}`}
-                    >
-                      {punto.nombre}
-                    </span>
-                    <span className="text-[13px] text-green-600 font-bold ml-2">
-                      {punto.costo === 0 ? "Gratis" : formatPrice(punto.costo)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    {punto.demora || "Retiras entre 2 y 5 días hábiles"}
-                  </p>
+                <div className="flex-1 flex justify-between">
+                  <span className="text-[13px]">{punto.nombre}</span>
+                  <span className="text-[13px] text-green-600 font-bold">
+                    {punto.costo === 0 ? "Gratis" : formatPrice(punto.costo)}
+                  </span>
                 </div>
               </div>
             ))}
@@ -279,35 +239,35 @@ export default function CartSummary({
         </div>
       </div>
 
-      {/* --- TOTALES --- */}
+      {/* TOTAL FINAL */}
       <div className="pt-6 border-t border-gray-100 space-y-1 text-right">
         <div className="flex justify-between items-end">
           <span className="text-lg font-light text-gray-400 tracking-[0.2em] uppercase">
             Total:
           </span>
           <span className="text-xl font-bold text-[#4A4A4A]">
-            {formatPrice(totalConEnvio)}
+            {formatPrice(totalFinalConEnvio)}
           </span>
         </div>
-        <p className="text-[10px] md:text-[11px] text-gray-400 uppercase tracking-tighter">
-          O {formatPrice(transferPrice)} CON TRANSFERENCIA{" "}
-          <span className="text-[#A186ED]">💜</span>
+        <p className="text-[10px] text-gray-400 uppercase">
+          O {formatPrice(transferPrice)} con transferencia 💜
         </p>
       </div>
 
       <Button
-        className={`w-full py-7 rounded-sm text-xs uppercase tracking-[0.2em] transition-all shadow-sm font-bold ${
-          isReadyToCheckout
-            ? "bg-[#A186ED] hover:bg-[#8e72e0] text-white"
-            : "bg-gray-100 text-gray-400 cursor-not-allowed"
-        }`}
+        className={`w-full py-7 rounded-sm text-xs uppercase tracking-[0.2em] font-bold ${isReadyToCheckout ? "bg-[#A186ED] text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
         disabled={!isReadyToCheckout}
         onClick={handleCheckout}
       >
-        {puntoSeleccionado
-          ? "Iniciar Compra"
-          : "Seleccioná un punto de envío o retiro"}
+        {seleccion ? "Iniciar Compra" : "Seleccioná un punto de envío"}
       </Button>
+
+      <button
+        onClick={openClearCartModal}
+        className="w-full text-[10px] text-gray-400 uppercase underline mt-2"
+      >
+        Vaciar carrito
+      </button>
     </div>
   );
 }

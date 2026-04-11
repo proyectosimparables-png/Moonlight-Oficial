@@ -10,6 +10,7 @@ import { useCartActions } from "./UseCartActions";
 export default function CartContent() {
   const { state, actions } = useCartActions();
 
+  // Mostramos mensaje de carga si el carrito está vacío y se está cargando
   if (state.loading && state.cart.length === 0 && !state.initialCartLoaded) {
     return (
       <p className="p-6 text-center text-gray-500 animate-pulse">
@@ -34,20 +35,22 @@ export default function CartContent() {
           </button>
         </div>
 
+        {/* Si el carrito está vacío, mostramos un mensaje */}
         {state.cart.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-400 mb-6">
-              No tienes productos en el carrito.
+          <div className="text-center py-20 animate-in fade-in duration-500">
+            <p className="text-gray-400 mb-4 text-sm uppercase tracking-widest">
+              Tu carrito está vacío
             </p>
             <button
               onClick={() => actions.router.push("/")}
-              className="text-purple-600 font-semibold underline"
+              className="bg-[#A186ED] text-white px-8 py-3 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-[#8e74d3] transition-colors"
             >
-              Ir a la tienda
+              Volver a la tienda
             </button>
           </div>
         ) : (
           <>
+            {/* Lista de productos en el carrito */}
             <ul className="divide-y divide-gray-100">
               {state.cart.map((item) => (
                 <CartItem
@@ -61,23 +64,24 @@ export default function CartContent() {
               ))}
             </ul>
 
+            {/* Resumen del carrito: subtotal, descuento, total */}
             <CartSummary
-              items={state.cart}
+              subtotal={state.subtotal}
+              descuento={state.descuento}
               totalPrice={state.totalPrice}
-              finalTotal={state.totalPrice}
+              items={state.cart}
               postalCode={state.postalCode}
               setPostalCode={actions.setPostalCode}
               handleCheckout={actions.handleCheckout}
-              router={actions.router}
               openClearCartModal={() => actions.setModalClearOpen(true)}
-              onShippingChange={(nombre, costo, type) =>
-                actions.setShippingInfo(nombre, costo, type)
-              }
+              // ✅ Agregamos esto para conectar el envío con el estado global
+              onShippingChange={actions.setShippingInfo}
             />
           </>
         )}
       </div>
 
+      {/* Modal de confirmación para eliminar un producto */}
       <ModalConfirm
         open={Boolean(state.modalDeleteId)}
         title="Eliminar producto"
@@ -86,13 +90,13 @@ export default function CartContent() {
         onConfirm={async () => {
           if (state.modalDeleteId) {
             await actions.removeItem(state.modalDeleteId);
-
             actions.setModalDeleteId(null);
           }
         }}
         onCancel={() => actions.setModalDeleteId(null)}
       />
 
+      {/* Modal de confirmación para vaciar el carrito */}
       <ModalConfirm
         open={state.modalClearOpen}
         title="Vaciar carrito"
@@ -105,8 +109,6 @@ export default function CartContent() {
         }}
         onCancel={() => actions.setModalClearOpen(false)}
       />
-
-      {/* El AddedToCartModal ha sido removido de aquí */}
     </div>
   );
 }

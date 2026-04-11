@@ -1,222 +1,196 @@
 "use client";
 
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback, // ✅ Importado para corregir el warning de dependencias
+  ReactNode,
+} from "react";
 import { CartService } from "@/services/cartService";
-import { useAuth } from "@/hooks/useAuth";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
-// Tipos
+// --- INTERFACES DE DATOS (Sincronizadas con NestJS) ---
+
 export interface CartItem {
   id: string;
   productoId: string;
   quantity: number;
+  precioOriginal: number;
+  precioFinalUnitario: number;
+  precioUnitarioVisual?: number;
+  precioFinal: number;
+  ahorroItem: number;
+  subtotalItem: number;
   producto: {
     id: string;
     nombre: string;
     precio: number;
     imagenUrl?: string;
-    loading?: boolean; // Flag para item temporal
   };
 }
 
 export interface CartResponse {
   items: CartItem[];
+  subtotal: number;
+  descuentoTotal: number;
+  total: number;
 }
+
+interface ProductData {
+  nombre: string;
+  imagenUrl?: string;
+}
+
+// --- INTERFAZ DEL CONTEXTO ---
 
 interface CartContextType {
   cart: CartItem[];
+  subtotal: number;
+  descuentoTotal: number;
+  total: number;
   loading: boolean;
-  // ✅ Firma mejorada para recibir datos del producto y evitar el modal vacío
   addItem: (
     productoId: string,
     quantity?: number,
-    productData?: { nombre: string; imagenUrl?: string },
+    productData?: ProductData,
   ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   updateItemQuantity: (itemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
   refreshCart: () => Promise<void>;
-  setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
   lastAddedItem: CartItem | null;
   closeLastAddedModal: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const { isAuthenticated } = useAuth();
-  const [cart, setCart] = useState<CartItem[]>([]);
+// --- PROVIDER ---
+
+export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { isAuthenticated, authLoaded } = useAuth();
+
+  const [cartData, setCartData] = useState<CartResponse>({
+    items: [],
+    subtotal: 0,
+    descuentoTotal: 0,
+    total: 0,
+  });
+
   const [loading, setLoading] = useState(true);
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
-  const refreshCart = async () => {
+  /**
+   * ✅ CORRECCIÓN ESLINT:
+   * Envolvemos refreshCart en useCallback para que sea estable y
+   * pueda ser usada como dependencia en el useEffect sin causar loops.
+   */
+  const refreshCart = useCallback(async () => {
+    if (!authLoaded) return;
+
     if (!isAuthenticated) {
-      setCart([]);
+      setCartData({ items: [], subtotal: 0, descuentoTotal: 0, total: 0 });
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
-      const cartData = await CartService.getCart();
-      setCart(cartData?.items ?? []);
+      const data = await CartService.getCart();
+      if (data) {
+        setCartData(data);
+      }
     } catch (err) {
       console.error("Error al cargar carrito:", err);
-      setCart([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, authLoaded]);
 
+  /**
+   * ✅ PROTECCIÓN CRÍTICA:
+   * Solo disparamos el refresh cuando la autenticación terminó de cargar.
+   */
   useEffect(() => {
     refreshCart();
-  }, [isAuthenticated]);
+  }, [refreshCart]); // ✅ Ahora usamos refreshCart como dependencia estable
 
-  const optimisticUpdate = async (
-    updateFn: () => void,
-    apiCall: () => Promise<CartResponse>,
-    rollbackFn?: () => void,
-  ) => {
-    try {
-      updateFn();
-      await apiCall();
-    } catch (err) {
-      console.error(err);
-      rollbackFn?.();
-    }
-  };
+  // --- ACCIONES ---
 
   const addItem = async (
     productoId: string,
     quantity = 1,
-    productData?: { nombre: string; imagenUrl?: string },
+    productData?: ProductData,
   ) => {
-    console.log("Estado del carrito antes de agregar el producto:", cart);
-    const existingItem = cart.find((i) => i.productoId === productoId);
+    try {
+      const response = await CartService.addItem(productoId, quantity);
+      setCartData(response);
 
-    if (existingItem) {
-      // 1️⃣ MOSTRAR EL MODAL INSTANTÁNEAMENTE
-      setLastAddedItem({
-        ...existingItem,
-        quantity: existingItem.quantity + quantity,
-      });
-
-      // 2️⃣ Actualización optimista
-      const prevCart = [...cart];
-      setCart((prev) =>
-        prev.map((i) =>
-          i.productoId === productoId
-            ? { ...i, quantity: i.quantity + quantity }
-            : i,
-        ),
-      );
-
-      try {
-        await CartService.addItem(productoId, quantity);
-      } catch (err) {
-        console.error(err);
-        setCart(prevCart);
+      const added = response.items.find((i) => i.productoId === productoId);
+      if (added) {
+        setLastAddedItem(added);
+      } else if (productData) {
+        setLastAddedItem({
+          id: "temp",
+          productoId,
+          quantity,
+          precioOriginal: 0,
+          precioFinalUnitario: 0,
+          precioFinal: 0,
+          ahorroItem: 0,
+          subtotalItem: 0,
+          producto: { id: productoId, ...productData, precio: 0 },
+        });
       }
-    } else {
-      // Item nuevo
-      const tempId = `temp-${productoId}-${Date.now()}`;
-      const tempItem: CartItem = {
-        id: tempId,
-        productoId,
-        quantity,
-        producto: {
-          id: productoId,
-          nombre: productData?.nombre || "Cargando...", // ✅ Usamos el nombre pasado por prop
-          precio: 0,
-          imagenUrl: productData?.imagenUrl, // ✅ Usamos la imagen pasada por prop
-          loading: true,
-        },
-      };
-      console.log(
-        "Estado del carrito antes de agregar el producto temporal:",
-        cart,
-      );
-      // 1️⃣ MOSTRAR MODAL INMEDIATAMENTE (Ya no estará vacío)
-      setLastAddedItem(tempItem);
-
-      // 2️⃣ Optimistic add instantáneo
-      const prevCart = [...cart];
-      setCart((prev) => [...prev, tempItem]);
-
-      try {
-        const response = await CartService.addItem(productoId, quantity);
-        const addedItem =
-          response.items.find((it) => it.productoId === productoId) ?? tempItem;
-
-        setCart((prev) => prev.map((i) => (i.id === tempId ? addedItem : i)));
-      } catch (err) {
-        console.error(err);
-        setCart(prevCart);
-      }
+    } catch (err) {
+      console.error("Error al agregar producto:", err);
     }
   };
 
   const removeItem = async (itemId: string) => {
-    const prevCart = [...cart];
-    await optimisticUpdate(
-      () => setCart((prev) => prev.filter((i) => i.id !== itemId)),
-      async () => {
-        await CartService.removeItem(itemId);
-        return { items: [] };
-      },
-      () => setCart(prevCart),
-    );
+    try {
+      const response = await CartService.removeItem(itemId);
+      setCartData(response);
+    } catch (err) {
+      console.error("Error al eliminar item:", err);
+    }
   };
 
   const updateItemQuantity = async (itemId: string, quantity: number) => {
-    const prevCart = [...cart];
-
-    if (quantity <= 0) {
-      await removeItem(itemId);
-      return;
+    if (quantity <= 0) return removeItem(itemId);
+    try {
+      const response = await CartService.updateItemQuantity(itemId, quantity);
+      setCartData(response);
+    } catch (err) {
+      console.error("Error al actualizar cantidad:", err);
     }
-
-    await optimisticUpdate(
-      () =>
-        setCart((prev) =>
-          prev.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
-        ),
-      async () => {
-        await CartService.updateItemQuantity(itemId, quantity);
-        return { items: [] };
-      },
-      () => setCart(prevCart),
-    );
   };
 
   const clearCart = async () => {
-    const prevCart = [...cart];
-    await optimisticUpdate(
-      () => setCart([]),
-      async () => {
-        await CartService.clearCart();
-        return { items: [] };
-      },
-      () => setCart(prevCart),
-    );
+    try {
+      await CartService.clearCart();
+      setCartData({ items: [], subtotal: 0, descuentoTotal: 0, total: 0 });
+    } catch (err) {
+      console.error("Error al vaciar carrito:", err);
+    }
   };
-
-  const closeLastAddedModal = () => setLastAddedItem(null);
 
   return (
     <CartContext.Provider
       value={{
-        cart,
+        cart: cartData.items,
+        subtotal: cartData.subtotal,
+        descuentoTotal: cartData.descuentoTotal,
+        total: cartData.total,
         loading,
         addItem,
         removeItem,
         updateItemQuantity,
         clearCart,
         refreshCart,
-        setCart,
         lastAddedItem,
-        closeLastAddedModal,
+        closeLastAddedModal: () => setLastAddedItem(null),
       }}
     >
       {children}
@@ -226,6 +200,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) throw new Error("useCart must be used within a CartProvider");
+  if (!context)
+    throw new Error("useCart debe usarse dentro de un CartProvider");
   return context;
 };

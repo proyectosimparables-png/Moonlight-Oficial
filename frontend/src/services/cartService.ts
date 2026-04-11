@@ -1,11 +1,16 @@
 // src/services/cartService.ts
-import { CartItem } from '../context/CartContext';
+import { CartItem, CartResponse } from '../context/CartContext';
 
+// Ya no necesitamos definir CartResponse aquí de nuevo si la exportamos del Context,
+// pero si prefieres tenerla aquí, debe ser idéntica:
+/*
 interface CartResponse {
-    id: string;
-    userId: string;
     items: CartItem[];
+    subtotal: number;
+    descuento: number;
+    total: number;
 }
+*/
 
 export const CartService = {
     // 🔹 Obtener carrito
@@ -15,15 +20,14 @@ export const CartService = {
                 credentials: 'include',
             });
             if (res.status === 401) {
-                // Usuario no logueado → carrito vacío
-                return { id: '', userId: '', items: [] };
+                return { items: [], subtotal: 0, descuento: 0, total: 0 };
             }
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Error fetching cart');
             return data;
         } catch (err) {
             console.error('Error fetching cart:', err);
-            return { id: '', userId: '', items: [] };
+            return { items: [], subtotal: 0, descuento: 0, total: 0 };
         }
     },
 
@@ -36,10 +40,7 @@ export const CartService = {
             credentials: 'include',
         });
         const data = await res.json();
-        if (!res.ok) {
-            console.error('Error desde backend:', data);
-            throw new Error(data.message || 'Error adding item');
-        }
+        if (!res.ok) throw new Error(data.message || 'Error adding item');
         return data;
     },
 
@@ -68,26 +69,27 @@ export const CartService = {
     },
 
     // 🔹 Vaciar carrito
-    async clearCart(): Promise<CartResponse> {
+    async clearCart(): Promise<void> {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/clear`, {
             method: 'DELETE',
             credentials: 'include',
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || 'Error clearing cart');
-        return data;
+        if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.message || 'Error clearing cart');
+        }
     },
 
-async syncWithBackend(userId: string, items: { productoId: string; cantidad: number }[]) {
+    // 🔹 Sincronizar (Si lo sigues usando)
+    async syncWithBackend(userId: string, items: { productoId: string; cantidad: number }[]): Promise<CartResponse> {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ordenes/carrito`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, items }),
+            credentials: 'include',
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Error sincronizando carrito');
         return data;
     },
-
-
 };

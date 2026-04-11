@@ -52,6 +52,9 @@ model Producto {
   imagenes          Imagen[]
   categoria         Categoria?        @relation(fields: [categoriaId], references: [id])
   secciones         ProductoSeccion[]
+
+// NUEVO CAMPO PARA LAS PROMOS
+  promociones       Promocion[]       @relation("ProductoPromocion")
 }
 
 model Imagen {
@@ -71,6 +74,9 @@ model Categoria {
   subcategorias Categoria[] @relation("Subcategorias")
   seccion       Seccion?    @relation(fields: [seccionId], references: [id])
   productos     Producto[]
+
+  // NUEVA RELACIÓN: Una categoría puede tener muchas promociones aplicadas
+  promociones   Promocion[] @relation("CategoriaPromocion")
 }
 
 model ProductoSeccion {
@@ -90,6 +96,9 @@ model Seccion {
   updatedAt  DateTime          @updatedAt
   categorias Categoria[]
   productos  ProductoSeccion[]
+
+  // NUEVA RELACIÓN
+  promociones Promocion[]       @relation("SeccionPromocion")
 }
 
 model Comentario {
@@ -151,7 +160,9 @@ model OrdenItem {
   id         String  @id @default(uuid())
   ordenId    String
   nombre     String
-  precio     Float
+  precio     Float // El precio original del producto
+  precioFinal    Float?   // El precio que pagó (con promo aplicada)
+  descuentoTotal Float   @default(0) // Cuánta plata se ahorró en este item
   cantidad   Int
   peso       Int?    // Peso unitario al momento de la compra
   productoId String?
@@ -201,6 +212,53 @@ model PuntoEntrega {
   esDomicilio    Boolean  @default(false)
   activo         Boolean  @default(true)
   createdAt      DateTime @default(now())
+}
+
+// 1. Enum para los tipos de promoción
+enum TipoPromocion {
+  PORCENTAJE          // Descuento directo (ej: -20% en el producto o categoría)
+  CANTIDAD_X_CANTIDAD // 2x1, 3x2, 4x3, etc.
+  SEGUNDA_UNIDAD      // Descuento en la unidad par (ej: 50% en la 2da unidad)
+}
+
+// 2. Modelo de Promoción Actualizado
+model Promocion {
+  id                String        @id @default(uuid())
+  nombre            String        // Ej: "Promo Lanzamiento", "3x2 en Invierno"
+  tipo              TipoPromocion
+  
+  // --- CONFIGURACIÓN DE LÓGICA ---
+  // false = El 2x1/3x2 se aplica solo si llevas el MISMO producto.
+  // true  = El 2x1/3x2 permite mezclar productos de la misma promo/categoría.
+  esCombinable      Boolean       @default(false) 
+
+  // Para PORCENTAJE (ej: 20) o SEGUNDA_UNIDAD (ej: 50 para el 50% off)
+  valor             Float?        
+  
+  // Para CANTIDAD_X_CANTIDAD (ej: lleva 3 paga 2)
+  lleva             Int?          @default(1)
+  paga              Int?          @default(1)
+
+  // --- CONTROL Y PRIORIDAD ---
+  prioridad         Int           @default(0)     // Mayor número = se aplica primero
+  acumulable        Boolean       @default(false) // ¿Se suma a otras promos activas?
+  descripcion       String?       
+  activa            Boolean       @default(true)
+  fechaInicio       DateTime?
+  fechaFin          DateTime?
+  
+  // --- RELACIONES ---
+  // Relación con productos individuales
+  productos         Producto[]    @relation("ProductoPromocion")
+  
+  // Relación con categorías (Aplica la promo a todos los productos de la categoría)
+  categorias        Categoria[]   @relation("CategoriaPromocion")
+
+  // NUEVA RELACIÓN
+  secciones     Seccion[]       @relation("SeccionPromocion")
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 }
 
 enum EstadoOrden {

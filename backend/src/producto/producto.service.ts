@@ -47,6 +47,7 @@ export class ProductoService {
       ...producto,
       precio: Number(producto.precio),
       precioPromocional: producto.precioPromocional ? Number(producto.precioPromocional) : null,
+      promociones: producto.promociones || [], // 👈 ESTO ES NUEVO
       stock: Number(producto.stock || 0),
       published: Boolean(producto.published),
       categoria: producto.categoria || null,
@@ -75,6 +76,7 @@ export class ProductoService {
         categoria: { include: { parent: true } },
         secciones: { include: { seccion: true } },
         imagenes: true,
+        promociones: true,
       },
     });
 
@@ -95,6 +97,7 @@ export class ProductoService {
         imagenes: true,
         categoria: true,
         secciones: { include: { seccion: true } },
+        promociones: true,
       },
     });
 
@@ -118,9 +121,11 @@ export class ProductoService {
       },
       include: {
         imagenes: true,
-        categoria: true
+        categoria: true,
+        promociones: true,
       },
       take: 10,
+
     });
 
     let relatedProducts: any[] = [];
@@ -158,13 +163,15 @@ export class ProductoService {
         categoria: { include: { parent: true } },
         secciones: { include: { seccion: true } },
         imagenes: true,
+        promociones: true, // 👈 AGREGADO: Para ver las promos en el panel
       },
       orderBy: { createdAt: 'desc' },
     });
 
+    // Usamos el formateador para que los precios y el array de promos 
+    // lleguen limpios al panel de administración
     return productos.map(p => this.formatearProducto(p));
   }
-
   async findOneById(id: string) {
     const producto = await this.prisma.producto.findUnique({
       where: { id },
@@ -172,11 +179,12 @@ export class ProductoService {
         categoria: { include: { parent: true } },
         secciones: { include: { seccion: true } },
         imagenes: true,
+        promociones: true, // 👈 Agregale esto también
       },
     });
 
     if (!producto) throw new NotFoundException('Producto no encontrado');
-    return producto;
+    return this.formatearProducto(producto); // 👈 Usá el formateador acá
   }
 
   async findAllPublic(seccionId?: string, categoriaId?: string) {
@@ -195,6 +203,7 @@ export class ProductoService {
         imagenes: true,
         categoria: true,
         secciones: { include: { seccion: true } },
+        promociones: true,
       },
       orderBy: { createdAt: 'desc' },
     });

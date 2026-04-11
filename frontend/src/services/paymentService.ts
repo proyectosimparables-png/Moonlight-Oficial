@@ -6,7 +6,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 interface OrderItem {
     productoId: string;
     cantidad: number;
-    precio: number;
 }
 
 export interface OrderPayload {
@@ -32,7 +31,7 @@ export interface OrderPayload {
     items: OrderItem[];
 }
 
-interface OrderResponse {
+export interface OrderResponse {
     id: string;
     total: number;
     estado: string;
@@ -101,19 +100,24 @@ export async function createMPPreference(orderId: string): Promise<MPPreferenceR
     }
 }
 
-export const createGoCuotasPayment = async (orderId) => {
+export const createGoCuotasPayment = async (orderId: string) => { // Agregué el tipo string
     try {
-        const response = await fetch(`http://localhost:3000/payments/create-gocuotas/${orderId}`, {
+        const headers = await getAuthHeaders(); // 👈 Importante: obtener headers
+
+        const response = await fetch(`${API_URL}/payments/create-gocuotas/${orderId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                ...headers, // 👈 Agregado para que sea consistente con los demás
             },
         });
 
-        if (!response.ok) throw new Error('Error al crear el pago');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Error al crear el pago en GoCuotas');
+        }
 
-        const data = await response.json();
-        return data; // Esto trae { url: "https://test.gocuotas..." }
+        return await response.json();
     } catch (error) {
         console.error("Error GoCuotas:", error);
         throw error;

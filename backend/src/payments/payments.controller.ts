@@ -14,15 +14,18 @@ export class PaymentsController {
     // Recibe la notificación de Mercado Pago cuando el pago cambia de estado
     @Post('webhook')
     async handleWebhook(@Body() body: any, @Query() query: any) {
-        // Usamos el operador ?. para evitar el error de "undefined"
+        // Mercado Pago envía el ID en diferentes lugares según la versión del webhook
         const paymentId = body?.data?.id || query['data.id'] || body?.id;
+        const type = body?.type || query['type'];
 
-        console.log('🔔 Webhook recibido. ID de pago:', paymentId);
+        console.log(`🔔 Webhook recibido. Tipo: ${type}, ID: ${paymentId}`);
 
-        if (paymentId) {
+        // SOLO procesamos si tenemos un ID y el tipo es 'payment'
+        if (paymentId && (type === 'payment' || !type)) {
             return await this.paymentsService.handleWebhook(paymentId);
         }
 
+        // Respondemos 200 siempre para que MP no reintente infinitamente
         return { received: true };
     }
 

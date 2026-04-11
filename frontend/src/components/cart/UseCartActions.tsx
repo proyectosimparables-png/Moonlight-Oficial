@@ -8,17 +8,29 @@ import { useAuth } from "@/hooks/useAuth";
 
 export function useCartActions() {
   const { user, isAuthenticated } = useAuth();
-  const { cart, removeItem, updateItemQuantity, clearCart, loading } =
-    useCart();
   const router = useRouter();
 
+  // ✅ Extraemos los nombres REALES del Context (descuentoTotal y total)
+  const {
+    cart,
+    subtotal,
+    descuentoTotal, // Antes era 'descuento'
+    total, // Antes era 'totalFinal'
+    removeItem,
+    updateItemQuantity,
+    clearCart,
+    loading,
+  } = useCart();
+
+  // Estados locales para la UI
   const [processingItems, setProcessingItems] = useState<
     Record<string, boolean>
   >({});
-  const [postalCode, setPostalCode] = useState("");
   const [initialCartLoaded, setInitialCartLoaded] = useState(false);
   const [modalDeleteId, setModalDeleteId] = useState<string | null>(null);
   const [modalClearOpen, setModalClearOpen] = useState(false);
+  const [postalCode, setPostalCode] = useState("");
+
   const [shippingInfo, setShippingInfo] = useState({
     nombre: "A convenir",
     costo: 0,
@@ -29,28 +41,25 @@ export function useCartActions() {
     if (!loading) setInitialCartLoaded(true);
   }, [loading]);
 
-  const increment = async (id: string) => {
-    // PROTECCIÓN BACKEND: Si ya está procesando, no hacemos nada
-    if (processingItems[id]) return;
+  // --- ACCIONES ---
 
+  const increment = async (id: string) => {
+    if (processingItems[id]) return;
     const item = cart.find((i) => i.id === id);
     if (!item) return;
 
-    toast.dismiss();
     setProcessingItems((prev) => ({ ...prev, [id]: true }));
     try {
       await updateItemQuantity(id, item.quantity + 1);
     } catch {
-      toast.error("Error de stock");
+      toast.error("Error al actualizar la cantidad");
     } finally {
       setProcessingItems((prev) => ({ ...prev, [id]: false }));
     }
   };
 
   const decrement = async (id: string) => {
-    // PROTECCIÓN BACKEND
     if (processingItems[id]) return;
-
     const item = cart.find((i) => i.id === id);
     if (!item) return;
 
@@ -59,12 +68,11 @@ export function useCartActions() {
       return;
     }
 
-    toast.dismiss();
     setProcessingItems((prev) => ({ ...prev, [id]: true }));
     try {
       await updateItemQuantity(id, item.quantity - 1);
     } catch {
-      toast.error("Error al actualizar");
+      toast.error("Error al actualizar el producto");
     } finally {
       setProcessingItems((prev) => ({ ...prev, [id]: false }));
     }
@@ -76,31 +84,43 @@ export function useCartActions() {
       router.push("/login");
       return;
     }
-    if (cart.length === 0) return;
+
+    if (cart.length === 0) {
+      toast.error("No tienes productos en el carrito");
+      return;
+    }
+
+    // ✅ BLINDAJE ACTUALIZADO:
+    const safeSubtotal = subtotal ?? 0;
+    const safeDiscount = descuentoTotal ?? 0; // Usamos el nombre nuevo
+    const safeTotal = total ?? 0; // Usamos el nombre nuevo
+    const safeShippingCost = shippingInfo.costo ?? 0;
 
     const params = new URLSearchParams({
-      shippingCost: shippingInfo.costo.toString(),
-      shippingName: shippingInfo.nombre,
+      subtotal: safeSubtotal.toString(),
+      shippingCost: safeShippingCost.toString(),
+      shippingName: shippingInfo.nombre || "A convenir",
       shippingType: shippingInfo.type || "",
+      discount: safeDiscount.toString(),
+      finalPrice: safeTotal.toString(),
     });
+
     router.push(`/checkout?${params.toString()}`);
   };
 
-  const totalPrice = cart.reduce(
-    (acc, item) => acc + item.producto.precio * item.quantity,
-    0,
-  );
-
   return {
     state: {
-      cart,
+      cart: cart || [],
       loading,
       initialCartLoaded,
       processingItems,
       postalCode,
       modalDeleteId,
       modalClearOpen,
-      totalPrice,
+      // ✅ Retornamos con los nombres que espera tu UI de Carrito
+      subtotal: subtotal ?? 0,
+      descuento: descuentoTotal ?? 0,
+      totalPrice: total ?? 0,
       shippingInfo,
     },
     actions: {

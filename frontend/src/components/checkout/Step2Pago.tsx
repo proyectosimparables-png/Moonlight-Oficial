@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useCheckout, MetodoPago } from "@/context/CheckoutContext";
@@ -10,6 +11,7 @@ import {
   createMPPreference,
   createGoCuotasPayment,
   OrderPayload,
+  OrderResponse,
 } from "@/services/paymentService";
 import {
   ChevronRight,
@@ -19,30 +21,72 @@ import {
   ExternalLink,
   Store,
   FileText,
+  Loader2,
 } from "lucide-react";
 
 const Step2Pago: React.FC = () => {
+  const router = useRouter();
   const { user } = useAuth();
   const { cart, clearCart } = useCart();
-  const { formData, updateFormData, prevStep } = useCheckout();
-  const [loading, setLoading] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
+  const { formData, updateFormData, prevStep, totalFinal } = useCheckout();
 
-  const subtotalProductos = cart.reduce(
-    (acc, item) => acc + item.producto.precio * item.quantity,
-    0,
-  );
+  const [loading, setLoading] = useState<boolean>(false);
+  const [showNotes, setShowNotes] = useState<boolean>(false);
 
-  const handlePaymentSelect = (metodo: MetodoPago) => {
+  // --- ESTADOS PARA EL VIGILANTE (POLLING) ---
+  const [isCheckingPayment, setIsCheckingPayment] = useState<boolean>(false);
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // --- EFECTO DE VIGILANCIA ---
+  useEffect(() => {
+    if (isCheckingPayment && activeOrderId) {
+      intervalRef.current = setInterval(async () => {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/ordenes/${activeOrderId}`,
+          );
+          if (!response.ok) return;
+
+          const orderData = await response.json();
+
+          // Si el Webhook del backend ya procesó el pago...
+          if (orderData.estado === "PAGADO") {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            setIsCheckingPayment(false);
+
+            toast.success("¡Pago confirmado con éxito!");
+            await clearCart(); // Limpiamos el carrito local
+            router.push(`/payment-success?orderId=${activeOrderId}`);
+          }
+        } catch (error) {
+          console.error("Error vigilando pago:", error);
+        }
+      }, 3000); // Checkea cada 3 segundos
+    }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isCheckingPayment, activeOrderId, router, clearCart]);
+
+  const handlePaymentSelect = (metodo: MetodoPago): void => {
     updateFormData({ metodoPago: metodo });
   };
 
-  const finalizarCompra = async () => {
-    if (!user?.id) return toast.error("Debes iniciar sesión");
-    if (!formData.metodoPago) return toast.error("Seleccioná un medio de pago");
+  const finalizarCompra = async (): Promise<void> => {
+    if (!user?.id) {
+      toast.error("Debes iniciar sesión para finalizar la compra");
+      return;
+    }
+
+    if (!formData.metodoPago) {
+      toast.error("Por favor, selecciona un medio de pago");
+      return;
+    }
 
     setLoading(true);
-    const toastId = toast.loading("Procesando pedido...");
+    const toastId = toast.loading("Procesando tu pedido...");
 
     try {
       const orderPayload: OrderPayload = {
@@ -62,105 +106,135 @@ const Step2Pago: React.FC = () => {
         piso: formData.piso || undefined,
         departamento: formData.depto || undefined,
         metodoPago: formData.metodoPago,
-        notasEntrega: formData.notasEntrega,
+        notasEntrega: formData.notasEntrega || "",
         items: cart.map((item) => ({
           productoId: item.productoId,
           cantidad: item.quantity,
-          precio: item.producto.precio,
+          precio: item.precioFinal / item.quantity,
         })),
       };
 
-      // 1. Crear la orden en la base de datos
-      const order = await createOrder(orderPayload);
+      const order: OrderResponse = await createOrder(orderPayload);
+      setActiveOrderId(order.id);
 
-      // 2. Procesar según el método de pago seleccionado
       if (formData.metodoPago === "MERCADO_PAGO") {
         const payment = await createMPPreference(order.id);
-        toast.success("Redirigiendo a Mercado Pago...", { id: toastId });
-        window.location.href = payment.init_point;
+        toast.success("Abriendo Mercado Pago...", { id: toastId });
+
+        const mpWindow = window.open(
+          payment.init_point,
+          "_blank",
+          "noopener,noreferrer",
+        );
+
+        if (!mpWindow) {
+          toast.error("Ventana emergente bloqueada. Por favor, habilitala.");
+        }
+        setIsCheckingPayment(true);
       } else if (formData.metodoPago === "GO_CUOTAS") {
-        // 👈 Lógica de GoCuotas agregada
         const payment = await createGoCuotasPayment(order.id);
-        toast.success("Redirigiendo a GoCuotas...", { id: toastId });
-        window.location.href = payment.url;
+        toast.success("Abriendo GoCuotas...", { id: toastId });
+
+        const goWindow = window.open(
+          payment.url,
+          "_blank",
+          "noopener,noreferrer",
+        );
+
+        if (!goWindow) {
+          toast.error("Ventana emergente bloqueada.");
+        }
+        setIsCheckingPayment(true);
       } else {
-        // Caso Transferencia u otros manuales
-        toast.success("¡Pedido realizado con éxito!", { id: toastId });
+        // TRANSFERENCIA
+        toast.success("¡Pedido realizado con éxito!", {
+          id: toastId,
+          duration: 5000,
+        });
         await clearCart();
-        // Aquí podrías redirigir a una página de éxito propia: router.push('/gracias')
+        router.push(`/payment-success?orderId=${order.id}`);
       }
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Error al procesar el pedido";
-      toast.error(errorMessage, { id: toastId });
+      const msg = error instanceof Error ? error.message : "Error inesperado";
+      toast.error(msg, { id: toastId });
     } finally {
       setLoading(false);
     }
   };
 
+  const formatPrice = (val: number): string =>
+    val.toLocaleString("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      minimumFractionDigits: 0,
+    });
+
   const mediosDePago = [
     {
       id: "TRANSFERENCIA" as MetodoPago,
-      label: "Transferencia Bancaria o Depósito",
-      extra: `PAGÁS $${(subtotalProductos * 0.9 + formData.costoEnvio).toLocaleString("es-AR")}`,
-      icon: <Wallet className="w-5 h-5 text-purple-500" />,
-      extraColor: "bg-[#D9F99D]",
+      label: "Transferencia / Depósito",
+      extra: `PAGÁS ${formatPrice(totalFinal * 0.9 + (formData.costoEnvio || 0))}`,
+      icon: <Wallet className="w-5 h-5 text-[#A186ED]" />,
+      badgeClass: "bg-green-100 text-green-700",
     },
     {
       id: "MERCADO_PAGO" as MetodoPago,
       label: "Mercado Pago",
-      extra: "HASTA 3 CUOTAS SIN INTERÉS",
+      extra: "3 CUOTAS SIN INTERÉS",
       icon: <ExternalLink className="w-5 h-5 text-blue-500" />,
+      badgeClass: "bg-blue-100 text-blue-700",
     },
     {
       id: "GO_CUOTAS" as MetodoPago,
-      label: "Cuotas con DÉBITO",
-      extra: "HASTA 4 CUOTAS SIN INTERÉS",
+      label: "Cuotas con Débito",
+      extra: "4 CUOTAS SIN INTERÉS",
       icon: (
-        <div className="text-[10px] font-bold border border-pink-500 text-pink-500 px-1 rounded leading-none">
+        <div className="text-[9px] font-black border-2 border-pink-500 text-pink-500 px-1 rounded leading-tight">
           GO
         </div>
       ),
+      badgeClass: "bg-pink-100 text-pink-700",
     },
   ];
 
   return (
-    <div className="w-full animate-in fade-in duration-500 text-[#4A4A4A] font-sans pb-10">
-      <div className="border border-gray-300 rounded-sm mb-8 bg-white overflow-hidden shadow-sm">
-        {/* Email */}
-        <div className="flex items-center gap-4 p-5 border-b border-gray-200">
-          <Mail className="w-5 h-5 text-gray-500 stroke-[1.5]" />
-          <span className="text-[15px] text-gray-600">{formData.email}</span>
+    <div className="w-full animate-in fade-in duration-500 text-[#4A4A4A] pb-10">
+      {/* Resumen de Datos */}
+      <div className="border border-gray-200 rounded-sm mb-8 bg-white divide-y divide-gray-100 shadow-sm overflow-hidden">
+        <div className="p-4 flex items-center justify-between bg-gray-50/50">
+          <div className="flex items-center gap-3 text-sm text-gray-500">
+            <Mail className="w-4 h-4 text-[#A186ED]" /> {formData.email}
+          </div>
         </div>
 
-        {/* Envío */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 bg-[#fdfbf2]/30">
-          <div className="flex items-center gap-4">
-            <Store className="w-5 h-5 text-gray-500 stroke-[1.5]" />
-            <span className="text-[15px] font-bold text-gray-700">
-              {formData.metodoEnvio} ·{" "}
-              {formData.costoEnvio === 0
-                ? "Gratis"
-                : `$${formData.costoEnvio.toLocaleString()}`}
-            </span>
+        <div className="p-4 flex items-start justify-between">
+          <div className="flex gap-4">
+            <Store className="w-4 h-4 text-gray-400 mt-1" />
+            <div className="text-sm">
+              <p className="font-bold text-gray-700">{formData.metodoEnvio}</p>
+              <p className="text-[#A186ED] font-semibold">
+                {formData.costoEnvio === 0
+                  ? "Gratis"
+                  : formatPrice(formData.costoEnvio || 0)}
+              </p>
+            </div>
           </div>
           <button
             onClick={prevStep}
-            className="text-[13px] text-gray-600 hover:underline font-medium"
+            className="text-[10px] font-black uppercase text-gray-400 hover:text-[#A186ED]"
           >
-            Cambiar
+            Editar
           </button>
         </div>
 
-        {/* Datos Facturación */}
-        <div className="flex items-start justify-between p-5 border-b border-gray-200">
+        <div className="p-4 flex items-start justify-between">
           <div className="flex gap-4">
-            <FileText className="w-5 h-5 text-gray-500 stroke-[1.5] mt-0.5" />
-            <div className="text-[14px] text-gray-500 leading-relaxed">
-              <p className="font-bold text-gray-700 mb-1">
-                Datos de facturación
+            <FileText className="w-4 h-4 text-gray-400 mt-1" />
+            <div className="text-[13px] text-gray-500">
+              <p className="font-bold text-gray-700 uppercase text-[9px] tracking-widest mb-1">
+                Entrega en:
               </p>
-              <p className="capitalize">
+              <p className="font-medium text-gray-800 capitalize">
                 {formData.nombre} {formData.apellido}
               </p>
               <p>
@@ -168,109 +242,118 @@ const Step2Pago: React.FC = () => {
                 {formData.depto || ""}
               </p>
               <p>
-                CP {formData.codigoPostal} - {formData.ciudad},{" "}
-                {formData.provincia}
+                {formData.ciudad}, {formData.provincia}
               </p>
-              <p>{formData.telefono}</p>
             </div>
           </div>
           <button
             onClick={prevStep}
-            className="text-[13px] text-gray-600 hover:underline font-medium"
+            className="text-[10px] font-black uppercase text-gray-400 hover:text-[#A186ED]"
           >
-            Cambiar
+            Editar
           </button>
         </div>
 
-        {/* Notas */}
-        <div className="p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <MessageSquare className="w-5 h-5 text-gray-500 stroke-[1.5]" />
-              <span className="text-[13px] font-bold uppercase tracking-wider text-gray-700">
-                Aclaraciones
-              </span>
-            </div>
-            {!showNotes && (
-              <button
-                onClick={() => setShowNotes(true)}
-                className="text-[13px] text-gray-600 hover:underline font-medium"
-              >
-                {formData.notasEntrega ? "Editar" : "Agregar"}
-              </button>
-            )}
-          </div>
+        <div className="p-4">
+          <button
+            onClick={() => setShowNotes(!showNotes)}
+            className="flex items-center gap-4 w-full text-left"
+          >
+            <MessageSquare className="w-4 h-4 text-gray-400" />
+            <span className="text-[13px] text-gray-500 font-medium">
+              {formData.notasEntrega
+                ? "Ver aclaraciones"
+                : "Agregar nota al pedido"}
+            </span>
+          </button>
           {showNotes && (
-            <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <textarea
-                className="w-full p-4 border border-gray-200 text-[14px] focus:outline-none focus:border-gray-400 min-h-25 bg-[#fafafa] resize-none rounded-sm"
-                placeholder="¿Algo que debamos saber?"
-                autoFocus
-                value={formData.notasEntrega}
-                onChange={(e) =>
-                  updateFormData({ notasEntrega: e.target.value })
-                }
-              />
-              <button
-                onClick={() => setShowNotes(false)}
-                className="mt-2 text-[11px] text-gray-400 uppercase hover:text-gray-600 font-bold"
-              >
-                Guardar
-              </button>
-            </div>
+            <textarea
+              className="w-full mt-3 p-3 border border-gray-100 text-sm focus:outline-none focus:border-[#A186ED] bg-gray-50 rounded-sm resize-none"
+              placeholder="¿Algo para el repartidor?"
+              value={formData.notasEntrega || ""}
+              onChange={(e) => updateFormData({ notasEntrega: e.target.value })}
+              rows={3}
+            />
           )}
         </div>
       </div>
 
-      <h3 className="text-[12px] font-bold mb-4 uppercase tracking-[0.15em] text-gray-500">
-        Medio de Pago
-      </h3>
-      <div className="border border-gray-300 rounded-sm bg-white overflow-hidden mb-8 shadow-sm">
-        {mediosDePago.map((medio) => (
-          <div
-            key={medio.id}
-            onClick={() => handlePaymentSelect(medio.id)}
-            className={`flex items-center justify-between p-5 cursor-pointer border-b border-gray-200 last:border-b-0 transition-all ${
-              formData.metodoPago === medio.id
-                ? "bg-gray-50"
-                : "hover:bg-gray-50/50"
-            }`}
-          >
-            <div className="flex items-center gap-4 flex-1">
-              <div
-                className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${formData.metodoPago === medio.id ? "border-black bg-black" : "border-gray-300"}`}
-              >
-                {formData.metodoPago === medio.id && (
-                  <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-gray-400">{medio.icon}</div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="text-[14px] text-gray-800 font-medium">
-                    {medio.label}
-                  </span>
-                  {medio.extra && (
-                    <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase ${medio.extraColor || "bg-[#E5FFB3] text-black"}`}
+      {isCheckingPayment ? (
+        <div className="bg-purple-50 border border-[#A186ED] rounded-sm p-8 text-center mb-10 animate-pulse">
+          <Loader2 className="w-10 h-10 animate-spin text-[#A186ED] mx-auto mb-4" />
+          <h4 className="font-bold text-gray-700 uppercase text-xs tracking-widest">
+            Esperando Pago...
+          </h4>
+          <p className="text-[13px] text-gray-500 mt-2">
+            Completá la operación en la ventana emergente.
+            <br />
+            Esta pantalla se actualizará automáticamente al terminar.
+          </p>
+        </div>
+      ) : (
+        <>
+          <h3 className="text-[11px] font-bold mb-4 uppercase tracking-[0.2em] text-gray-400">
+            Seleccioná un medio de pago
+          </h3>
+          <div className="space-y-3 mb-10">
+            {mediosDePago.map((medio) => {
+              const active = formData.metodoPago === medio.id;
+              return (
+                <div
+                  key={medio.id}
+                  onClick={() => handlePaymentSelect(medio.id)}
+                  className={`p-5 cursor-pointer border rounded-sm transition-all flex items-center justify-between ${
+                    active
+                      ? "border-[#A186ED] bg-purple-50/40"
+                      : "border-gray-200 bg-white hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${active ? "border-[#A186ED]" : "border-gray-300"}`}
                     >
-                      {medio.extra}
-                    </span>
-                  )}
+                      {active && (
+                        <div className="w-2 h-2 bg-[#A186ED] rounded-full" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {medio.icon}
+                        <span className="text-sm font-bold text-gray-700">
+                          {medio.label}
+                        </span>
+                      </div>
+                      <span
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tight ${medio.badgeClass}`}
+                      >
+                        {medio.extra}
+                      </span>
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className={`w-4 h-4 ${active ? "text-[#A186ED]" : "text-gray-200"}`}
+                  />
                 </div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-300" />
+              );
+            })}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       <button
         onClick={finalizarCompra}
-        disabled={loading || !formData.metodoPago}
-        className="w-full bg-[#A186ED] text-white py-5 rounded-sm font-bold text-sm uppercase tracking-[0.2em] hover:bg-[#8e72e0] transition-all disabled:bg-gray-300 shadow-md active:scale-[0.99]"
+        disabled={loading || isCheckingPayment || !formData.metodoPago}
+        className="w-full bg-[#A186ED] text-white py-6 rounded-sm font-bold text-xs uppercase tracking-[0.4em] hover:bg-[#8e72e0] transition-all disabled:bg-gray-200 shadow-xl active:scale-[0.98] flex justify-center items-center gap-3"
       >
-        {loading ? "Procesando..." : "Realizar Pedido"}
+        {loading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" /> Procesando...
+          </>
+        ) : isCheckingPayment ? (
+          "Esperando Confirmación..."
+        ) : (
+          "Finalizar Compra"
+        )}
       </button>
     </div>
   );

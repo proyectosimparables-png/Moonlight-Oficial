@@ -21,5 +21,5 @@ import { LocalAuthModule } from 'src/auth/local/local.module';
   controllers: [CartController],
   providers: [CartService],
 })
-export class CartModule {}
+export class CartModule { }
 

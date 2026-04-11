@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { PrismaService } from '../prisma/prisma.service';
-import { MetodoPago, EstadoOrden } from '@prisma/client';
+import { EstadoOrden } from '@prisma/client';
 
 @Injectable()
 export class PaymentsService {
@@ -13,7 +13,9 @@ export class PaymentsService {
         });
     }
 
-    // --- MERCADO PAGO ---
+    // =========================
+    // MERCADO PAGO
+    // =========================
     async createPreference(ordenId: string) {
         const orden = await this.prisma.orden.findUnique({
             where: { id: ordenId },
@@ -23,20 +25,40 @@ export class PaymentsService {
         if (!orden) throw new NotFoundException('Orden no encontrada');
 
         const preference = new Preference(this.client);
-        const body = {
-            items: orden.items.map((item) => ({
+
+        const itemsMP = orden.items.map((item) => {
+            const valorUnitario = (item.precioFinal && Number(item.precioFinal) > 0)
+                ? Number(item.precioFinal)
+                : Number(item.precio);
+
+            return {
                 id: item.id,
                 title: item.nombre,
-                unit_price: Number(item.precio),
+                unit_price: valorUnitario,
                 quantity: item.cantidad,
                 currency_id: 'ARS',
-            })),
-            payer: { email: 'test_user_6490245370322727351@testuser.com' },
+            };
+        });
+
+        if (Number(orden.costoEnvio) > 0) {
+            itemsMP.push({
+                id: 'shipping_cost',
+                title: 'Costo de Envío',
+                unit_price: Number(orden.costoEnvio),
+                quantity: 1,
+                currency_id: 'ARS',
+            });
+        }
+        console.log("DEBUG BACK_URL SUCCESS:", `${process.env.FRONTEND_URL}/payment-success`);
+        const body = {
+            items: itemsMP,
+            payer: { email: orden.emailContacto || 'test_user_6490245370322727351@testuser.com' },
             back_urls: {
                 success: `${process.env.FRONTEND_URL}/payment-success`,
-                failure: `${process.env.FRONTEND_URL}/payment-failure`,
+                failure: `${process.env.FRONTEND_URL}/checkout`,
                 pending: `${process.env.FRONTEND_URL}/payment-pending`,
             },
+            //auto_return: 'approved', // ✅ Redirección automática al finalizar
             notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
             external_reference: orden.id,
         };
@@ -76,13 +98,10 @@ export class PaymentsService {
                     });
 
                     const userCart = await tx.cart.findUnique({ where: { userId: orden.userId } });
-
                     if (userCart) {
                         await tx.cartItem.deleteMany({ where: { cartId: userCart.id } });
                     }
                 });
-
-                console.log(`✅ Pago MP aprobado: ${orden.userId}`);
             }
 
             return { success: true };
@@ -96,7 +115,6 @@ export class PaymentsService {
     // GO CUOTAS
     // =========================
 
-    // --- HELPER: Obtener Token Dinámico ---
     private async getGoCuotasToken(): Promise<string> {
         const response = await fetch(`${process.env.GOCUOTAS_BASE_URL}/authentication`, {
             method: 'POST',
@@ -112,7 +130,6 @@ export class PaymentsService {
         return data.token;
     }
 
-    // --- CREATE CHECKOUT ---
     async createGoCuotasCheckout(ordenId: string) {
         const orden = await this.prisma.orden.findUnique({
             where: { id: ordenId },
@@ -121,18 +138,15 @@ export class PaymentsService {
 
         if (!orden) throw new NotFoundException('Orden no encontrada');
 
-        // 1. Obtener Token de sesión
         const token = await this.getGoCuotasToken();
-
-        // 2. Preparar el Body (Aseguramos centavos y datos requeridos)
-        const totalConEnvio = Number(orden.total) + (Number(orden.costoEnvio) || 0);
+        const totalFinal = Number(orden.total);
 
         const body = {
-            amount_in_cents: Math.round(totalConEnvio * 100),
+            amount_in_cents: Math.round(totalFinal * 100),
             currency: 'ARS',
             order_reference_id: orden.id,
             email: orden.emailContacto || orden.user?.email,
-            phone_number: orden.telefonoDestinatario || "1100000000", // Evitar nulos
+            phone_number: (orden.telefonoDestinatario || "1100000000").replace(/\D/g, ""),
             url_success: `${process.env.FRONTEND_URL}/payment-success`,
             url_failure: `${process.env.FRONTEND_URL}/payment-failure`,
             webhook_url: `${process.env.BACKEND_URL}/payments/webhook-gocuotas`,
@@ -142,7 +156,7 @@ export class PaymentsService {
             const response = await fetch(`${process.env.GOCUOTAS_BASE_URL}/checkouts`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`, // Usamos el token dinámico
+                    'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                 },
@@ -150,30 +164,18 @@ export class PaymentsService {
             });
 
             const data = await response.json();
+            if (!response.ok) throw new BadRequestException(data?.errors || 'Error al crear checkout');
 
-            if (!response.ok) {
-                throw new BadRequestException(data?.errors || 'Error al crear checkout');
-            }
-
-            // 3. Actualizamos la orden
-            await this.prisma.orden.update({
-                where: { id: ordenId },
-                data: { metodoPago: MetodoPago.GO_CUOTAS },
-            });
-
-            // Devolvemos la url_init para que el front redirija
             return { url: data.url_init };
 
         } catch (error) {
-            throw new BadRequestException(error.message || 'Error con Go Cuotas');
+            const errorMessage = error instanceof Error ? error.message : 'Error con Go Cuotas';
+            throw new BadRequestException(errorMessage);
         }
     }
 
-    // --- WEBHOOK (Ya lo tenías muy bien) ---
     async handleGoCuotasWebhook(body: any) {
         const { status, order_reference_id, order_id } = body;
-
-        // Validamos que el status sea 'approved'
         if (status !== 'approved') return { success: true };
 
         const orden = await this.prisma.orden.findUnique({

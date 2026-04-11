@@ -417,3 +417,13 @@ export async function eliminarSeccion(id: string) {
 
 
 
+// ✅ Agregá esto para el formulario de Promociones
+export async function getAllCategorias() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias`, {
+    cache: "no-store"
+  });
+
+  if (!res.ok) throw new Error("Error cargando todas las categorías");
+
+  return res.json();
+}

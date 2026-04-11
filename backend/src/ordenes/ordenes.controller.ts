@@ -1,7 +1,7 @@
 import { Controller, Get, Patch, Post, Param, Body, ParseUUIDPipe } from '@nestjs/common';
 import { OrdenesService } from './ordenes.service';
 import { UpdateOrdenStatusDto } from './dto/update-ordene.dto';
-import { CreateOrdeneDto } from './dto/create-ordene.dto'; // Importación agregada
+import { CreateOrdeneDto } from './dto/create-ordene.dto';
 
 @Controller('ordenes')
 export class OrdenesController {
@@ -12,10 +12,11 @@ export class OrdenesController {
     return this.ordenesService.findAll();
   }
 
-@Get(':id')
-findOne(@Param('id', ParseUUIDPipe) id: string) {
-  return this.ordenesService.findOne(id);
-}
+  // ✅ Este es el endpoint que el "vigilante" del frontend consultará
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.ordenesService.findOne(id);
+  }
 
   @Post()
   async create(@Body() createOrdeneDto: CreateOrdeneDto) {

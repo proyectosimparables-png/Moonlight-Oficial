@@ -9,27 +9,26 @@ import {
   ShoppingCart,
   Tags,
   Users,
-  Shirt,
   FolderTree,
   Menu,
   X,
   LogOut,
   Cloud,
-  MapIcon,
   MapPin,
+  Percent,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
-import { title } from "process";
 
 const menuItems = [
   { title: "Resumen", url: "/admin", icon: LayoutDashboard },
-  {title: "Ventas", url: "/admin/ventas", icon: ShoppingCart},
+  { title: "Ventas", url: "/admin/ventas", icon: ShoppingCart },
+  { title: "Promociones", url: "/admin/promociones", icon: Percent },
   { title: "Publicar", url: "/admin/nuevo-producto", icon: Tags },
   { title: "Productos", url: "/admin/productos", icon: Package },
   { title: "Secciones", url: "/admin/secciones", icon: FolderTree },
   { title: "Usuarios", url: "/admin/usuarios", icon: Users },
-  {title: "Puntos de Entrega", url: "/admin/puntos-entrega", icon: MapPin},
+  { title: "Puntos de Entrega", url: "/admin/puntos-entrega", icon: MapPin },
   { title: "Comentarios", url: "/admin/comentarios", icon: Cloud },
   { title: "Volver a la tienda", url: "/", icon: ShoppingCart },
 ];
@@ -72,7 +71,7 @@ export default function AdminNavbar() {
       {/* Mobile Menu */}
       <div
         className={`md:hidden bg-white border-b px-4 transition-all duration-300 ease-in-out overflow-hidden ${
-          isMobileMenuOpen ? "max-h-[600px] py-4" : "max-h-0"
+          isMobileMenuOpen ? "max-h-150 py-4" : "max-h-0"
         }`}
       >
         <ul className="space-y-2">
@@ -144,9 +143,7 @@ export default function AdminNavbar() {
         </div>
 
         {/* Tema */}
-        <div className="mt-6">
-         
-        </div>
+        <div className="mt-6"></div>
       </aside>
     </>
   );
