@@ -239,4 +239,16 @@ export class OrdenesService {
       data: { estado: EstadoOrden.CANCELADO },
     });
   }
+
+  async actualizarNotasAdmin(id: string, notasAdmin: string) {
+    try {
+      return await this.prisma.orden.update({
+        where: { id },
+        data: { notasAdmin },
+      });
+    } catch (error) {
+      throw new BadRequestException('No se pudo actualizar la nota de la orden');
+    }
+  }
+
 }

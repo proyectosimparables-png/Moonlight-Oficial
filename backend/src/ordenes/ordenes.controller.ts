@@ -35,4 +35,13 @@ export class OrdenesController {
   refund(@Param('id', ParseUUIDPipe) id: string) {
     return this.ordenesService.procesarReembolso(id);
   }
+
+  @Patch(':id/notas-admin')
+  updateAdminNotes(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('notasAdmin') notasAdmin: string, // Recibimos solo el campo específico
+  ) {
+    return this.ordenesService.actualizarNotasAdmin(id, notasAdmin);
+  }
+
 }

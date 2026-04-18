@@ -7,9 +7,13 @@ import {
   Gift,
   MousePointerClick,
   Layers,
-  Calendar,
-  Info,
   Loader2,
+  X,
+  Check,
+  ChevronRight,
+  Square,
+  CheckSquare,
+  Calendar,
 } from "lucide-react";
 import { createPromocion } from "@/services/promoService";
 import {
@@ -31,7 +35,7 @@ export const FormPromocion = () => {
   );
   const [categoriasData, setCategoriasData] = useState([]);
 
-  /* --- ESTADOS DE SELECCIÓN (Igual que Producto) --- */
+  /* --- ESTADOS DE SELECCIÓN --- */
   const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState<
     string[]
   >([]);
@@ -42,69 +46,70 @@ export const FormPromocion = () => {
     string[]
   >([]);
 
+  /* --- ESTADOS DE UI --- */
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [tab, setTab] = useState<"productos" | "categorias">("productos");
   const [loading, setLoading] = useState(false);
+
+  // Nuevo: Controla qué sección estamos "editando" actualmente en el panel
+  const [seccionActivaTree, setSeccionActivaTree] = useState<string | null>(
+    null,
+  );
 
   /* --- FORM DATA --- */
   const [formData, setFormData] = useState({
     nombre: "",
-    descripcion: "",
     tipo: "PORCENTAJE",
     valor: 0,
     lleva: 2,
     paga: 1,
-    prioridad: 0,
     acumulable: false,
     fechaInicio: "",
     fechaFin: "",
   });
 
-  /* --- CARGA INICIAL --- */
   useEffect(() => {
     getSecciones().then(setSecciones).catch(console.error);
     getProductos().then(setProductos).catch(console.error);
   }, []);
 
-  /* --- CARGA DE ÁRBOL (Replicado de FormProducto) --- */
+  // Carga el árbol solo de la sección que el usuario clickea para expandir
   useEffect(() => {
-    // Si no hay sección elegida o el ID es muy corto (evitar ruidos), limpiamos
-    if (!seccionesSeleccionadas[0] || seccionesSeleccionadas[0].length < 10) {
+    if (!seccionActivaTree) {
       setCategoriasData([]);
       return;
     }
-    // Cargamos el árbol de la sección seleccionada (usamos la primera como base)
-    getCategoriasTree(seccionesSeleccionadas[0])
+    getCategoriasTree(seccionActivaTree)
       .then((data) => {
         if (data) setCategoriasData(data);
       })
-      .catch((err) => {
-        console.error(err);
-        toast.error("No se pudieron cargar las categorías");
-      });
-  }, [seccionesSeleccionadas]);
+      .catch(console.error);
+  }, [seccionActivaTree]);
 
-  const toggleSeccion = (id: string) => {
-    // Para promociones, podrías permitir varias secciones,
-    // pero para mantener la lógica del TreeSelector, manejamos la principal
-    setSeccionesSeleccionadas((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
-    );
+  const openSelector = (mode: "productos" | "categorias") => {
+    setTab(mode);
+    setIsPanelOpen(true);
+  };
+
+  const handleSelectAll = () => {
+    if (productosSeleccionados.length === productos.length) {
+      setProductosSeleccionados([]);
+    } else {
+      setProductosSeleccionados(productos.map((p) => p.id));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const payload = {
         ...formData,
         esCombinable: formData.acumulable,
         activa: true,
-        // Los IDs que vienen de los selectores
         productosIds: productosSeleccionados,
         categoriasIds: categoriasSeleccionadas,
         seccionesIds: seccionesSeleccionadas,
-        // Formateo de fechas para el backend
         fechaInicio: formData.fechaInicio
           ? new Date(formData.fechaInicio).toISOString()
           : undefined,
@@ -112,251 +117,325 @@ export const FormPromocion = () => {
           ? new Date(formData.fechaFin).toISOString()
           : undefined,
       };
-
       await createPromocion(payload);
-      toast.success("Promoción creada correctamente");
+      toast.success("Promoción creada");
       router.push("/admin/promociones");
     } catch (error) {
-      console.error(error);
-      toast.error("Error al crear la promoción");
+      toast.error("Error al crear");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-3xl mx-auto bg-white/70 backdrop-blur p-6 rounded-2xl shadow-xl space-y-6"
-    >
-      <div className="flex items-center gap-2 border-b pb-4">
-        <Gift className="text-purple-600" size={24} />
-        <h2 className="text-xl font-bold text-purple-900">
-          Configurar Nueva Promoción
-        </h2>
-      </div>
-
-      {/* DATOS BÁSICOS */}
-      <section className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Nombre de la Promo</label>
-          <input
-            value={formData.nombre}
-            onChange={(e) =>
-              setFormData({ ...formData, nombre: e.target.value })
-            }
-            className="border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none"
-            placeholder="Ej: Hot Sale Verano"
-            required
-          />
+    <div className="relative">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-xl space-y-6 border border-gray-100"
+      >
+        <div className="flex items-center gap-2 border-b pb-4">
+          <Gift className="text-purple-600" size={24} />
+          <h2 className="text-xl font-bold text-purple-900">Nueva Promoción</h2>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Tipo de Promo</label>
-          <select
-            value={formData.tipo}
-            onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-            className="border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none bg-white"
-          >
-            <option value="PORCENTAJE">Porcentaje de Descuento</option>
-            <option value="CANTIDAD_X_CANTIDAD">X x Y (Ej: 2x1, 3x2)</option>
-            <option value="SEGUNDA_UNIDAD">Descuento en 2da Unidad</option>
-          </select>
-        </div>
-      </section>
 
-      {/* SELECCIÓN DE OBJETIVOS (TABS) */}
-      <div className="space-y-3">
-        <div className="flex gap-4 border-b border-gray-100">
+        {/* 1. DATOS BÁSICOS */}
+        <section className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 uppercase">
+              Nombre de la Promo
+            </label>
+            <input
+              value={formData.nombre}
+              onChange={(e) =>
+                setFormData({ ...formData, nombre: e.target.value })
+              }
+              className="border rounded-xl p-3 outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Ej: Promo BTS"
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-400 uppercase">
+              Tipo de Descuento
+            </label>
+            <select
+              value={formData.tipo}
+              onChange={(e) =>
+                setFormData({ ...formData, tipo: e.target.value })
+              }
+              className="border rounded-xl p-3 bg-white outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="PORCENTAJE">Porcentaje (%)</option>
+              <option value="CANTIDAD_X_CANTIDAD">X x Y (2x1, 3x2)</option>
+              <option value="SEGUNDA_UNIDAD">Dcto 2da Unidad</option>
+            </select>
+          </div>
+        </section>
+
+        {/* 2. FECHAS (Recuperadas) */}
+        <section className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-500 flex items-center gap-2">
+              <Calendar size={14} /> FECHA INICIO
+            </label>
+            <input
+              type="date"
+              value={formData.fechaInicio}
+              onChange={(e) =>
+                setFormData({ ...formData, fechaInicio: e.target.value })
+              }
+              className="border rounded-lg p-2 bg-white"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-bold text-gray-500 flex items-center gap-2">
+              <Calendar size={14} /> FECHA FIN
+            </label>
+            <input
+              type="date"
+              value={formData.fechaFin}
+              onChange={(e) =>
+                setFormData({ ...formData, fechaFin: e.target.value })
+              }
+              className="border rounded-lg p-2 bg-white"
+            />
+          </div>
+        </section>
+
+        {/* 3. SELECTORES A PANEL */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <button
             type="button"
-            onClick={() => setTab("productos")}
-            className={`pb-2 px-1 text-sm font-bold flex items-center gap-2 ${tab === "productos" ? "border-b-2 border-purple-600 text-purple-600" : "text-gray-400"}`}
+            onClick={() => openSelector("productos")}
+            className="flex items-center justify-between p-4 rounded-xl border-2 border-dashed border-purple-200 hover:border-purple-500 transition-all"
           >
-            <MousePointerClick size={16} /> ASIGNAR A PRODUCTOS
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("categorias")}
-            className={`pb-2 px-1 text-sm font-bold flex items-center gap-2 ${tab === "categorias" ? "border-b-2 border-purple-600 text-purple-600" : "text-gray-400"}`}
-          >
-            <Layers size={16} /> ASIGNAR A SECCIONES/CATEGORÍAS
-          </button>
-        </div>
-
-        <div className="max-h-72 overflow-y-auto p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-inner">
-          {tab === "productos" ? (
-            <div className="flex flex-wrap gap-2">
-              {productos.map((p) => (
-                <label
-                  key={p.id}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer border text-[11px] transition-all ${productosSeleccionados.includes(p.id) ? "bg-purple-600 text-white" : "bg-white text-gray-600"}`}
-                >
-                  <input
-                    type="checkbox"
-                    className="hidden"
-                    checked={productosSeleccionados.includes(p.id)}
-                    onChange={() =>
-                      setProductosSeleccionados((prev) =>
-                        prev.includes(p.id)
-                          ? prev.filter((i) => i !== p.id)
-                          : [...prev, p.id],
-                      )
-                    }
-                  />
-                  {p.nombre}
-                </label>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Selector de Secciones (Igual al de Producto) */}
+            <div className="flex items-center gap-3 text-left">
+              <MousePointerClick className="text-purple-600" />
               <div>
-                <p className="text-[11px] font-black text-gray-400 uppercase mb-2">
-                  1. Seleccionar Sección
+                <p className="text-sm font-bold">Asignar Productos</p>
+                <p className="text-xs text-gray-400">
+                  {productosSeleccionados.length} seleccionados
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {secciones.map((s) => (
-                    <label
-                      key={s.id}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer border text-xs transition-all ${seccionesSeleccionadas.includes(s.id) ? "bg-purple-700 text-white" : "bg-white text-gray-500"}`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="hidden"
-                        checked={seccionesSeleccionadas.includes(s.id)}
-                        onChange={() => toggleSeccion(s.id)}
-                      />
-                      {s.nombre}
-                    </label>
-                  ))}
-                </div>
               </div>
+            </div>
+            <ChevronRight size={18} className="text-gray-300" />
+          </button>
 
-              {/* Selector de Categorías Tree (Igual al de Producto) */}
-              {seccionesSeleccionadas.length > 0 && (
-                <div className="border-t pt-4">
-                  <p className="text-[11px] font-black text-gray-400 uppercase mb-2">
-                    2. Seleccionar Categorías/Subcategorías
-                  </p>
-                  <div className="bg-white rounded-xl border p-2">
-                    <CategoriaTreeSelector
-                      categorias={categoriasData}
-                      value={categoriasSeleccionadas}
-                      onChange={setCategoriasSeleccionadas}
-                    />
+          <button
+            type="button"
+            onClick={() => openSelector("categorias")}
+            className="flex items-center justify-between p-4 rounded-xl border-2 border-dashed border-blue-200 hover:border-blue-500 transition-all"
+          >
+            <div className="flex items-center gap-3 text-left">
+              <Layers className="text-blue-600" />
+              <div>
+                <p className="text-sm font-bold">Categorías/Secciones</p>
+                <p className="text-xs text-gray-400">
+                  {categoriasSeleccionadas.length} seleccionadas
+                </p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-gray-300" />
+          </button>
+        </div>
+
+        {/* 4. CONFIGURACIÓN TÉCNICA */}
+        <section className="bg-purple-50 p-4 rounded-2xl border border-purple-100 space-y-4">
+          {formData.tipo === "PORCENTAJE" && (
+            <div>
+              <label className="text-sm font-bold text-purple-900">
+                Valor del Descuento (%)
+              </label>
+              <input
+                type="number"
+                value={formData.valor}
+                onChange={(e) =>
+                  setFormData({ ...formData, valor: Number(e.target.value) })
+                }
+                className="w-full mt-1 border rounded-lg p-2"
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-purple-100">
+            <input
+              type="checkbox"
+              id="acum"
+              checked={formData.acumulable}
+              onChange={(e) =>
+                setFormData({ ...formData, acumulable: e.target.checked })
+              }
+              className="w-5 h-5 accent-purple-600 rounded"
+            />
+            <label htmlFor="acum" className="text-sm text-gray-700">
+              Permitir combinar diferentes productos elegidos
+            </label>
+          </div>
+        </section>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-4 rounded-2xl font-black text-white bg-purple-700 hover:bg-purple-800 shadow-xl transition-all active:scale-[0.98] disabled:bg-gray-300"
+        >
+          {loading ? (
+            <Loader2 className="animate-spin mx-auto" />
+          ) : (
+            "ACTIVAR PROMOCIÓN 🚀"
+          )}
+        </button>
+      </form>
+
+      {/* --- PANEL LATERAL --- */}
+      {isPanelOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 animate-in fade-in duration-200"
+            onClick={() => setIsPanelOpen(false)}
+          />
+          <div className="fixed right-0 top-0 h-full w-full max-w-lg bg-white z-50 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="p-6 border-b flex items-center justify-between">
+              <h3 className="font-bold text-lg uppercase tracking-tight">
+                {tab === "productos"
+                  ? "Seleccionar Productos"
+                  : "Seleccionar Categorías"}
+              </h3>
+              <button
+                onClick={() => setIsPanelOpen(false)}
+                className="p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
+              {tab === "productos" ? (
+                <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="flex items-center gap-2 text-xs font-bold text-purple-700 bg-white border px-4 py-2 rounded-lg shadow-sm"
+                  >
+                    {productosSeleccionados.length === productos.length ? (
+                      <CheckSquare size={16} />
+                    ) : (
+                      <Square size={16} />
+                    )}
+                    {productosSeleccionados.length === productos.length
+                      ? "Deseleccionar Todos"
+                      : "Seleccionar Todos"}
+                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    {productos.map((p) => (
+                      <label
+                        key={p.id}
+                        className={`px-3 py-2 rounded-xl border text-[11px] font-medium cursor-pointer transition-all ${productosSeleccionados.includes(p.id) ? "bg-purple-600 text-white border-purple-700 shadow-md" : "bg-white text-gray-600 border-gray-200"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={productosSeleccionados.includes(p.id)}
+                          onChange={() =>
+                            setProductosSeleccionados((prev) =>
+                              prev.includes(p.id)
+                                ? prev.filter((i) => i !== p.id)
+                                : [...prev, p.id],
+                            )
+                          }
+                        />
+                        {p.nombre}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase mb-3">
+                      1. Secciones Disponibles
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {secciones.map((s) => (
+                        <div
+                          key={s.id}
+                          className={`p-3 rounded-xl border-2 transition-all cursor-pointer flex flex-col gap-2 ${seccionesSeleccionadas.includes(s.id) ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}
+                          onClick={() => {
+                            if (!seccionesSeleccionadas.includes(s.id)) {
+                              setSeccionesSeleccionadas([
+                                ...seccionesSeleccionadas,
+                                s.id,
+                              ]);
+                            }
+                            setSeccionActivaTree(s.id); // Al tocar, lo ponemos como activo para ver su árbol
+                          }}
+                        >
+                          <div className="flex justify-between items-center">
+                            <span
+                              className={`text-xs font-bold ${seccionesSeleccionadas.includes(s.id) ? "text-blue-700" : "text-gray-600"}`}
+                            >
+                              {s.nombre}
+                            </span>
+                            {seccionesSeleccionadas.includes(s.id) && (
+                              <Check size={14} className="text-blue-600" />
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSeccionesSeleccionadas((prev) =>
+                                prev.filter((id) => id !== s.id),
+                              );
+                              if (seccionActivaTree === s.id)
+                                setSeccionActivaTree(null);
+                            }}
+                            className="text-[9px] text-red-500 font-bold hover:underline text-left"
+                          >
+                            [ Quitar sección ]
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. ARBOL DINÁMICO: Solo muestra el árbol de la sección que clickeaste arriba */}
+                  <div className="border-t pt-6">
+                    <p className="text-[10px] font-black text-gray-400 uppercase mb-3">
+                      2. Categorías{" "}
+                      {seccionActivaTree
+                        ? `de: ${secciones.find((s) => s.id === seccionActivaTree)?.nombre}`
+                        : ""}
+                    </p>
+                    {seccionActivaTree ? (
+                      <div className="bg-white border rounded-2xl p-4 shadow-inner min-h-[200px]">
+                        <CategoriaTreeSelector
+                          categorias={categoriasData}
+                          value={categoriasSeleccionadas}
+                          onChange={setCategoriasSeleccionadas}
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-32 flex items-center justify-center border-2 border-dashed rounded-2xl text-gray-400 text-xs text-center p-4">
+                        Toca una sección arriba para ver y marcar sus categorías
+                        específicas.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* CONFIGURACIÓN DINÁMICA DE LA PROMO */}
-      <section className="grid grid-cols-2 gap-6 bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
-        {formData.tipo === "PORCENTAJE" && (
-          <div className="col-span-2">
-            <label className="text-sm font-bold text-purple-800">
-              Porcentaje de Descuento (%)
-            </label>
-            <input
-              type="number"
-              value={formData.valor}
-              onChange={(e) =>
-                setFormData({ ...formData, valor: Number(e.target.value) })
-              }
-              className="w-full mt-1 border rounded-lg p-2 focus:ring-2 focus:ring-purple-500"
-            />
+            <div className="p-6 border-t bg-white">
+              <button
+                type="button"
+                onClick={() => setIsPanelOpen(false)}
+                className="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold hover:bg-black transition-all shadow-lg flex items-center justify-center gap-2"
+              >
+                <Check size={20} /> GUARDAR SELECCIÓN
+              </button>
+            </div>
           </div>
-        )}
-
-        {formData.tipo === "CANTIDAD_X_CANTIDAD" && (
-          <>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-bold text-purple-800">
-                Lleva (Cantidad)
-              </label>
-              <input
-                type="number"
-                value={formData.lleva}
-                onChange={(e) =>
-                  setFormData({ ...formData, lleva: Number(e.target.value) })
-                }
-                className="border rounded-lg p-2"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-bold text-purple-800">
-                Paga (Cantidad)
-              </label>
-              <input
-                type="number"
-                value={formData.paga}
-                onChange={(e) =>
-                  setFormData({ ...formData, paga: Number(e.target.value) })
-                }
-                className="border rounded-lg p-2"
-              />
-            </div>
-          </>
-        )}
-
-        <div className="flex items-center gap-3 col-span-2 bg-white p-3 rounded-xl border border-purple-100">
-          <input
-            type="checkbox"
-            id="acumulable"
-            checked={formData.acumulable}
-            onChange={(e) =>
-              setFormData({ ...formData, acumulable: e.target.checked })
-            }
-            className="w-5 h-5 rounded text-purple-600"
-          />
-          <label
-            htmlFor="acumulable"
-            className="text-sm font-medium text-gray-700"
-          >
-            Permitir combinar diferentes productos de las categorías elegidas
-          </label>
-        </div>
-      </section>
-
-      {/* FECHAS Y PRIORIDAD */}
-      <section className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Fecha Inicio</label>
-          <input
-            type="date"
-            value={formData.fechaInicio}
-            onChange={(e) =>
-              setFormData({ ...formData, fechaInicio: e.target.value })
-            }
-            className="border rounded-lg p-2"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Fecha Fin</label>
-          <input
-            type="date"
-            value={formData.fechaFin}
-            onChange={(e) =>
-              setFormData({ ...formData, fechaFin: e.target.value })
-            }
-            className="border rounded-lg p-2"
-          />
-        </div>
-      </section>
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full py-4 rounded-2xl font-black text-white bg-purple-700 hover:bg-purple-800 shadow-xl transition-all transform active:scale-95 disabled:bg-gray-300"
-      >
-        {loading ? (
-          <Loader2 className="animate-spin mx-auto" />
-        ) : (
-          "ACTIVAR PROMOCIÓN 🚀"
-        )}
-      </button>
-    </form>
+        </>
+      )}
+    </div>
   );
 };

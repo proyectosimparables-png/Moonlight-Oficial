@@ -1,23 +1,42 @@
-'use client';
+"use client";
 
 import { Fragment, useState } from "react";
 import {
-  MoreHorizontal, Package, Send, RotateCcw, Ban,
-  CheckCircle2, ChevronDown, ChevronRight, ExternalLink
+  MoreHorizontal,
+  Package,
+  Send,
+  Ban,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  Truck,
+  ShoppingBag,
+  Pencil,
+  Archive,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { adminOrderService } from '@/services/adminOrderService';
-import toast from 'react-hot-toast';
+import { adminOrderService } from "@/services/adminOrderService";
+import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 // --- Interfaces ---
 export interface OrdenItem {
@@ -35,237 +54,313 @@ export interface OrdenReal {
   createdAt: string;
   user: { name: string | null; email: string };
   metodoEnvio: string | null;
+  metodoPago?: string;
   items: OrdenItem[];
 }
 
 export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  
-  // Estado para el modal de confirmación (si lo necesitas manejar desde aquí)
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
-  // 1. Filtrado y Conteos
-  const ordenesFiltradas = ordenes.filter(o => o.estado !== 'CARRITO');
+  const ordenesFiltradas = ordenes.filter((o) => o.estado !== "CARRITO");
 
   const conteo = {
-    porEmpaquetar: ordenes.filter(o => o.estado === 'PAGADO' || o.estado === 'PENDIENTE').length,
-    porEnviar: ordenes.filter(o => o.estado === 'EMPAQUETADO').length,
-    enviados: ordenes.filter(o => o.estado === 'ENVIADO').length,
-    cancelados: ordenes.filter(o => o.estado === 'CANCELADO' || o.estado === 'REEMBOLSADO').length,
+    porEmpaquetar: ordenes.filter((o) =>
+      ["PAGADO", "PENDIENTE"].includes(o.estado),
+    ).length,
+    porEnviar: ordenes.filter((o) => o.estado === "EMPAQUETADO").length,
+    enviados: ordenes.filter((o) => o.estado === "ENVIADO").length,
+    cancelados: ordenes.filter((o) =>
+      ["CANCELADO", "REEMBOLSADO"].includes(o.estado),
+    ).length,
   };
 
   const toggleRow = (id: string) => {
-    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+    setExpandedRows((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // 2. Manejo de Acciones
   const handleAction = async (id: string, action: string) => {
-
-  if (action === 'CANCELADO') {
-    const confirmacion = confirm("¿Estás seguro de que deseas cancelar esta orden?");
-    if (!confirmacion) return;
-  }
-
-  const loadingToast = toast.loading('Actualizando...');
-  
-  try {
-    if (action === 'REFUND') {
-      await adminOrderService.refundOrder(id);
-    } 
-    // NUEVA LÓGICA: Si es enviar, usamos el servicio de despacho que manda el mail
-    else if (action === 'ENVIADO') {
-      await adminOrderService.notifyShipment(id);
-    } 
-    // Para todo lo demás (EMPAQUETADO, ENTREGADO, CANCELADO), solo actualizamos status
-    else {
-      await adminOrderService.updateStatus(id, action);
+    if (action === "CANCELADO") {
+      if (!confirm("¿Estás seguro de cancelar esta venta?")) return;
     }
+    const loadingToast = toast.loading("Actualizando...");
+    try {
+      if (action === "REFUND") await adminOrderService.refundOrder(id);
+      else if (action === "ENVIADO") await adminOrderService.notifyShipment(id);
+      else await adminOrderService.updateStatus(id, action);
 
-    toast.success('Orden actualizada correctamente', { id: loadingToast });
-    router.refresh();
-  } catch (error) {
-    console.error(error);
-    toast.error('Error al procesar la acción', { id: loadingToast });
-  }
-};
-
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case 'PENDIENTE': return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pendiente</Badge>;
-      case 'PAGADO': return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Pagado</Badge>;
-      case 'EMPAQUETADO': return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">Empaquetado</Badge>;
-      case 'ENVIADO': return <Badge variant="default" className="bg-green-600">Enviado</Badge>;
-      case 'ENTREGADO': return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Entregado</Badge>;
-      case 'CANCELADO': return <Badge variant="destructive">Cancelado</Badge>;
-      case 'REEMBOLSADO': return <Badge variant="outline" className="bg-gray-100 text-gray-600">Reembolsado</Badge>;
-      default: return <Badge variant="secondary">{estado}</Badge>;
+      toast.success("Orden actualizada", { id: loadingToast });
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al procesar", { id: loadingToast });
     }
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* --- BARRA DE CONTEO SUPERIOR --- */}
-      <div className="flex flex-wrap gap-2 bg-gray-50 p-4 rounded-md border text-sm font-medium text-gray-600 shadow-sm">
-        <div className="flex items-center px-4 py-2 bg-white border rounded-lg shadow-sm">
-          <Package className="w-4 h-4 mr-2 text-purple-500" />
-          Por empaquetar <span className="ml-2 text-purple-700 font-bold">{conteo.porEmpaquetar}</span>
-        </div>
-        <div className="flex items-center px-4 py-2 bg-white border rounded-lg shadow-sm">
-          <Send className="w-4 h-4 mr-2 text-blue-500" />
-          Por enviar <span className="ml-2 text-blue-600 font-bold">{conteo.porEnviar}</span>
-        </div>
-        <div className="flex items-center px-4 py-2 bg-white border rounded-lg shadow-sm">
-          <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
-          Enviados <span className="ml-2 text-green-600 font-bold">{conteo.enviados}</span>
-        </div>
-        <div className="flex items-center px-4 py-2 bg-white border rounded-lg shadow-sm">
-          <Ban className="w-4 h-4 mr-2 text-gray-400" />
-          Cancelados <span className="ml-2 text-gray-500 font-bold">{conteo.cancelados}</span>
-        </div>
+    <div className="flex flex-col gap-6">
+      {/* --- 1. RESUMEN SUPERIOR --- */}
+      <div className="flex flex-wrap gap-4">
+        {[
+          {
+            label: "Por empaquetar",
+            count: conteo.porEmpaquetar,
+            color: "text-purple-600",
+            bg: "bg-purple-50",
+            icon: Package,
+          },
+          {
+            label: "Por enviar",
+            count: conteo.porEnviar,
+            color: "text-blue-500",
+            bg: "bg-blue-50",
+            icon: Send,
+          },
+          {
+            label: "Enviados",
+            count: conteo.enviados,
+            color: "text-green-500",
+            bg: "bg-green-50",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Cancelados",
+            count: conteo.cancelados,
+            color: "text-gray-400",
+            bg: "bg-gray-50",
+            icon: Ban,
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center gap-3 px-4 py-2 bg-white border rounded-xl shadow-sm min-w-42.5"
+          >
+            <div className={`p-1.5 ${item.bg} ${item.color} rounded-lg`}>
+              <item.icon size={16} />
+            </div>
+            <div>
+              <p className="text-[9px] font-bold text-gray-400 uppercase leading-none mb-1">
+                {item.label}
+              </p>
+              <p className="text-lg font-bold text-gray-800 leading-none">
+                {item.count}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* --- TABLA DE ÓRDENES --- */}
-      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
+      {/* --- 2. TABLA --- */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden text-xs">
         <Table>
           <TableHeader>
-            <TableRow className="bg-gray-50/50">
-              <TableHead className="w-[40px]"></TableHead>
-              <TableHead className="w-[120px]">Venta</TableHead>
-              <TableHead>Fecha</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
+            <TableRow className="bg-gray-50/50 h-11">
+              <TableHead className="w-32 text-[10px] font-bold uppercase text-gray-400 pl-6">
+                Venta
+              </TableHead>
+              <TableHead className="w-28 text-[10px] font-bold uppercase text-gray-400">
+                Fecha
+              </TableHead>
+              <TableHead className="text-[10px] font-bold uppercase text-gray-400">
+                Cliente
+              </TableHead>
+              <TableHead className="w-28 text-[10px] font-bold uppercase text-gray-400">
+                Total
+              </TableHead>
+              <TableHead className="w-32 text-[10px] font-bold uppercase text-gray-400 text-center">
+                Productos
+              </TableHead>
+              <TableHead className="w-36 text-[10px] font-bold uppercase text-gray-400">
+                Pago
+              </TableHead>
+              <TableHead className="w-40 text-[10px] font-bold uppercase text-gray-400">
+                Envío
+              </TableHead>
+              <TableHead className="w-12 pr-6"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {ordenesFiltradas.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-gray-500">
-                  No hay ventas procesadas para mostrar.
-                </TableCell>
-              </TableRow>
-            ) : (
-              ordenesFiltradas.map((orden) => (
+            {ordenesFiltradas.map((orden) => {
+              const totalItems =
+                orden.items?.reduce((acc, item) => acc + item.cantidad, 0) || 0;
+              const isPagado = [
+                "PAGADO",
+                "EMPAQUETADO",
+                "ENVIADO",
+                "ENTREGADO",
+              ].includes(orden.estado);
+
+              return (
                 <Fragment key={orden.id}>
-                  <TableRow className="hover:bg-gray-50/30 transition-colors border-b">
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => toggleRow(orden.id)}
-                      >
-                        {expandedRows[orden.id] ? (
-                          <ChevronDown className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-500" />
-                        )}
-                      </Button>
-                    </TableCell>
-                    <TableCell>
+                  <TableRow className="group hover:bg-gray-50/30 transition-colors border-b last:border-0 h-16">
+                    <TableCell className="pl-6 py-3">
                       <button
-                        onClick={() => router.push(`/admin/vendidos/${orden.id}`)}
-                        className="font-bold text-purple-700 hover:underline flex items-center gap-1"
+                        onClick={() =>
+                          router.push(`/admin/vendidos/${orden.id}`)
+                        }
+                        className="text-purple-500 text-[13px] flex items-center gap-1 hover:opacity-70 transition-opacity"
                       >
-                        #{orden.id.split('-')[0].toUpperCase()}
-                        <ExternalLink className="h-3 w-3" />
+                        #{orden.id.split("-")[0].toUpperCase()}
+                        <ExternalLink size={10} className="opacity-40" />
                       </button>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {new Date(orden.createdAt).toLocaleDateString('es-AR')}
+
+                    <TableCell className="py-3 text-gray-400 text-[11px]">
+                      {new Date(orden.createdAt).toLocaleDateString("es-AR")}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm text-gray-900">
-                          {orden.user.name || 'Cliente invitado'}
+
+                    <TableCell className="py-3 text-gray-600 text-[12px] font-medium">
+                      {orden.user.name || "Invitado"}
+                    </TableCell>
+
+                    <TableCell className="py-3 font-semibold text-gray-800 text-sm">
+                      ${orden.total.toLocaleString("es-AR")}
+                    </TableCell>
+
+                    <TableCell className="py-3 text-center">
+                      <button
+                        onClick={() => toggleRow(orden.id)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-100 bg-purple-50 text-purple-700 text-[10px] font-bold hover:bg-purple-100 transition-colors"
+                      >
+                        <ShoppingBag size={13} />
+                        {totalItems} u.
+                        {expandedRows[orden.id] ? (
+                          <ChevronDown size={13} />
+                        ) : (
+                          <ChevronRight size={13} />
+                        )}
+                      </button>
+                    </TableCell>
+
+                    <TableCell className="py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <Badge
+                          variant="outline"
+                          className={`w-fit text-[9px] font-bold px-2 py-0 border-none ${
+                            isPagado
+                              ? "bg-green-50 text-green-600"
+                              : "bg-amber-50 text-amber-600"
+                          }`}
+                        >
+                          {isPagado ? "RECIBIDO" : "PENDIENTE"}
+                        </Badge>
+                        <span className="text-[9px] text-gray-300 font-semibold uppercase">
+                          {orden.metodoPago || "MERCADO PAGO"}
                         </span>
-                        <span className="text-xs text-gray-400">{orden.user.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-semibold text-gray-900">
-                      ${orden.total.toLocaleString('es-AR')}
+
+                    <TableCell className="py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <Badge
+                          variant="outline"
+                          className="w-fit bg-gray-50 text-gray-500 border-transparent text-[9px] font-bold px-2 py-0"
+                        >
+                          {orden.estado === "PENDIENTE" ||
+                          orden.estado === "PAGADO"
+                            ? "POR EMPAQUETAR"
+                            : orden.estado.toUpperCase()}
+                        </Badge>
+                        <div className="flex items-center gap-1 text-[10px] text-gray-300 italic">
+                          <Truck size={11} />
+                          <span className="truncate max-w-28 uppercase">
+                            {orden.metodoEnvio || "Local Propio"}
+                          </span>
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell>{getEstadoBadge(orden.estado)}</TableCell>
-                    <TableCell className="text-right">
+
+                    <TableCell className="py-3 pr-6 text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0 rounded-full"
+                          >
+                            <MoreHorizontal className="h-4 w-4 text-gray-300" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                          <DropdownMenuLabel>Gestionar Pedido</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          
-                          {/* Opciones de Estado */}
-                          <DropdownMenuItem onClick={() => handleAction(orden.id, 'EMPAQUETADO')}>
-                            <Package className="mr-2 h-4 w-4 text-gray-500" /> Marcar Empaquetado
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleAction(orden.id, 'ENVIADO')}>
-                            <Send className="mr-2 h-4 w-4 text-gray-500" /> Notificar Envío
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleAction(orden.id, 'ENTREGADO')}>
-                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" /> Marcar Entregado
-                          </DropdownMenuItem>
-                          
-                          <DropdownMenuSeparator />
-                          
-                          {/* Acciones Críticas */}
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-52 text-xs"
+                        >
                           <DropdownMenuItem
-                            onClick={() => handleAction(orden.id, 'REFUND')}
-                            className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                            onClick={() =>
+                              handleAction(orden.id, "EMPAQUETADO")
+                            }
                           >
-                            <RotateCcw className="mr-2 h-4 w-4" /> Reembolsar (MP)
+                            <Package size={14} className="mr-2" /> Marcar como
+                            empaquetado
                           </DropdownMenuItem>
-                          
-                          <DropdownMenuItem 
-                            onClick={() => handleAction(orden.id, 'CANCELADO')}
-                            className="text-red-600 focus:bg-red-50 focus:text-red-600 font-medium"
+
+                          <DropdownMenuItem
+                            onClick={() => handleAction(orden.id, "ENVIADO")}
                           >
-                            <Ban className="mr-2 h-4 w-4" /> Cancelar Orden
+                            <Send size={14} className="mr-2" /> Notificar envío
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() =>
+                              router.push(`/admin/vendidos/editar/${orden.id}`)
+                            }
+                          >
+                            <Pencil size={14} className="mr-2" /> Editar venta
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => handleAction(orden.id, "ARCHIVAR")}
+                          >
+                            <Archive size={14} className="mr-2" /> Archivar
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+
+                          <DropdownMenuItem
+                            onClick={() => handleAction(orden.id, "CANCELADO")}
+                            className="text-red-600"
+                          >
+                            <Ban size={14} className="mr-2" /> Cancelar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
 
-                  {/* --- Detalle de Productos --- */}
                   {expandedRows[orden.id] && (
-                    <TableRow className="bg-gray-50/50 border-b">
-                      <TableCell colSpan={7} className="p-4">
-                        <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-1">
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                            Productos en este pedido:
-                          </p>
-                          <div className="grid gap-2">
-                            {orden.items?.map((item) => (
-                              <div key={item.id} className="flex items-center gap-4 bg-white p-3 rounded-md border shadow-sm">
-                                <img
+                    <TableRow className="bg-gray-50/20 border-b">
+                      <TableCell colSpan={8} className="p-4 pl-12">
+                        <div className="flex flex-wrap gap-3 animate-in fade-in slide-in-from-top-1">
+                          {orden.items?.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100 shadow-sm min-w-48"
+                            >
+                              <div className="relative w-9 h-9 shrink-0">
+                                <Image
                                   src={item.imagenUrl}
                                   alt={item.nombre}
-                                  className="w-12 h-12 rounded object-cover border bg-gray-100"
+                                  fill
+                                  className="rounded-lg object-cover border"
                                 />
-                                <div className="flex-1">
-                                  <p className="text-sm font-semibold text-gray-800">{item.nombre}</p>
-                                  <p className="text-xs text-gray-500">Cantidad: {item.cantidad}</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-sm font-bold text-gray-900">
-                                    ${(item.precio * item.cantidad).toLocaleString('es-AR')}
-                                  </p>
-                                </div>
                               </div>
-                            ))}
-                          </div>
+                              <div className="overflow-hidden">
+                                <p className="text-[11px] font-semibold text-gray-700 truncate leading-tight">
+                                  {item.nombre}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-medium">
+                                  {item.cantidad} x $
+                                  {item.precio.toLocaleString("es-AR")}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </TableCell>
                     </TableRow>
                   )}
                 </Fragment>
-              ))
-            )}
+              );
+            })}
           </TableBody>
         </Table>
       </div>

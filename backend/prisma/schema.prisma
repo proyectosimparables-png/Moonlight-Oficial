@@ -136,6 +136,7 @@ model Orden {
   piso                    String?
   departamento            String?
   notasEntrega            String?     // Aclaraciones y comentarios
+  notasAdmin              String?
 
   // Datos técnicos Correo
   productType             String?   // CP o EP
