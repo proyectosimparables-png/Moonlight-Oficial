@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async getTotalProductos(): Promise<number> {
     return this.prisma.producto.count();
@@ -12,7 +12,7 @@ export class DashboardService {
   async getOrdenesActivas(): Promise<number> {
     return this.prisma.orden.count({
       where: {
-        estado: 'PENDIENTE', 
+        estado: 'PENDIENTE',
       },
     });
   }
@@ -21,114 +21,134 @@ export class DashboardService {
     return this.prisma.user.count();
   }
 
- async getVentasDelMes(): Promise<number> {
-  const ahora = new Date();
-  // Creamos el primer día del mes actual a las 00:00:00
-  const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+  async getVentasDelMes(): Promise<number> {
+    const ahora = new Date();
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
 
-  const result = await this.prisma.orden.aggregate({
-    _sum: {
-      total: true,
-    },
-    where: {
-      // Ajuste de estados: Sumamos todo lo que ya es una venta real
-      estado: {
-        in: ['PAGADO', 'EMPAQUETADO', 'ENVIADO', 'ENTREGADO'],
+    const result = await this.prisma.orden.aggregate({
+      _sum: { total: true },
+      where: {
+        estado: { in: ['PAGADO', 'EMPAQUETADO', 'ENVIADO', 'ENTREGADO'] },
+        createdAt: { gte: inicioMes },
       },
-      createdAt: {
-        gte: inicioMes,
-      },
-    },
-  });
+    });
 
-  return result._sum.total ?? 0;
-}
+    return result._sum.total ?? 0;
+  }
 
   async getVentasRecientes() {
     return this.prisma.orden.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        user: true,
-        
+        user: {
+          select: {
+            name: true,
+            email: true,
+            image: true
+          }
+        },
       },
     });
   }
 
-async getProductosPopulares() {
-  const populares = await this.prisma.ordenItem.groupBy({
-    by: ['productoId', 'nombre'],
-    where: {
-      productoId: { not: null },
-      orden: {
-        estado: {
-          in: ['PAGADO', 'EMPAQUETADO', 'ENVIADO', 'ENTREGADO'],
+  async getProductosPopulares() {
+    const itemsVendidos = await this.prisma.ordenItem.findMany({
+      where: {
+        varianteId: { not: null },
+        orden: {
+          estado: { in: ['PAGADO', 'EMPAQUETADO', 'ENVIADO', 'ENTREGADO'] },
         },
       },
-    },
-    _sum: { cantidad: true },
-    orderBy: { _sum: { cantidad: 'desc' } },
-    take: 5,
-  });
-
-  return Promise.all(
-    populares.map(async (p) => {
-      // FIX 1: Validamos que productoId exista para evitar el error ts(2322)
-      if (!p.productoId) return null;
-
-      const producto = await this.prisma.producto.findUnique({
-        where: { id: p.productoId },
-        // FIX 2: Usamos include para traer la relación de la tabla Imagen
-        include: {
-          imagenes: {
-            take: 1 // Solo necesitamos la primera imagen para el dashboard
+      include: {
+        variante: {
+          include: {
+            producto: {
+              include: { imagenes: { take: 1 } }
+            }
           }
         }
-      });
+      }
+    });
 
-      return {
-        productoId: p.productoId,
-        nombre: p.nombre,
-        vendidos: p._sum.cantidad ?? 0,
-        // Si hay imágenes, enviamos la URL de la primera, si no, el campo imagenUrl plano, o null
-        imagen: producto?.imagenes[0]?.url || producto?.imagenUrl || null,
-      };
-    })
-  ).then(results => results.filter(item => item !== null)); // Limpiamos nulos por seguridad
-}
+    const agrupado = itemsVendidos.reduce((acc: any, item) => {
+      if (!item.variante || !item.variante.producto) return acc;
 
-// dashboard.service.ts
-async getResumenGeneral() {
-  const ahora = new Date();
-  const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
-  const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
-  const finMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth(), 0);
+      const pId = item.variante.productoId;
 
-  // Consultas en paralelo para mayor velocidad
-  const [totalProd, ordenesAct, totalUsers, ventasAct, ventasAnt, usersAnt] = await Promise.all([
-    this.prisma.producto.count(),
-    this.prisma.orden.count({ where: { estado: 'PENDIENTE' } }),
-    this.prisma.user.count(),
-    this.prisma.orden.aggregate({
-      _sum: { total: true },
-      where: { estado: { in: ['PAGADO', 'ENTREGADO'] }, createdAt: { gte: inicioMesActual } }
-    }),
-    this.prisma.orden.aggregate({
-      _sum: { total: true },
-      where: { estado: { in: ['PAGADO', 'ENTREGADO'] }, createdAt: { gte: inicioMesAnterior, lte: finMesAnterior } }
-    }),
-    this.prisma.user.count({ where: { createdAt: { lt: inicioMesActual } } })
-  ]);
+      if (!acc[pId]) {
+        acc[pId] = {
+          productoId: pId,
+          nombre: item.variante.producto.nombre,
+          vendidos: 0,
+          imagen: item.variante.producto.imagenes[0]?.url || item.variante.producto.imagenUrl || null,
+        };
+      }
 
-  const calcCambio = (act: number, ant: number) => ant === 0 ? 100 : Math.round(((act - ant) / ant) * 100);
+      acc[pId].vendidos += item.cantidad;
+      return acc;
+    }, {});
 
-  return {
-    totalProductos: totalProd,
-    ordenesActivas: ordenesAct,
-    usuariosRegistrados: totalUsers,
-    ventasDelMes: ventasAct._sum.total ?? 0,
-    cambioVentas: calcCambio(ventasAct._sum.total ?? 0, ventasAnt._sum.total ?? 0),
-    cambioUsuarios: calcCambio(totalUsers - usersAnt, usersAnt)
-  };
-}
+    return Object.values(agrupado)
+      .sort((a: any, b: any) => b.vendidos - a.vendidos)
+      .slice(0, 5);
+  }
+
+  async getResumenGeneral() {
+    const ahora = new Date();
+    const inicioMesActual = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    const inicioMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth() - 1, 1);
+    const finMesAnterior = new Date(ahora.getFullYear(), ahora.getMonth(), 0);
+
+    const [
+      totalProd,
+      ordenesAct,
+      totalUsers,
+      ventasAct,
+      ventasAnt,
+      usersAnt,
+      populares,
+      recientes
+    ] = await Promise.all([
+      this.prisma.producto.count(),
+      this.prisma.orden.count({ where: { estado: 'PENDIENTE' } }),
+      this.prisma.user.count(),
+      this.prisma.orden.aggregate({
+        _sum: { total: true },
+        where: {
+          estado: { in: ['PAGADO', 'EMPAQUETADO', 'ENVIADO', 'ENTREGADO'] },
+          createdAt: { gte: inicioMesActual }
+        }
+      }),
+      this.prisma.orden.aggregate({
+        _sum: { total: true },
+        where: {
+          estado: { in: ['PAGADO', 'EMPAQUETADO', 'ENVIADO', 'ENTREGADO'] },
+          createdAt: { gte: inicioMesAnterior, lte: finMesAnterior }
+        }
+      }),
+      this.prisma.user.count({ where: { createdAt: { lt: inicioMesActual } } }),
+      this.getProductosPopulares(),
+      this.getVentasRecientes()
+    ]);
+
+    // Función interna robusta para evitar el "undefined"
+    const calcCambio = (act: any, ant: any) => {
+      const actual = Number(act) || 0;
+      const anterior = Number(ant) || 0;
+      if (anterior === 0) return actual > 0 ? 100 : 0;
+      return Math.round(((actual - anterior) / anterior) * 100);
+    };
+
+    return {
+      totalProductos: totalProd,
+      ordenesActivas: ordenesAct,
+      usuariosRegistrados: totalUsers,
+      ventasDelMes: Number(ventasAct._sum.total ?? 0),
+      cambioVentas: calcCambio(ventasAct._sum.total ?? 0, ventasAnt._sum.total ?? 0),
+      cambioUsuarios: calcCambio(totalUsers - usersAnt, usersAnt),
+      productosPopulares: populares,
+      ventasRecientes: recientes
+    };
+  }
 }

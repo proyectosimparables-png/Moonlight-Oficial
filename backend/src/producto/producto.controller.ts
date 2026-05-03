@@ -11,14 +11,9 @@ import {
   Query,
   UseInterceptors,
   UploadedFiles,
-  ValidationPipe,
-  UsePipes,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import type { Express } from 'express';
-
 import { ProductoService } from './producto.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { CreateSeccionDto } from './dto/create-seccion.dto';
@@ -32,15 +27,49 @@ export class ProductoController {
   ) { }
 
   // ==========================================
-  // 1. 🔍 RUTAS FIJAS / BÚSQUEDA (Prioridad Alta)
+  // 🛠️ FUNCIÓN PRIVADA DE LIMPIEZA
+  // ==========================================
+  private parseProductData(body: any) {
+    const parsedBody = { ...body };
+
+    if (typeof parsedBody.variantes === 'string') {
+      const rawVariantes = JSON.parse(parsedBody.variantes);
+      parsedBody.variantes = rawVariantes.map((v: any) => ({
+        ...v,
+        stock: (v.stock === "" || v.stock === null || v.stock === undefined)
+          ? null
+          : parseInt(v.stock, 10)
+      }));
+    }
+
+    if (typeof parsedBody.seccionesIds === 'string') {
+      parsedBody.seccionesIds = parsedBody.seccionesIds.split(',').filter(id => id.trim() !== '');
+    }
+    if (typeof parsedBody.categoriasIds === 'string') {
+      parsedBody.categoriasIds = parsedBody.categoriasIds.split(',').filter(id => id.trim() !== '');
+    }
+
+    parsedBody.precio = parseFloat(parsedBody.precio) || 0;
+    if (parsedBody.peso) parsedBody.peso = Math.round(parseFloat(parsedBody.peso));
+    if (parsedBody.ancho) parsedBody.ancho = Math.round(parseFloat(parsedBody.ancho));
+    if (parsedBody.alto) parsedBody.alto = Math.round(parseFloat(parsedBody.alto));
+    if (parsedBody.profundidad) parsedBody.profundidad = Math.round(parseFloat(parsedBody.profundidad));
+
+    return parsedBody;
+  }
+
+  // ==========================================
+  // 1. 🔍 LECTURA (PÚBLICO / ADMIN)
   // ==========================================
 
   @Get()
-  findAllPublic(
-    @Query('seccionId') seccionId?: string,
-    @Query('categoriaId') categoriaId?: string,
-  ) {
-    return this.productoService.findAllPublic(seccionId, categoriaId);
+  findAllPublic(@Query('seccionId') sId?: string, @Query('categoriaId') cId?: string) {
+    return this.productoService.findAllPublic(sId, cId);
+  }
+
+  @Get('admin')
+  findAllAdmin(@Query('seccionId') sId?: string, @Query('categoriaId') cId?: string) {
+    return this.productoService.findAllAdmin(sId, cId);
   }
 
   @Get('search')
@@ -50,9 +79,7 @@ export class ProductoController {
   }
 
   @Get('secciones')
-  getSecciones() {
-    return this.productoService.getSecciones();
-  }
+  getSecciones() { return this.productoService.getSecciones(); }
 
   @Get('categorias')
   getCategorias(@Query('seccionId') seccionId?: string) {
@@ -60,60 +87,28 @@ export class ProductoController {
     return this.productoService.getCategoriasPorSeccion(seccionId);
   }
 
-  @Get('admin')
-  findAllAdmin(
-    @Query('seccionId') seccionId?: string,
-    @Query('categoriaId') categoriaId?: string,
-  ) {
-    return this.productoService.findAllAdmin(seccionId, categoriaId);
-  }
-
-  // ==========================================
-  // 2. 🔍 RUTAS CON PREFIJOS (Slug / Tree)
-  // ==========================================
-
-  // ✅ Para obtener un PRODUCTO individual por su slug
   @Get('slug/:slug')
-  async findBySlug(@Param('slug') slug: string) {
-    return this.productoService.findBySlug(slug);
-  }
-
-  // ✅ Para obtener una SECCIÓN con sus productos
-  @Get('seccion/:slug')
-  async getSeccionPorSlug(@Param('slug') slug: string) {
-    const seccion = await this.productoService.getSeccionConProductos(slug);
-    if (!seccion) {
-      throw new NotFoundException(`No se encontró la sección con slug "${slug}"`);
-    }
-    return seccion;
-  }
-
-  @Get('tree/por-seccion/:seccionId')
-  getTreePorSeccion(@Param('seccionId') seccionId: string) {
-    return this.productoService.getCategoriasTreePorSeccion(seccionId);
-  }
-
-  // ==========================================
-  // 3. 📦 RUTAS CON ID (Prioridad Baja)
-  // ==========================================
-
-  @Get('admin/:id')
-  findOneAdmin(@Param('id') id: string) {
-    return this.productoService.findOneById(id);
-  }
+  async findBySlug(@Param('slug') slug: string) { return this.productoService.findBySlug(slug); }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productoService.findOne(id);
-  }
+  findOne(@Param('id') id: string) { return this.productoService.findOne(id); }
 
   // ==========================================
   // ➕ POST – CREACIÓN
   // ==========================================
 
-  @Post()
-  create(@Body() dto: CreateProductoDto) {
-    return this.productoService.create(dto);
+  @Post('upload-producto')
+  @UseInterceptors(FilesInterceptor('files'))
+  async uploadProducto(@UploadedFiles() files: any[], @Body() body: any) {
+    const cleanData = this.parseProductData(body);
+    const imagenesUrls: string[] = [];
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const url = await this.cloudinaryService.uploadImage(file);
+        imagenesUrls.push(url);
+      }
+    }
+    return this.productoService.create(cleanData, imagenesUrls);
   }
 
   @Post('secciones')
@@ -122,96 +117,54 @@ export class ProductoController {
   }
 
   @Post('categorias')
-  crearCategoria(
-    @Body() data: { nombre: string; seccionSlug: string; parentId?: string },
-  ) {
+  crearCategoria(@Body() data: { nombre: string; seccionSlug: string; parentId?: string }) {
     return this.productoService.crearCategoria(data);
-  }
-
-  @Post('upload-producto')
-  @UseInterceptors(FilesInterceptor('files'))
-  @UsePipes(new ValidationPipe({ transform: true }))
-  async uploadProducto(
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: CreateProductoDto,
-  ) {
-    if (!files?.length) {
-      throw new BadRequestException('Debes subir al menos una imagen');
-    }
-    const imagenesUrls: string[] = [];
-    for (const file of files) {
-      imagenesUrls.push(await this.cloudinaryService.uploadImage(file));
-    }
-    return this.productoService.create(body, imagenesUrls);
   }
 
   // ==========================================
   // ✏️ PUT / PATCH – ACTUALIZACIÓN
   // ==========================================
 
+  @Put(':id')
+  @UseInterceptors(FilesInterceptor('files'))
+  async updateProducto(@Param('id') id: string, @UploadedFiles() files: any[], @Body() body: any) {
+    const cleanData = this.parseProductData(body);
+    const imagenesNuevas: string[] = [];
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const url = await this.cloudinaryService.uploadImage(file);
+        imagenesNuevas.push(url);
+      }
+    }
+    return this.productoService.updateProductoFlexible(id, {
+      ...cleanData,
+      imagenUrl: imagenesNuevas.length > 0 ? imagenesNuevas[0] : cleanData.imagenUrl,
+    });
+  }
+
   @Put('secciones/:id')
-  actualizarSeccion(
-    @Param('id') id: string,
-    @Body() data: Partial<CreateSeccionDto>,
-  ) {
+  actualizarSeccion(@Param('id') id: string, @Body() data: Partial<CreateSeccionDto>) {
     return this.productoService.actualizarSeccion(id, data);
   }
 
   @Patch('categorias/:id')
-  actualizarCategoria(
-    @Param('id') id: string,
-    @Body() data: { nombre?: string; seccionId?: string },
-  ) {
+  actualizarCategoria(@Param('id') id: string, @Body() data: { nombre?: string; seccionId?: string }) {
     return this.productoService.actualizarCategoria(id, data);
   }
 
-  @Put(':id')
-  update(@Param('id') id: string, @Body() dto: CreateProductoDto) {
-    return this.productoService.updateProductoFlexible(id, dto);
-  }
-
-  @Put(':id/upload')
-  @UseInterceptors(FilesInterceptor('files'))
-  async updateProductoWithImages(
-    @Param('id') id: string,
-    @UploadedFiles() files: Express.Multer.File[],
-    @Body() body: CreateProductoDto,
-  ) {
-    const imagenUrls: string[] = [];
-    if (files && files.length) {
-      for (const file of files) {
-        imagenUrls.push(await this.cloudinaryService.uploadImage(file));
-      }
-    }
-    return this.productoService.updateMultipleImages(id, body, imagenUrls);
-  }
-
-  @Put(':id/remover-imagen')
-  removeImagen(@Param('id') id: string) {
-    return this.productoService.removeImagen(id);
-  }
-
   @Put(':id/publicar')
-  publicar(@Param('id') id: string) {
-    return this.productoService.publicar(id);
-  }
+  publicar(@Param('id') id: string) { return this.productoService.publicar(id); }
 
   // ==========================================
   // 🗑 DELETE – ELIMINACIÓN
   // ==========================================
 
   @Delete('secciones/:id')
-  eliminarSeccion(@Param('id') id: string) {
-    return this.productoService.eliminarSeccion(id);
-  }
+  eliminarSeccion(@Param('id') id: string) { return this.productoService.eliminarSeccion(id); }
 
   @Delete('categorias/:id')
-  eliminarCategoria(@Param('id') id: string) {
-    return this.productoService.eliminarCategoria(id);
-  }
+  eliminarCategoria(@Param('id') id: string) { return this.productoService.eliminarCategoria(id); }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productoService.remove(id);
-  }
+  remove(@Param('id') id: string) { return this.productoService.remove(id); }
 }

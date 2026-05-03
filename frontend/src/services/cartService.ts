@@ -1,16 +1,5 @@
 // src/services/cartService.ts
-import { CartItem, CartResponse } from '../context/CartContext';
-
-// Ya no necesitamos definir CartResponse aquí de nuevo si la exportamos del Context,
-// pero si prefieres tenerla aquí, debe ser idéntica:
-/*
-interface CartResponse {
-    items: CartItem[];
-    subtotal: number;
-    descuento: number;
-    total: number;
-}
-*/
+import { CartResponse } from '../context/CartContext';
 
 export const CartService = {
     // 🔹 Obtener carrito
@@ -19,26 +8,30 @@ export const CartService = {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart`, {
                 credentials: 'include',
             });
+
             if (res.status === 401) {
-                return { items: [], subtotal: 0, descuento: 0, total: 0 };
+                return { items: [], subtotal: 0, descuentoTotal: 0, total: 0 };
             }
+
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Error fetching cart');
             return data;
         } catch (err) {
             console.error('Error fetching cart:', err);
-            return { items: [], subtotal: 0, descuento: 0, total: 0 };
+            return { items: [], subtotal: 0, descuentoTotal: 0, total: 0 };
         }
     },
 
-    // 🔹 Agregar producto
-    async addItem(productoId: string, quantity = 1): Promise<CartResponse> {
+    // 🔹 Agregar producto (Actualizado para variantes)
+    async addItem(productoId: string, quantity = 1, varianteId?: string): Promise<CartResponse> {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/add`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productoId, quantity }),
+            // Enviamos el varianteId al backend de NestJS
+            body: JSON.stringify({ productoId, quantity, varianteId }),
             credentials: 'include',
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Error adding item');
         return data;
@@ -52,6 +45,7 @@ export const CartService = {
             body: JSON.stringify({ quantity }),
             credentials: 'include',
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Error updating item');
         return data;
@@ -63,6 +57,7 @@ export const CartService = {
             method: 'DELETE',
             credentials: 'include',
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Error removing item');
         return data;
@@ -74,20 +69,22 @@ export const CartService = {
             method: 'DELETE',
             credentials: 'include',
         });
+
         if (!res.ok) {
             const data = await res.json();
             throw new Error(data.message || 'Error clearing cart');
         }
     },
 
-    // 🔹 Sincronizar (Si lo sigues usando)
-    async syncWithBackend(userId: string, items: { productoId: string; cantidad: number }[]): Promise<CartResponse> {
+    // 🔹 Sincronizar (Actualizado para incluir varianteId en la lógica de items)
+    async syncWithBackend(userId: string, items: { productoId: string; cantidad: number; varianteId?: string }[]): Promise<CartResponse> {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ordenes/carrito`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId, items }),
             credentials: 'include',
         });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Error sincronizando carrito');
         return data;

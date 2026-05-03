@@ -146,14 +146,18 @@ const Step2Pago: React.FC = () => {
         }
         setIsCheckingPayment(true);
       } else {
-        // TRANSFERENCIA
-        toast.success("¡Pedido realizado con éxito!", {
-          id: toastId,
-          duration: 5000,
-        });
-        await clearCart();
-        router.push(`/payment-success?orderId=${order.id}`);
+        toast.success("¡Pedido realizado con éxito!", { id: toastId });
+
+        // Primero navegamos para que el usuario ya esté en la ruta nueva
+        router.push(`/order-success/${order.id}`);
+
+        // Y después limpiamos el carrito (sin el await para que no bloquee)
+        clearCart();
       }
+      // 2. Redirigimos a la nueva página que creamos en app/(cliente)/order-success/[id]
+      // Usamos order.id porque es el ID real que devuelve tu backend
+      console.log("Redirigiendo a ID:", order.id);
+      router.push(`/order-success/${order.id}`);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error inesperado";
       toast.error(msg, { id: toastId });

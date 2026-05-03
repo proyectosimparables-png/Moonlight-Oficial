@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
@@ -11,13 +12,13 @@ export class PurchaseService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
-  ) {}
+  ) { }
 
   /**
    * MÉTODO 1: Sincronizar el carrito.
-   * Recibe todos los productos que el usuario tiene actualmente en su sesión de frontend.
+   * Ahora recibe varianteId para ser compatible con el nuevo modelo.
    */
-  async startCart(userId: string, items: { productoId: string; cantidad: number }[]) {
+  async startCart(userId: string, items: { varianteId: string; cantidad: number }[]) {
     const carritoExistente = await this.prisma.orden.findFirst({
       where: { userId, estado: EstadoOrden.CARRITO },
     });
@@ -25,31 +26,37 @@ export class PurchaseService {
     let total = 0;
     const ordenItems: Prisma.OrdenItemCreateWithoutOrdenInput[] = [];
 
-    // Validamos productos y calculamos total
+    // Validamos variantes y calculamos total
     for (const item of items) {
-      const producto = await this.prisma.producto.findUnique({ where: { id: item.productoId } });
-      if (!producto) throw new NotFoundException(`Producto ${item.productoId} no encontrado`);
+      const variante = await this.prisma.variante.findUnique({
+        where: { id: item.varianteId },
+        include: { producto: true } // Traemos el producto para sacar el precio y nombre
+      });
 
-      total += producto.precio * item.cantidad;
+      if (!variante) throw new NotFoundException(`Variante ${item.varianteId} no encontrada`);
+
+      const precioFinal = variante.producto.precioPromocional || variante.producto.precio;
+      total += precioFinal * item.cantidad;
+
       ordenItems.push({
-        nombre: producto.nombre,
-        precio: producto.precio,
+        nombre: variante.producto.nombre,
+        precio: precioFinal,
         cantidad: item.cantidad,
-        productoId: producto.id,
-        imagenUrl: producto.imagenUrl ?? '',
+        imagenUrl: variante.producto.imagenUrl ?? '',
+        // En lugar de varianteId: variante.id, usamos la relación connect:
+        variante: { connect: { id: variante.id } }
       });
     }
 
     if (carritoExistente) {
-      // Actualizamos: reseteamos el flag de email y actualizamos updatedAt
       return await this.prisma.orden.update({
         where: { id: carritoExistente.id },
         data: {
           total,
-          carritoAbandonadoEmail: false, // Si agrega algo nuevo, vuelve a ser un carrito "activo"
-          updatedAt: new Date(), // Esto reinicia el contador de 24hs
+          carritoAbandonadoEmail: false,
+          updatedAt: new Date(),
           items: {
-            deleteMany: {}, // Limpiamos ítems anteriores para sincronizar
+            deleteMany: {},
             create: ordenItems,
           },
         },
@@ -57,7 +64,6 @@ export class PurchaseService {
       });
     }
 
-    // Si no hay carrito, creamos uno nuevo
     return await this.prisma.orden.create({
       data: {
         userId,
@@ -70,8 +76,7 @@ export class PurchaseService {
   }
 
   /**
-   * MÉTODO 2: Tarea programada (Background Job).
-   * Se ejecuta cada hora buscando carritos sin actividad por más de 24 horas.
+   * MÉTODO 2: Tarea programada para carritos abandonados.
    */
   @Cron(CronExpression.EVERY_HOUR)
   async checkAbandonedCarts() {
@@ -84,31 +89,28 @@ export class PurchaseService {
       where: {
         estado: EstadoOrden.CARRITO,
         carritoAbandonadoEmail: false,
-        updatedAt: { lte: hace24h }, // No modificado en las últimas 24hs
-        items: { some: {} }, // Que tenga al menos un producto
+        updatedAt: { lte: hace24h },
+        items: { some: {} },
       },
       include: { user: true, items: true },
-      take: 50, // Procesamos en bloques para evitar sobrecarga
+      take: 50,
     });
 
     if (carritosAbandonados.length === 0) return;
 
     for (const orden of carritosAbandonados) {
       try {
-        // 1. Marcamos como enviado PRIMERO para evitar duplicidad en caso de lag
         await this.prisma.orden.update({
           where: { id: orden.id },
           data: { carritoAbandonadoEmail: true },
         });
 
-        // 2. Preparamos el contenido
         const listaProductos = orden.items
           .map((i) => `<li>✨ <strong>${i.nombre}</strong> (x${i.cantidad})</li>`)
           .join('');
 
         const htmlContent = this.getAbandonedCartTemplate(orden.user.name || 'enamorado del arte', listaProductos);
 
-        // 3. Enviamos el mail
         await this.mailService.sendMail(
           orden.user.email,
           '¿Te olvidaste de algo especial? ✨',
@@ -128,14 +130,13 @@ export class PurchaseService {
   async finalizeOrder(ordenId: string) {
     const ordenFinalizada = await this.prisma.orden.update({
       where: { id: ordenId },
-      data: { 
+      data: {
         estado: EstadoOrden.PENDIENTE,
         updatedAt: new Date()
       },
       include: { user: true },
     });
 
-    // Limpieza de carritos viejos para evitar correos basura
     await this.prisma.orden.deleteMany({
       where: {
         userId: ordenFinalizada.userId,
@@ -179,7 +180,7 @@ export class PurchaseService {
         <p>Notamos que dejaste algunas cosas especiales. Tus elegidos todavía te están esperando:</p>
         <ul style="list-style: none; padding: 0;">${lista}</ul>
         <div style="margin-top: 30px; text-align: center;">
-          <a href="https://tutienda.com/carrito" style="background-color: #6a5acd; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          <a href="https://moonlight-oficial.com/carrito" style="background-color: #6a5acd; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
             Terminar mi compra ahora
           </a>
         </div>
@@ -190,32 +191,28 @@ export class PurchaseService {
     `;
   }
 
-
   async notifyShipment(ordenId: string) {
-  // 1. Buscamos la orden y los datos del usuario
-  const orden = await this.prisma.orden.findUnique({
-    where: { id: ordenId },
-    include: { user: true }
-  });
+    const orden = await this.prisma.orden.findUnique({
+      where: { id: ordenId },
+      include: { user: true }
+    });
 
-  if (!orden) throw new NotFoundException('Orden no encontrada');
+    if (!orden) throw new NotFoundException('Orden no encontrada');
 
-  // 2. Actualizamos el estado a ENVIADO
-  const ordenActualizada = await this.prisma.orden.update({
-    where: { id: ordenId },
-    data: { 
-      estado: EstadoOrden.ENVIADO, // Asegúrate de que este valor exista en tu Enum
-      updatedAt: new Date() 
-    },
-  });
+    const ordenActualizada = await this.prisma.orden.update({
+      where: { id: ordenId },
+      data: {
+        estado: EstadoOrden.ENVIADO,
+        updatedAt: new Date()
+      },
+    });
 
-  // 3. Enviamos el correo
-  await this.mailService.sendShippingNotification(
-    orden.user.email,
-    orden.user.name || 'Cliente',
-    orden.id
-  );
+    await this.mailService.sendShippingNotification(
+      orden.user.email,
+      orden.user.name || 'Cliente',
+      orden.id
+    );
 
-  return ordenActualizada;
-}
+    return ordenActualizada;
+  }
 }

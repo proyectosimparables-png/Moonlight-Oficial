@@ -51,10 +51,11 @@ export default function CartItem({
   return (
     <li className="flex gap-4 py-6 border-b border-gray-100 relative group">
       {/* Imagen del producto */}
-      <div className="w-24 h-24 shrink-0 overflow-hidden rounded-sm bg-gray-50 relative">
+      <div className="relative w-24 h-24 bg-gray-100 rounded">
         <Image
-          src={item.producto?.imagenUrl ?? "/placeholder.png"}
-          alt={item.producto?.nombre ?? "Producto"}
+          // Cambiamos el camino: item -> variante -> producto -> imagenUrl
+          src={item.variante?.producto?.imagenUrl || "/logo-moonlight.png"}
+          alt={item.variante?.producto?.nombre || "Producto"}
           fill
           className="object-cover"
         />
@@ -63,10 +64,21 @@ export default function CartItem({
       <div className="flex flex-col flex-1 justify-between py-1">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-[15px] font-normal text-gray-500 mb-1">
-              {item.producto?.nombre ?? "Cargando producto..."}
+            <h3 className="text-sm font-medium">
+              {item.variante?.producto?.nombre ?? "Producto sin nombre"}
             </h3>
-
+            <div className="flex gap-2 mt-0.5">
+              {item.variante?.talle && (
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider">
+                  Talle: {item.variante.talle}
+                </span>
+              )}
+              {item.variante?.color && (
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider border-l border-gray-200 pl-2">
+                  Color: {item.variante.color}
+                </span>
+              )}
+            </div>
             <div className="flex flex-col">
               {mostrarTachadoUnitario && (
                 <span className="text-xs text-gray-400 line-through">

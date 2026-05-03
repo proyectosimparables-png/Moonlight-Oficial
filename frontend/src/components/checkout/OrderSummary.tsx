@@ -40,15 +40,15 @@ const OrderSummary: React.FC = () => {
       <h3 className="text-[11px] font-bold mb-6 uppercase text-gray-400 tracking-[0.2em] hidden lg:block">
         Resumen de compra
       </h3>
-
-      {/* Lista de Productos */}
-      <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+      {/* Lista de Productos - Quitamos el scroll y la altura máxima */}
+      <div className="space-y-4 mb-6">
         {cart.map((item) => {
           const precioUnitarioAMostrar =
             item?.precioUnitarioVisual ?? item?.precioOriginal ?? 0;
           const lineaSubtotal = item?.subtotalItem ?? 0;
           const itemQuantity = item?.quantity ?? 1;
           const tienePromoItem = (item?.ahorroItem ?? 0) > 0;
+          const productoInfo = item.variante?.producto;
 
           return (
             <div
@@ -58,8 +58,8 @@ const OrderSummary: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="relative w-14 h-14 shrink-0 border border-gray-100 rounded-sm overflow-hidden bg-gray-50">
                   <Image
-                    src={item.producto?.imagenUrl ?? "/placeholder.png"}
-                    alt={item.producto?.nombre ?? "Producto"}
+                    src={productoInfo?.imagenUrl ?? "/logo-moonlight.png"}
+                    alt={productoInfo?.nombre ?? "Producto"}
                     fill
                     className="object-cover"
                   />
@@ -69,8 +69,15 @@ const OrderSummary: React.FC = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[13px] text-gray-700 font-medium line-clamp-1">
-                    {item.producto?.nombre ?? "Cargando..."}
+                    {productoInfo?.nombre ?? "Cargando..."}
                   </span>
+                  {/* Agregamos talle y color para que no quede duda de qué se lleva */}
+                  {(item.variante?.talle || item.variante?.color) && (
+                    <span className="text-[10px] text-gray-400 uppercase leading-none mb-1">
+                      {item.variante.talle && `Talle: ${item.variante.talle}`}
+                      {item.variante.color && ` | ${item.variante.color}`}
+                    </span>
+                  )}
                   <span className="text-[11px] text-gray-400 uppercase">
                     {formatPrice(precioUnitarioAMostrar)}
                   </span>
@@ -92,7 +99,6 @@ const OrderSummary: React.FC = () => {
           );
         })}
       </div>
-
       {/* --- SECCIÓN DE CUPÓN (Visual corregida) --- */}
       <div className="mb-6 pt-4 border-t border-gray-100">
         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
@@ -114,7 +120,6 @@ const OrderSummary: React.FC = () => {
           </button>
         </div>
       </div>
-
       {/* Desglose de Totales */}
       <div className="space-y-3">
         <div className="flex justify-between text-[13px]">

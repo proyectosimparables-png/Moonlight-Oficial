@@ -7,54 +7,70 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// --- USUARIOS ---
 model User {
-  id                        String      @id @default(uuid())
-  email                     String      @unique
-  name                      String?
-  password                  String
-  isVerified                Boolean     @default(false)
-  verificationCode          String?
-  verificationCodeExpires   DateTime?
-  role                      Role        @default(CLIENTE)
-  image                     String?
-  address                   String?
-  createdAt                 DateTime    @default(now())
-  updatedAt                 DateTime    @updatedAt
-  carrito                   Cart?
-  comentarios               Comentario[]
-  favoritos                 Favorito[]
-  ordenes                   Orden[]
+  id                      String       @id @default(uuid())
+  email                   String       @unique
+  name                    String?
+  password                String
+  isVerified              Boolean      @default(false)
+  verificationCode        String?
+  verificationCodeExpires DateTime?
+  role                    Role         @default(CLIENTE)
+  image                   String?
+  address                 String?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  carrito                 Cart?
+  comentarios             Comentario[]
+  favoritos               Favorito[]
+  ordenes                 Orden[]
 }
 
+// --- PRODUCTOS Y VARIANTES ---
 model Producto {
   id                String            @id @default(uuid())
   nombre            String
-  slug              String?  @unique
+  slug              String?           @unique
   descripcion       String?
   precio            Float
   precioPromocional Float?
-  stock             Int
-
+  
   // Envíos - peso y dimensiones
-  peso              Int               // Peso en GRAMOS (Ej: 500)
-  profundidad       Int               // Profundidad en CM (largo)
+  peso              Int               // Peso en GRAMOS
+  profundidad       Int               // Profundidad en CM
   ancho             Int               // Ancho en CM
   alto              Int               // Alto en CM    
-  imagenUrl         String?
+  
+  imagenUrl         String?           // Imagen principal
   createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   published         Boolean           @default(false)
+  
   categoriaId       String?
-  colores           String[]
-  cortes            String[]
-  talles            String[]
-  cartItems         CartItem[]
-  favoritos         Favorito[]
-  imagenes          Imagen[]
   categoria         Categoria?        @relation(fields: [categoriaId], references: [id])
+  
+  // Relaciones
+  variantes         Variante[]        // El stock ahora vive en las variantes
+  imagenes          Imagen[]
   secciones         ProductoSeccion[]
-
-// NUEVO CAMPO PARA LAS PROMOS
   promociones       Promocion[]       @relation("ProductoPromocion")
+  favoritos         Favorito[]
+}
+
+model Variante {
+  id         String   @id @default(uuid())
+  talle      String?  // Ej: "S", "M", "L"
+  color      String?  // Ej: "Borealis", "Negro"
+  stock      Int?     
+  sku        String?  @unique
+  
+  productoId String
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  // Referencias en compras
+  cartItems  CartItem[]
+  ordenItems OrdenItem[]
 }
 
 model Imagen {
@@ -64,6 +80,7 @@ model Imagen {
   producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 }
 
+// --- CATEGORIZACIÓN ---
 model Categoria {
   id            String      @id @default(uuid())
   nombre        String
@@ -74,8 +91,6 @@ model Categoria {
   subcategorias Categoria[] @relation("Subcategorias")
   seccion       Seccion?    @relation(fields: [seccionId], references: [id])
   productos     Producto[]
-
-  // NUEVA RELACIÓN: Una categoría puede tener muchas promociones aplicadas
   promociones   Promocion[] @relation("CategoriaPromocion")
 }
 
@@ -89,18 +104,17 @@ model ProductoSeccion {
 }
 
 model Seccion {
-  id         String            @id @default(uuid())
-  nombre     String
-  slug       String?           @unique
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  categorias Categoria[]
-  productos  ProductoSeccion[]
-
-  // NUEVA RELACIÓN
+  id          String            @id @default(uuid())
+  nombre      String
+  slug        String?           @unique
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  categorias  Categoria[]
+  productos   ProductoSeccion[]
   promociones Promocion[]       @relation("SeccionPromocion")
 }
 
+// --- SOCIAL ---
 model Comentario {
   id        String   @id @default(uuid())
   contenido String
@@ -108,69 +122,6 @@ model Comentario {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
-
-model Orden {
-  id                      String      @id @default(uuid())
-  userId                  String
-  total                   Float
-  estado                  EstadoOrden @default(PENDIENTE)
-  metodoPago              MetodoPago  @default(MERCADO_PAGO) // <--- Agregado para distinguir medios de pago
-  carritoAbandonadoEmail  Boolean     @default(false)
-  carritoCreadoEn         DateTime    @default(now())
-  
-  // Datos del Destinatario (Capturas 2 y 3)
-  emailContacto           String?     // Email ingresado en checkout
-  nombreDestinatario      String?
-  apellidoDestinatario    String?
-  dniDestinatario         String?
-  telefonoDestinatario    String?
-
-  // Datos de Envío (Captura 1 y 2)
-  metodoEnvio             String?     // Correo Argentino, Retiro, etc.
-  costoEnvio              Float       @default(0)
-  codigoPostal            String?
-  provincia               String?
-  localidad               String?
-  calle                   String?
-  numero                  String?
-  piso                    String?
-  departamento            String?
-  notasEntrega            String?     // Aclaraciones y comentarios
-  notasAdmin              String?
-
-  // Datos técnicos Correo
-  productType             String?   // CP o EP
-  deliveredType           String?   // S o D
-  trackingCode            String?
-  shipmentId              String?
-
-  // Referencias de Pago
-  paymentId               String?
-  preferenceId            String?
-  merchantOrderId         String?
-  
-  createdAt               DateTime    @default(now())
-  updatedAt               DateTime    @updatedAt
-  user                    User        @relation(fields: [userId], references: [id])
-  items                   OrdenItem[]
-
-  @@index([userId])
-}
-
-model OrdenItem {
-  id         String  @id @default(uuid())
-  ordenId    String
-  nombre     String
-  precio     Float // El precio original del producto
-  precioFinal    Float?   // El precio que pagó (con promo aplicada)
-  descuentoTotal Float   @default(0) // Cuánta plata se ahorró en este item
-  cantidad   Int
-  peso       Int?    // Peso unitario al momento de la compra
-  productoId String?
-  imagenUrl  String?
-  orden      Orden   @relation(fields: [ordenId], references: [id])
-}
-
 
 model Favorito {
   id         String   @id @default(uuid())
@@ -183,6 +134,7 @@ model Favorito {
   @@unique([userId, productoId])
 }
 
+// --- CARRITO ---
 model Cart {
   id        String     @id @default(uuid())
   userId    String     @unique
@@ -195,14 +147,80 @@ model Cart {
 model CartItem {
   id         String   @id @default(uuid())
   cartId     String
-  productoId String
+  varianteId String   // Ahora el carrito guarda la variante específica
   quantity   Int      @default(1)
   cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  producto   Producto @relation(fields: [productoId], references: [id])
+  variante   Variante @relation(fields: [varianteId], references: [id])
 
-  @@unique([cartId, productoId])
+  @@unique([cartId, varianteId])
 }
 
+// --- ÓRDENES ---
+model Orden {
+  id                     String      @id @default(uuid())
+  userId                 String
+  total                  Float
+  estado                 EstadoOrden @default(PENDIENTE)
+  metodoPago             MetodoPago  @default(MERCADO_PAGO)
+  carritoAbandonadoEmail Boolean     @default(false)
+  carritoCreadoEn        DateTime    @default(now())
+  
+  // Datos del Destinatario
+  emailContacto          String?
+  nombreDestinatario     String?
+  apellidoDestinatario   String?
+  dniDestinatario        String?
+  telefonoDestinatario   String?
+
+  // Datos de Envío
+  metodoEnvio            String?
+  costoEnvio             Float       @default(0)
+  codigoPostal           String?
+  provincia              String?
+  localidad              String?
+  calle                  String?
+  numero                 String?
+  piso                   String?
+  departamento           String?
+  notasEntrega           String?
+  notasAdmin             String?
+
+  // Datos técnicos Correo
+  productType            String?
+  deliveredType          String?
+  trackingCode           String?
+  shipmentId             String?
+
+  // Referencias de Pago
+  paymentId              String?
+  preferenceId           String?
+  merchantOrderId        String?
+  
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime    @updatedAt
+  user                   User        @relation(fields: [userId], references: [id])
+  items                  OrdenItem[]
+
+  @@index([userId])
+}
+
+model OrdenItem {
+  id             String    @id @default(uuid())
+  ordenId        String
+  nombre         String    // Ej: "Remera BTS - Talle L - Negro"
+  precio         Float     // Precio original
+  precioFinal    Float?    // Precio pagado con descuento
+  descuentoTotal Float     @default(0)
+  cantidad       Int
+  peso           Int?      // Peso unitario al comprar
+  varianteId     String?   // Referencia para reposición de stock
+  imagenUrl      String?
+  
+  orden          Orden     @relation(fields: [ordenId], references: [id])
+  variante       Variante? @relation(fields: [varianteId], references: [id], onDelete: SetNull)
+}
+
+// --- OTROS ---
 model PuntoEntrega {
   id             String   @id @default(uuid())
   nombre         String
@@ -215,53 +233,30 @@ model PuntoEntrega {
   createdAt      DateTime @default(now())
 }
 
-// 1. Enum para los tipos de promoción
-enum TipoPromocion {
-  PORCENTAJE          // Descuento directo (ej: -20% en el producto o categoría)
-  CANTIDAD_X_CANTIDAD // 2x1, 3x2, 4x3, etc.
-  SEGUNDA_UNIDAD      // Descuento en la unidad par (ej: 50% en la 2da unidad)
-}
-
-// 2. Modelo de Promoción Actualizado
 model Promocion {
-  id                String        @id @default(uuid())
-  nombre            String        // Ej: "Promo Lanzamiento", "3x2 en Invierno"
-  tipo              TipoPromocion
+  id           String        @id @default(uuid())
+  nombre       String
+  tipo         TipoPromocion
+  esCombinable Boolean       @default(false)
+  valor        Float?
+  lleva        Int?          @default(1)
+  paga         Int?          @default(1)
+  prioridad    Int           @default(0)
+  acumulable   Boolean       @default(false)
+  descripcion  String?
+  activa       Boolean       @default(true)
+  fechaInicio  DateTime?
+  fechaFin     DateTime?
   
-  // --- CONFIGURACIÓN DE LÓGICA ---
-  // false = El 2x1/3x2 se aplica solo si llevas el MISMO producto.
-  // true  = El 2x1/3x2 permite mezclar productos de la misma promo/categoría.
-  esCombinable      Boolean       @default(false) 
-
-  // Para PORCENTAJE (ej: 20) o SEGUNDA_UNIDAD (ej: 50 para el 50% off)
-  valor             Float?        
+  productos    Producto[]    @relation("ProductoPromocion")
+  categorias   Categoria[]   @relation("CategoriaPromocion")
+  secciones    Seccion[]     @relation("SeccionPromocion")
   
-  // Para CANTIDAD_X_CANTIDAD (ej: lleva 3 paga 2)
-  lleva             Int?          @default(1)
-  paga              Int?          @default(1)
-
-  // --- CONTROL Y PRIORIDAD ---
-  prioridad         Int           @default(0)     // Mayor número = se aplica primero
-  acumulable        Boolean       @default(false) // ¿Se suma a otras promos activas?
-  descripcion       String?       
-  activa            Boolean       @default(true)
-  fechaInicio       DateTime?
-  fechaFin          DateTime?
-  
-  // --- RELACIONES ---
-  // Relación con productos individuales
-  productos         Producto[]    @relation("ProductoPromocion")
-  
-  // Relación con categorías (Aplica la promo a todos los productos de la categoría)
-  categorias        Categoria[]   @relation("CategoriaPromocion")
-
-  // NUEVA RELACIÓN
-  secciones     Seccion[]       @relation("SeccionPromocion")
-  
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
+// --- ENUMS ---
 enum EstadoOrden {
   CARRITO
   PENDIENTE
@@ -283,4 +278,10 @@ enum MetodoPago {
 enum Role {
   ADMIN
   CLIENTE
+}
+
+enum TipoPromocion {
+  PORCENTAJE
+  CANTIDAD_X_CANTIDAD
+  SEGUNDA_UNIDAD
 }

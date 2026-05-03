@@ -7,12 +7,20 @@ import { ChevronDown } from "lucide-react";
 import { CartButton } from "./CartButton";
 import { AuthButton } from "./AuthButton";
 import { SearchInput } from "../search/SearchInput";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // 1. Agregamos useEffect
 
 export const NavbarDesktop = () => {
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [productsOpen, setProductsOpen] = useState(false);
   const [howToBuyOpen, setHowToBuyOpen] = useState(false);
+
+  // 2. Estado para controlar la hidratación
+  const [mounted, setMounted] = useState(false);
+
+  // 3. Se activa solo en el cliente tras el primer render
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleMouseEnter = (menu: string) => {
     setOpenMenus((prev) => ({ ...prev, [menu]: true }));
@@ -27,6 +35,12 @@ export const NavbarDesktop = () => {
     setHowToBuyOpen(false);
     setOpenMenus({});
   };
+
+  // 4. Si no está montado, mostramos una versión simplificada o nula
+  // para que coincida con el servidor y evitar el error de IDs
+  if (!mounted) {
+    return <div className="hidden md:block w-full h-36 bg-[#fafcef]/80" />;
+  }
 
   return (
     <div className="hidden md:block w-full relative z-50">

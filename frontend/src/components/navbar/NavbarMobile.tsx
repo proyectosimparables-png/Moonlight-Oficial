@@ -192,6 +192,11 @@ export const NavbarMobile = () => {
 
   const [open, setOpen] = useState(false);
   const [menuStack, setMenuStack] = useState<MenuItem[][]>([MENU]);
+  const [mounted, setMounted] = useState(false); // ✅ ESTADO PARA HIDRATACIÓN
+
+  useEffect(() => {
+    setMounted(true); // ✅ Activa el renderizado en cliente
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -216,6 +221,33 @@ export const NavbarMobile = () => {
       setMenuStack((prev) => prev.slice(0, -1));
     }
   };
+
+  // ✅ PREVENCIÓN DE ERROR DE HIDRATACIÓN:
+  // Si no está montado, renderizamos la estructura básica sin Sheet para que coincida con el servidor.
+  if (!mounted) {
+    return (
+      <div className="md:hidden">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#FAFCEF]">
+          <button aria-label="Abrir menú" className="p-1 outline-none">
+            <Menu className="h-6 w-6 text-[#7b5ca2]" />
+          </button>
+          <div className="flex-1 flex justify-center">
+            <Image
+              src="/moonlight.png"
+              alt="Moonlight Logo"
+              width={120}
+              height={30}
+              priority
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <AuthButton />
+            <CartButton />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="md:hidden">
@@ -247,7 +279,6 @@ export const NavbarMobile = () => {
             </SheetHeader>
 
             <div className="px-4 py-3">
-              {/* ✅ Corregido: Ahora el menú se cierra al buscar o seleccionar un producto */}
               <SearchInput onResultClick={() => setOpen(false)} />
             </div>
 

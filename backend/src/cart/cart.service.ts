@@ -12,50 +12,46 @@ export class CartService {
 
     const flatItems: any[] = [];
 
-    // 1. Aplanamos ítems y unificamos promociones (Producto + Categoría + Sección)
+    // 1. Aplanamos ítems y unificamos promociones (vía Variante -> Producto)
     items.forEach(item => {
-      const precioBase = item.producto.precio;
+      // Importante: El precio y la info ahora vienen de item.variante.producto
+      const producto = item.variante.producto;
+      const precioBase = producto.precio;
       subtotalGeneral += precioBase * item.quantity;
 
       // Unificamos las promociones de todas las fuentes
-      const promosDirectas = item.producto.promociones || [];
-      const promosCategoria = item.producto.categoria?.promociones || [];
-      const promosSeccion = item.producto.categoria?.seccion?.promociones || []; // Jerarquía de sección
+      const promosDirectas = producto.promociones || [];
+      const promosCategoria = producto.categoria?.promociones || [];
+      const promosSeccion = producto.categoria?.seccion?.promociones || [];
 
-      // Filtramos duplicados por ID (por si una promo está asignada a varios niveles)
       const todasLasPromos = [...promosDirectas, ...promosCategoria, ...promosSeccion].filter(
         (v, i, a) => v && a.findIndex(t => t.id === v.id) === i
       );
 
-      // Creamos una entrada por cada unidad física (para manejar 2x1, etc.)
       for (let i = 0; i < item.quantity; i++) {
         flatItems.push({
           cartItemId: item.id,
-          productoId: item.productoId,
+          varianteId: item.varianteId, // Usamos varianteId para identificar el producto específico
           precio: precioBase,
           promociones: todasLasPromos
         });
       }
     });
 
-    // 2. Clasificamos por mejor promoción
     const unidadesConDescuento = new Set<number>();
     let descuentoAcumulado = 0;
 
-    // Ordenamos ítems de mayor a menor precio para que el beneficio sea justo
     const sortedItems = [...flatItems].sort((a, b) => b.precio - a.precio);
     const promosAplicadas = new Map<string, any[]>();
 
     sortedItems.forEach((unit, index) => {
       if (unit.promociones && unit.promociones.length > 0) {
-        // Elegimos la promo con mayor prioridad definida
         const mejorPromo = [...unit.promociones].sort((a, b: any) => (b.prioridad || 0) - (a.prioridad || 0))[0];
 
         if (mejorPromo) {
-          // Si no es combinable, el grupo es específico al producto
           const groupId = mejorPromo.esCombinable
             ? mejorPromo.id
-            : `${mejorPromo.id}-${unit.productoId}`;
+            : `${mejorPromo.id}-${unit.varianteId}`;
 
           if (!promosAplicadas.has(groupId)) {
             promosAplicadas.set(groupId, []);
@@ -69,7 +65,6 @@ export class CartService {
       }
     });
 
-    // 3. Aplicamos la lógica de negocio por grupo de promoción
     promosAplicadas.forEach((unidadesEnEstaPromo) => {
       const promoData = unidadesEnEstaPromo[0].promoAsignada;
 
@@ -78,7 +73,6 @@ export class CartService {
           const numGrupos = Math.floor(unidadesEnEstaPromo.length / promoData.lleva);
           const cantADescontar = numGrupos * (promoData.lleva - promoData.paga);
 
-          // Bonificamos las unidades más baratas del grupo
           const aBonificar = unidadesEnEstaPromo.slice(-cantADescontar);
           aBonificar.forEach(u => {
             descuentoAcumulado += u.precio;
@@ -111,9 +105,8 @@ export class CartService {
 
     totalDescuentoGeneral = descuentoAcumulado;
 
-    // 4. Mapeo final para el Front-end
     const itemsConCalculo = items.map(item => {
-      const precioBase = item.producto.precio;
+      const precioBase = item.variante.producto.precio;
       const totalItemBase = precioBase * item.quantity;
 
       const unidadesBonificadasDeEsteItem = Array.from(unidadesConDescuento).filter(index => {
@@ -159,23 +152,27 @@ export class CartService {
     const includeQuery = {
       items: {
         include: {
-          producto: {
+          variante: { // Accedemos a la variante
             include: {
-              promociones: { where: { activa: true } },
-              categoria: {
+              producto: { // De la variante al producto
                 include: {
                   promociones: { where: { activa: true } },
-                  seccion: { // Jerarquía: Incluimos la sección
+                  categoria: {
                     include: {
-                      promociones: { where: { activa: true } }
+                      promociones: { where: { activa: true } },
+                      seccion: {
+                        include: {
+                          promociones: { where: { activa: true } }
+                        }
+                      }
                     }
                   }
                 }
               }
             }
-          },
-        },
-      },
+          }
+        }
+      }
     };
 
     let cart = await this.prisma.cart.findUnique({
@@ -199,17 +196,22 @@ export class CartService {
     };
   }
 
-  async addItemToCart(userId: string, productoId: string, quantity = 1) {
+  async addItemToCart(userId: string, varianteId: string, quantity = 1) {
     if (quantity <= 0) throw new BadRequestException('La cantidad debe ser mayor a 0');
 
-    const producto = await this.prisma.producto.findUnique({ where: { id: productoId } });
-    if (!producto) throw new NotFoundException('Producto no encontrado');
+    // Validamos que exista la VARIANTE
+    const variante = await this.prisma.variante.findUnique({
+      where: { id: varianteId },
+      include: { producto: true }
+    });
+    if (!variante) throw new NotFoundException('Variante de producto no encontrada');
 
     let cart = await this.prisma.cart.findUnique({ where: { userId } });
     if (!cart) cart = await this.prisma.cart.create({ data: { userId } });
 
+    // Buscamos si ya existe esta variante en el carrito
     const existingItem = await this.prisma.cartItem.findFirst({
-      where: { cartId: cart.id, productoId },
+      where: { cartId: cart.id, varianteId },
     });
 
     if (existingItem) {
@@ -219,7 +221,7 @@ export class CartService {
       });
     } else {
       await this.prisma.cartItem.create({
-        data: { cartId: cart.id, productoId, quantity },
+        data: { cartId: cart.id, varianteId, quantity },
       });
     }
     return this.getCartByUser(userId);
@@ -227,7 +229,10 @@ export class CartService {
 
   async updateItemQuantity(cartItemId: string, quantity: number) {
     if (quantity <= 0) throw new BadRequestException('La cantidad debe ser mayor a 0');
-    const item = await this.prisma.cartItem.findUnique({ where: { id: cartItemId }, include: { cart: true } });
+    const item = await this.prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: { cart: true }
+    });
     if (!item) throw new NotFoundException('Item no encontrado');
 
     await this.prisma.cartItem.update({ where: { id: cartItemId }, data: { quantity } });
@@ -235,7 +240,10 @@ export class CartService {
   }
 
   async removeItemFromCart(cartItemId: string) {
-    const item = await this.prisma.cartItem.findUnique({ where: { id: cartItemId }, include: { cart: true } });
+    const item = await this.prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: { cart: true }
+    });
     if (!item) throw new NotFoundException('Item no encontrado');
 
     await this.prisma.cartItem.delete({ where: { id: cartItemId } });

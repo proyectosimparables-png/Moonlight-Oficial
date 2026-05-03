@@ -5,30 +5,54 @@ import React, {
   useContext,
   useEffect,
   useState,
-  useCallback, // ✅ Importado para corregir el warning de dependencias
+  useCallback,
   ReactNode,
 } from "react";
 import { CartService } from "@/services/cartService";
 import { useAuth } from "@/context/AuthContext";
 
-// --- INTERFACES DE DATOS (Sincronizadas con NestJS) ---
+// --- INTERFACES DE DATOS ACTUALIZADAS ---
+
+export interface Variante {
+  id: string;
+  talle?: string;
+  color?: string;
+  stock?: number;
+  precio?: number;
+}
 
 export interface CartItem {
   id: string;
-  productoId: string;
+  varianteId: string; // Es obligatorio según tu lógica de back
   quantity: number;
+
+  // La Variante es el puente hacia el Producto
+  variante: {
+    id: string;
+    talle?: string;
+    color?: string;
+    sku?: string;
+    producto: {
+      // ✅ El producto vive aquí adentro
+      id: string;
+      nombre: string;
+      precio: number;
+      imagenUrl?: string;
+    };
+  };
+
+  // Campos calculados que vienen de tu calculatePromotions en el back
   precioOriginal: number;
   precioFinalUnitario: number;
   precioUnitarioVisual?: number;
   precioFinal: number;
   ahorroItem: number;
   subtotalItem: number;
-  producto: {
-    id: string;
-    nombre: string;
-    precio: number;
-    imagenUrl?: string;
-  };
+
+  // Estos puedes mantenerlos como opcionales si el back los aplana,
+  // pero lo ideal es usar siempre item.variante.talle
+  talle?: string;
+  color?: string;
 }
 
 export interface CartResponse {
@@ -38,9 +62,14 @@ export interface CartResponse {
   total: number;
 }
 
+// Interfaz para los datos temporales que vienen del componente visual
 interface ProductData {
   nombre: string;
+  precio: number;
   imagenUrl?: string;
+  talle?: string;
+  color?: string;
+  varianteId?: string;
 }
 
 // --- INTERFAZ DEL CONTEXTO ---
@@ -54,7 +83,7 @@ interface CartContextType {
   addItem: (
     productoId: string,
     quantity?: number,
-    productData?: ProductData,
+    productData?: ProductData, // ✅ Ahora incluye info de variante
   ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   updateItemQuantity: (itemId: string, quantity: number) => Promise<void>;
@@ -81,11 +110,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
 
-  /**
-   * ✅ CORRECCIÓN ESLINT:
-   * Envolvemos refreshCart en useCallback para que sea estable y
-   * pueda ser usada como dependencia en el useEffect sin causar loops.
-   */
   const refreshCart = useCallback(async () => {
     if (!authLoaded) return;
 
@@ -108,15 +132,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isAuthenticated, authLoaded]);
 
-  /**
-   * ✅ PROTECCIÓN CRÍTICA:
-   * Solo disparamos el refresh cuando la autenticación terminó de cargar.
-   */
   useEffect(() => {
     refreshCart();
-  }, [refreshCart]); // ✅ Ahora usamos refreshCart como dependencia estable
+  }, [refreshCart]);
 
   // --- ACCIONES ---
+
+  // --- Dentro de la función addItem en CartContext.tsx ---
 
   const addItem = async (
     productoId: string,
@@ -124,23 +146,44 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     productData?: ProductData,
   ) => {
     try {
-      const response = await CartService.addItem(productoId, quantity);
+      const response = await CartService.addItem(
+        productoId,
+        quantity,
+        productData?.varianteId,
+      );
       setCartData(response);
 
-      const added = response.items.find((i) => i.productoId === productoId);
+      const added = response.items.find(
+        (i) =>
+          i.variante?.producto?.id === productoId &&
+          i.varianteId === productData?.varianteId,
+      );
+
       if (added) {
         setLastAddedItem(added);
       } else if (productData) {
+        // ✅ Agregamos el objeto 'variante' aquí para que coincida con la interfaz
         setLastAddedItem({
-          id: "temp",
-          productoId,
+          id: "temp-" + Date.now(),
+          varianteId: productData.varianteId || "", // ✅ Aseguramos que sea string (no undefined)
           quantity,
-          precioOriginal: 0,
-          precioFinalUnitario: 0,
-          precioFinal: 0,
+          variante: {
+            id: productData.varianteId || "temp-var",
+            talle: productData.talle,
+            color: productData.color,
+            producto: {
+              // ✅ Agregamos el objeto producto aquí adentro
+              id: productoId,
+              nombre: productData.nombre,
+              precio: productData.precio,
+              imagenUrl: productData.imagenUrl,
+            },
+          },
+          precioOriginal: productData.precio,
+          precioFinalUnitario: productData.precio,
+          precioFinal: productData.precio * quantity,
           ahorroItem: 0,
-          subtotalItem: 0,
-          producto: { id: productoId, ...productData, precio: 0 },
+          subtotalItem: productData.precio * quantity,
         });
       }
     } catch (err) {

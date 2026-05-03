@@ -1,79 +1,85 @@
-import { IsString, IsOptional, IsNumber, IsArray } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsArray, IsBoolean, ValidateNested } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+
+// Definimos la estructura interna de una variante para validarla
+class CreateVarianteDto {
+  @IsString()
+  talle!: string;
+
+  @IsString()
+  color!: string;
+
+  @IsOptional()
+  @IsNumber()
+  stock?: number;
+
+  @IsString()
+  sku!: string;
+}
 
 export class CreateProductoDto {
   @IsString()
-  nombre: string;
+  nombre!: string;
 
   @IsString()
-  descripcion: string;
+  descripcion!: string;
 
   @Type(() => Number)
   @IsNumber()
-  precio: number;
+  precio!: number;
 
   @Type(() => Number)
   @IsOptional()
   @IsNumber()
   precioPromocional?: number;
 
-  @Type(() => Number)
+  @IsString()
   @IsOptional()
-  @IsNumber()
-  stock?: number;
+  imagenUrl?: string;
 
   // 📦 ENVÍOS
   @Type(() => Number)
-  @IsOptional()
   @IsNumber()
-  peso: number;
+  peso!: number;
 
   @Type(() => Number)
-  @IsOptional()
   @IsNumber()
-  profundidad: number;
+  profundidad!: number;
 
   @Type(() => Number)
-  @IsOptional()
   @IsNumber()
-  ancho: number;
+  ancho!: number;
 
   @Type(() => Number)
-  @IsOptional()
   @IsNumber()
-  alto: number;
+  alto!: number;
 
   @IsString()
-  categoriaId: string;
+  categoriaId!: string;
 
-  // 🎨 NUEVOS CAMPOS: COLORES, TALLES, CORTES
+  // 🔗 SECCIONES
+  @Transform(({ value }) => handleArrayTransform(value))
+  @IsArray()
+  seccionesIds!: string[];
+
+  // 🚀 EL CAMPO CLAVE QUE FALTABA: VARIANTES
   @IsOptional()
   @Transform(({ value }) => handleArrayTransform(value))
   @IsArray()
-  colores?: string[];
-
-  @IsOptional()
-  @Transform(({ value }) => handleArrayTransform(value))
-  @IsArray()
-  talles?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => CreateVarianteDto)
+  variantes?: CreateVarianteDto[];
 
   @IsOptional()
   @Transform(({ value }) => handleArrayTransform(value))
   @IsArray()
   cortes?: string[];
 
-  // 🔗 SECCIONES
-  @Transform(({ value }) => handleArrayTransform(value))
-  @IsArray()
-  seccionesIds: string[];
-
   @IsOptional()
+  @IsBoolean()
   published?: boolean;
 }
 
-/**
- * Función auxiliar para limpiar la lógica de transformación repetida
- */
 function handleArrayTransform(value: any) {
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') {
@@ -81,7 +87,6 @@ function handleArrayTransform(value: any) {
       const parsed = JSON.parse(value);
       return Array.isArray(parsed) ? parsed : [parsed];
     } catch (e) {
-      // Si llega como un string simple (ej: "blanco"), lo convertimos a ["blanco"]
       return value ? [value] : [];
     }
   }

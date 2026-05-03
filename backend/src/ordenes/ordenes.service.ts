@@ -1,3 +1,4 @@
+// src/ordenes/ordenes.service.ts
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EstadoOrden, MetodoPago, TipoPromocion } from '@prisma/client';
@@ -22,27 +23,34 @@ export class OrdenesService {
   }
 
   async crearOrden(dto: CreateOrdeneDto) {
-    // 1. BUSQUEDA AMPLIADA: Incluimos SECCIONES en la consulta
+    // 1. BUSQUEDA AMPLIADA: Navegamos a través de Variantes
     const carrito = await this.prisma.cart.findUnique({
       where: { userId: dto.userId },
       include: {
         items: {
           include: {
-            producto: {
+            variante: { // 👈 CAMBIO: Entramos por variante
               include: {
-                promociones: { where: { activa: true } },
-                categoria: {
-                  include: { promociones: { where: { activa: true } } }
-                },
-                secciones: { // 👈 NUEVO: Buscamos las secciones del producto
+                producto: {
                   include: {
-                    seccion: {
-                      include: { promociones: { where: { activa: true } } }
+                    promociones: { where: { activa: true } },
+                    categoria: {
+                      include: {
+                        promociones: { where: { activa: true } },
+                        seccion: { include: { promociones: { where: { activa: true } } } }
+                      }
+                    },
+                    secciones: {
+                      include: {
+                        seccion: {
+                          include: { promociones: { where: { activa: true } } }
+                        }
+                      }
                     }
                   }
                 }
               }
-            },
+            }
           },
         },
       },
@@ -55,32 +63,33 @@ export class OrdenesService {
     const unidadesParaCombos: Map<string, any[]> = new Map();
     const itemsOrden: any[] = [];
 
-    // 2. Primer paso: Identificar promos (Producto, Categoría y SECCIÓN)
+    // 2. Procesar ítems y promociones
     carrito.items.forEach((item, index) => {
-      const p = item.producto;
+      const v = item.variante;
+      const p = v.producto;
       const precioBase = Number(p.precio);
 
-      // Extraemos las promociones de las secciones
+      // Unificamos promociones de Producto, Categoría y Secciones
       const promosSecciones = p.secciones.flatMap(ps => ps.seccion.promociones || []);
-
-      // Combinamos todas las fuentes de promociones
       const todasLasPromos = [
         ...(p.promociones || []),
         ...(p.categoria?.promociones || []),
-        ...promosSecciones // 👈 NUEVO: Sumamos las promos de sección
-      ].sort((a, b) => b.prioridad - a.prioridad);
+        ...promosSecciones
+      ].sort((a, b) => (b.prioridad || 0) - (a.prioridad || 0));
 
-      // Aplicar descuento directo si existe (%)
+      // Promo de porcentaje directo
       const promoPorcentaje = todasLasPromos.find(pr => pr.tipo === TipoPromocion.PORCENTAJE);
       let precioConDctoDirecto = precioBase;
       if (promoPorcentaje) {
         precioConDctoDirecto = precioBase * (1 - ((promoPorcentaje.valor || 0) / 100));
       }
 
-      // Estructura inicial del item
+      // Nombre descriptivo para la orden (incluye talle/color si existen)
+      const nombreCompleto = `${p.nombre}${v.talle ? ' - ' + v.talle : ''}${v.color ? ' - ' + v.color : ''}`;
+
       const itemProcesado = {
-        productoId: p.id,
-        nombre: p.nombre,
+        varianteId: v.id, // Guardamos el ID de variante
+        nombre: nombreCompleto,
         precio: precioBase,
         precioFinal: precioConDctoDirecto,
         descuentoTotal: (precioBase - precioConDctoDirecto) * item.quantity,
@@ -91,13 +100,13 @@ export class OrdenesService {
       };
       itemsOrden.push(itemProcesado);
 
-      // Identificar promos de volumen
+      // Promos de volumen (2x1, etc.)
       const promoVolumen = todasLasPromos.find(pr =>
         pr.tipo === TipoPromocion.CANTIDAD_X_CANTIDAD || pr.tipo === TipoPromocion.SEGUNDA_UNIDAD
       );
 
       if (promoVolumen) {
-        const grupoId = promoVolumen.esCombinable ? promoVolumen.id : `${promoVolumen.id}-${p.id}`;
+        const grupoId = promoVolumen.esCombinable ? promoVolumen.id : `${promoVolumen.id}-${v.id}`;
         if (!unidadesParaCombos.has(grupoId)) unidadesParaCombos.set(grupoId, []);
 
         for (let i = 0; i < item.quantity; i++) {
@@ -110,7 +119,7 @@ export class OrdenesService {
       }
     });
 
-    // 3. Segundo paso: Calcular descuentos por cantidad (2x1, 3x2, etc.)
+    // 3. Calcular descuentos por volumen (2x1, 3x2, etc.)
     unidadesParaCombos.forEach((unidades) => {
       const config = unidades[0].config;
       unidades.sort((a, b) => a.precio - b.precio);
@@ -136,22 +145,41 @@ export class OrdenesService {
       }
     });
 
-    // 4. Paso Final: Prorratear precios EXACTOS
+    // 4. Redondeo final
     itemsOrden.forEach(item => {
       const subtotalConDcto = (item.precio * item.cantidad) - item.descuentoTotal;
-      // Usamos un redondeo de 2 decimales para evitar problemas de coma flotante en MP
       item.precioFinal = Math.round((subtotalConDcto / item.cantidad) * 100) / 100;
     });
 
-    // 5. Cálculos de Totales
+    // 5. Totales
     const totalProductos = itemsOrden.reduce((acc, i) => acc + (i.precioFinal * i.cantidad), 0);
     let totalFinal = totalProductos + (dto.costoEnvio || 0);
-
-    // Descuento por método de pago
     if (dto.metodoPago === MetodoPago.TRANSFERENCIA) totalFinal *= 0.9;
 
-    // 6. Transacción de Base de Datos
+    // 6. TRANSACCIÓN: Crear orden, descontar stock y limpiar carrito
     const nuevaOrden = await this.prisma.$transaction(async (tx) => {
+
+      // VALIDAR Y DESCONTAR STOCK
+      for (const item of itemsOrden) {
+        const varianteStock = await tx.variante.findUnique({
+          where: { id: item.varianteId }
+        });
+
+        // 1. Verificamos que la variante exista
+        // 2. Si el stock NO es null (es limitado), verificamos que alcance
+        if (!varianteStock || (varianteStock.stock !== null && varianteStock.stock < item.cantidad)) {
+          throw new BadRequestException(`Stock insuficiente para la variante ${item.nombre}`);
+        }
+
+        // 🔥 CORRECCIÓN AQUÍ: Solo descontamos si NO es infinito (null)
+        if (varianteStock.stock !== null) {
+          await tx.variante.update({
+            where: { id: item.varianteId },
+            data: { stock: { decrement: item.cantidad } }
+          });
+        }
+      }
+
       const orden = await tx.orden.create({
         data: {
           userId: dto.userId,
@@ -207,7 +235,6 @@ export class OrdenesService {
     return nuevaOrden;
   }
 
-  // ... (Resto de métodos findOne, cambiarEstado, etc. quedan igual)
   async findOne(id: string) {
     const orden = await this.prisma.orden.findUnique({
       where: { id },
@@ -250,5 +277,4 @@ export class OrdenesService {
       throw new BadRequestException('No se pudo actualizar la nota de la orden');
     }
   }
-
 }

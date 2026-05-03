@@ -137,7 +137,7 @@ export async function getSecciones() {
   }
 
   const data = JSON.parse(text);
-  console.log("Fetch secciones data:", data);
+
 
   return data;
 }
@@ -212,12 +212,22 @@ export async function getProductoBySlug(slug: string): Promise<Producto | null> 
 
 //Categorias en arbol para el formulario//////////////////////////////////////////////////////////////////////////////
 export async function getCategoriasTree(seccionId: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/tree/por-seccion/${seccionId}`);
+  // Usamos el endpoint que SÍ funciona (el que probaste en la pestaña)
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/productos/categorias?seccionId=${seccionId}`, {
+    cache: "no-store"
+  });
 
-  if (res.status === 404) return []; // Si no hay nada, devolvemos array vacío en vez de tirar error
-  if (!res.ok) throw new Error("Error cargando categorías");
+  if (!res.ok) {
+    console.error("Error cargando categorías desde el endpoint plano");
+    return [];
+  }
 
-  return res.json();
+  const data = await res.json();
+
+  // LOG DE CONTROL: Para que veas en la terminal si llegan los datos
+  console.log("Categorías recuperadas con éxito:", data.length);
+
+  return data;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

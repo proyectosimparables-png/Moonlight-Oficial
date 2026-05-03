@@ -12,39 +12,51 @@ import EditorDescripcion from "./EditorDescripcion";
 import {
   XMarkIcon,
   CameraIcon,
-  InformationCircleIcon,
+  PlusIcon,
+  TrashIcon,
+  PencilSquareIcon,
 } from "@heroicons/react/24/solid";
 import { CategoriaTreeSelector } from "../CategoriaTreeSelector";
-import { COLOR_MAP } from "@/lib/colores";
+import Image from "next/image";
 
-type Seccion = { id: string; nombre: string };
-type Categoria = {
+// --- INTERFACES DE TIPADO ---
+interface VarianteEstado {
+  id: string;
+  talle: string;
+  color: string;
+  stock: string;
+  seguimiento: boolean;
+}
+
+interface Seccion {
   id: string;
   nombre: string;
-  subcategorias?: Categoria[];
-};
+}
+
+interface CategoriaNode {
+  id: string;
+  nombre: string;
+  children?: CategoriaNode[];
+}
 
 export default function FormProducto() {
-  /* ---------------- STATE ---------------- */
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
   const [precioPromocional, setPrecioPromocional] = useState("");
   const [descripcion, setDescripcion] = useState("");
-  const [stock, setStock] = useState("");
 
-  // Logística
+  // LOGÍSTICA (Correo Argentino)
   const [peso, setPeso] = useState("");
   const [profundidad, setProfundidad] = useState("");
   const [ancho, setAncho] = useState("");
   const [alto, setAlto] = useState("");
 
-  // Errores de validación
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
   const [imagenes, setImagenes] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
+  // ESTADOS TIPADOS
   const [secciones, setSecciones] = useState<Seccion[]>([]);
-  const [categoriasData, setCategoriasData] = useState<Categoria[]>([]);
+  const [categoriasData, setCategoriasData] = useState<CategoriaNode[]>([]);
   const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<
     string[]
   >([]);
@@ -52,465 +64,553 @@ export default function FormProducto() {
     string[]
   >([]);
 
-  /* Variantes */
-  const [coloresSel, setColoresSel] = useState<string[]>([]);
-  const [cortesSel, setCortesSel] = useState<string[]>([]);
-  const [tallesSel, setTallesSel] = useState<string[]>([]);
+  // VARIANTES
+  const [variantesData, setVariantesData] = useState<VarianteEstado[]>([]);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // ESTADO TEMPORAL DEL DRAWER
+  const [tempColor, setTempColor] = useState("");
+  const [tempTalle, setTempTalle] = useState("");
+  const [tempStock, setTempStock] = useState("0");
+  const [tempSeguimiento, setTempSeguimiento] = useState(true);
+
   const [loading, setLoading] = useState(false);
 
-  /* ---------------- VALIDACIÓN EN TIEMPO REAL (SEGÚN MANUAL MICORREO) ---------------- */
+  // --- LÓGICA DE VALIDACIÓN ---
+  const isFormValid =
+    nombre.trim() !== "" &&
+    precio !== "" &&
+    peso !== "" &&
+    alto !== "" &&
+    ancho !== "" &&
+    profundidad !== "" &&
+    seccionesSeleccionadas.length > 0 &&
+    categoriasSeleccionadas.length > 0 &&
+    variantesData.length > 0 &&
+    imagenes.length > 0;
+
+  // Carga inicial de secciones
   useEffect(() => {
-    const newErrors: { [key: string]: string } = {};
-
-    // Validación Peso (Máximo 25.000g = 25kg)
-    if (peso) {
-      const p = parseFloat(peso);
-      if (isNaN(p) || p <= 0) {
-        newErrors.peso = "El peso debe ser mayor a 0 kg";
-      } else if (p > 25) {
-        newErrors.peso = "Correo Argentino permite máximo 25kg";
-      }
-    }
-
-    // Validación Dimensiones (Máximo 150cm por lado)
-    const dims = { profundidad, ancho, alto };
-    Object.entries(dims).forEach(([key, value]) => {
-      if (value) {
-        const v = parseInt(value);
-        if (isNaN(v) || v <= 0) {
-          newErrors[key] = "Debe ser mayor a 0 cm";
-        } else if (v > 150) {
-          newErrors[key] = "Máximo 150cm (Límite Correo)";
-        }
-      }
-    });
-
-    setErrors(newErrors);
-  }, [peso, profundidad, ancho, alto]);
-
-  /* ---------------- LOAD DATA ---------------- */
-  useEffect(() => {
-    getSecciones().then(setSecciones).catch(console.error);
+    getSecciones()
+      .then((data: Seccion[]) => {
+        console.log("📂 Secciones cargadas:", data);
+        setSecciones(data);
+      })
+      .catch((err) => console.error("❌ Error al cargar secciones:", err));
   }, []);
 
+  // Carga de categorías según la sección seleccionada
   useEffect(() => {
-    if (!seccionesSeleccionadas[0] || seccionesSeleccionadas[0].length < 10) {
-      setCategoriasData([]);
-      return;
+    async function fetchCategorias() {
+      // 1. Validamos que realmente haya una sección seleccionada
+      if (seccionesSeleccionadas.length > 0) {
+        const ultimaSeccionId =
+          seccionesSeleccionadas[seccionesSeleccionadas.length - 1];
+
+        // 2. IMPORTANTE: Si el ID es un objeto o undefined, el fetch del servicio fallará
+        if (!ultimaSeccionId || typeof ultimaSeccionId !== "string") return;
+
+        try {
+          console.log("🔍 Buscando categorías para sección:", ultimaSeccionId);
+          const data = await getCategoriasTree(ultimaSeccionId);
+
+          // 3. Forzamos la actualización solo si recibimos un array
+          if (Array.isArray(data)) {
+            setCategoriasData(data);
+          } else {
+            setCategoriasData([]);
+          }
+        } catch (err) {
+          console.error("❌ Error en getCategoriasTree:", err);
+          setCategoriasData([]);
+        }
+      } else {
+        setCategoriasData([]);
+      }
     }
-    getCategoriasTree(seccionesSeleccionadas[0])
-      .then((data) => {
-        if (data) setCategoriasData(data);
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("No se pudieron cargar las categorías");
-      });
+    fetchCategorias();
   }, [seccionesSeleccionadas]);
-
-  /* ---------------- HANDLERS ---------------- */
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setImagenes((prev) => [...prev, ...files]);
-    setPreviewUrls((prev) => [
-      ...prev,
-      ...files.map((f) => URL.createObjectURL(f)),
-    ]);
+  const openDrawer = (variante?: VarianteEstado) => {
+    if (variante) {
+      setEditingId(variante.id);
+      setTempColor(variante.color);
+      setTempTalle(variante.talle);
+      setTempStock(variante.stock);
+      setTempSeguimiento(variante.seguimiento);
+    } else {
+      setEditingId(null);
+      setTempColor("");
+      setTempTalle("");
+      setTempStock("0");
+      setTempSeguimiento(true);
+    }
+    setIsDrawerOpen(true);
   };
 
-  const eliminarImagen = (index: number) => {
-    setImagenes((prev) => prev.filter((_, i) => i !== index));
-    setPreviewUrls((prev) => prev.filter((_, i) => i !== index));
+  const handleSaveVariante = () => {
+    if (!tempColor || !tempTalle)
+      return toast.error("Seleccioná color y talle");
+    const id = `${tempColor}-${tempTalle}`;
+    if (!editingId && variantesData.find((v) => v.id === id)) {
+      return toast.error("Esta variante ya existe");
+    }
+    const nueva: VarianteEstado = {
+      id,
+      color: tempColor,
+      talle: tempTalle,
+      stock: tempStock,
+      seguimiento: tempSeguimiento,
+    };
+    if (editingId) {
+      setVariantesData(
+        variantesData.map((v) => (v.id === editingId ? nueva : v)),
+      );
+    } else {
+      setVariantesData([...variantesData, nueva]);
+    }
+    setIsDrawerOpen(false);
+    toast.success(editingId ? "Variante actualizada" : "Variante agregada");
   };
 
-  const toggleSeccion = (id: string) => {
-    setSeccionesSeleccionadas((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
-    );
+  const removeVariante = (id: string) => {
+    setVariantesData(variantesData.filter((v) => v.id !== id));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validaciones finales antes de enviar
-    if (Object.keys(errors).length > 0)
-      return toast.error("Corregí los errores de logística antes de continuar");
-
-    if (!peso || !ancho || !alto || !profundidad)
-      return toast.error("Todos los campos de logística son obligatorios");
-
-    if (!imagenes.length) return toast.error("Agregá al menos una imagen");
+    if (!isFormValid) {
+      console.warn(
+        "⚠️ Formulario incompleto. Revisa campos obligatorios e imágenes.",
+      );
+      return;
+    }
 
     setLoading(true);
-    const categoriaFinalId =
-      categoriasSeleccionadas[categoriasSeleccionadas.length - 1];
+    console.group("🚀 Moonlight: Enviando Producto");
 
     const formData = new FormData();
+
+    // 1. Procesar variantes
+    const variantesFinal = variantesData.map((v) => ({
+      talle: v.talle,
+      color: v.color,
+      stock: v.seguimiento ? parseInt(v.stock) || 0 : null,
+      sku: `${nombre.substring(0, 3).toUpperCase()}-${v.color.substring(0, 3).toUpperCase()}-${v.talle}`,
+    }));
+
+    // 2. Adjuntar archivos
     imagenes.forEach((img) => formData.append("files", img));
+
+    // 3. Datos básicos y logística
     formData.append("nombre", nombre);
     formData.append("descripcion", descripcion);
     formData.append("precio", precio);
-    formData.append("stock", stock);
-
-    // CONVERSIÓN A GRAMOS PARA LA API DE CORREO
-    const pesoEnGramos = Math.round(parseFloat(peso) * 1000);
-    formData.append("peso", pesoEnGramos.toString());
-
+    formData.append("peso", peso);
     formData.append("profundidad", profundidad);
     formData.append("ancho", ancho);
     formData.append("alto", alto);
-    formData.append("categoriaId", categoriaFinalId);
 
-    coloresSel.forEach((c) => formData.append("colores", c));
-    tallesSel.forEach((t) => formData.append("talles", t));
-    cortesSel.forEach((cor) => formData.append("cortes", cor));
+    // 4. Categoría y Secciones
+    const catId = categoriasSeleccionadas[categoriasSeleccionadas.length - 1];
+    formData.append("categoriaId", catId);
     seccionesSeleccionadas.forEach((id) => formData.append("seccionesIds", id));
 
+    // 5. Variantes y Promos
+    formData.append("variantes", JSON.stringify(variantesFinal));
     if (precioPromocional)
       formData.append("precioPromocional", precioPromocional);
 
+    // LOGS DE SALIDA
+    console.log("📁 FormData - Secciones:", seccionesSeleccionadas);
+    console.log("📁 FormData - Categoria Final:", catId);
+    console.log("📁 FormData - Variantes:", variantesFinal);
+    console.groupEnd();
+
     try {
-      const producto = await createProducto(formData);
-      await publicarProducto(producto.id);
-      toast.success("Producto creado y publicado");
-      window.location.reload();
+      const prod = await createProducto(formData);
+      console.log("✅ Producto creado:", prod);
+
+      await publicarProducto(prod.id);
+      console.log("📢 Producto publicado correctamente.");
+
+      toast.success("¡Producto publicado en Moonlight!");
+      // Descomenta para recargar después de verificar los logs
+      // window.location.reload();
     } catch (error) {
-      console.error(error);
-      toast.error("Error creando el producto");
+      console.error("❌ Error fatal al crear/publicar:", error);
+      toast.error("Error al crear el producto");
       setLoading(false);
     }
   };
 
-  const OPCIONES_COLORES = [
-    "blanco",
-    "negro",
-    "gris",
-    "chocolate",
-    "azul",
-    "crema",
-    "beige",
-    "verde",
-    "violeta",
-    "lila",
-  ];
-  const OPCIONES_CORTES = [
-    "clásica",
-    "oversize",
-    "boxy fit",
-    "musculosa oversize",
-    "crop top",
-  ];
-  const OPCIONES_TALLES = ["S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"];
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-3xl mx-auto bg-white/70 backdrop-blur p-6 rounded-2xl shadow-xl space-y-6"
-    >
-      <h2 className="text-xl font-bold text-purple-900 border-b pb-2">
-        Publicar Producto
-      </h2>
+    <div className="relative min-h-screen pb-20">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-10"
+      >
+        <h2 className="text-2xl font-bold text-gray-800 border-b pb-4">
+          Nuevo Producto Moonlight
+        </h2>
 
-      {/* DATOS BÁSICOS */}
-      <section className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Nombre</label>
+        {/* DATOS BÁSICOS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-            className="border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none"
+            placeholder="Nombre del producto"
+            className="col-span-2 border-2 p-3 rounded-xl outline-none focus:border-purple-500"
             required
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Stock</label>
-          <input
-            type="number"
-            value={stock}
-            onChange={(e) => setStock(e.target.value)}
-            className="border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none"
-            required
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">Precio ($)</label>
           <input
             type="number"
             value={precio}
             onChange={(e) => setPrecio(e.target.value)}
-            className="border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none"
+            placeholder="Precio ($)"
+            className="border-2 p-3 rounded-xl outline-none focus:border-purple-500"
             required
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-500">
-            Precio Promocional (opcional)
-          </label>
           <input
             type="number"
             value={precioPromocional}
             onChange={(e) => setPrecioPromocional(e.target.value)}
-            className="border rounded-lg p-2 focus:ring-2 focus:ring-purple-500 outline-none"
+            placeholder="Precio Promocional (Opcional)"
+            className="border-2 p-3 rounded-xl outline-none"
           />
         </div>
-      </section>
 
-      {/* LOGÍSTICA CORREO ARGENTINO */}
-      <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-        <div className="flex items-center gap-2 mb-3">
-          <p className="text-sm font-bold text-purple-800 uppercase tracking-wider">
-            Logística (Correo Argentino)
-          </p>
-          <InformationCircleIcon className="w-4 h-4 text-purple-400" />
-        </div>
-
-        <section className="grid grid-cols-4 gap-3">
-          {/* PESO */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-gray-500">
-              PESO (KG)
-            </label>
-            <input
-              placeholder="0.5"
-              value={peso}
-              onChange={(e) => setPeso(e.target.value)}
-              className={`border rounded h-10 px-2 text-center text-sm ${errors.peso ? "border-red-500 bg-red-50" : "border-gray-300 shadow-sm"}`}
-            />
-            {errors.peso ? (
-              <span className="text-[10px] text-red-600 font-medium">
-                {errors.peso}
-              </span>
-            ) : (
-              <span className="text-[9px] text-gray-400">Ej: 0.5 (500g)</span>
-            )}
+        {/* VARIANTES */}
+        <section className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-gray-700">Variantes de stock</h3>
+            <button
+              type="button"
+              onClick={() => openDrawer()}
+              className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors"
+            >
+              <PlusIcon className="w-4 h-4" /> Agregar Variante
+            </button>
           </div>
 
-          {/* PROFUNDIDAD */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-gray-500">
-              LARGO (CM)
-            </label>
-            <input
-              placeholder="20"
-              value={profundidad}
-              onChange={(e) => setProfundidad(e.target.value)}
-              className={`border rounded h-10 px-2 text-center text-sm ${errors.profundidad ? "border-red-500 bg-red-50" : "border-gray-300 shadow-sm"}`}
-            />
-            {errors.profundidad && (
-              <span className="text-[10px] text-red-600 font-medium">
-                {errors.profundidad}
-              </span>
-            )}
-          </div>
-
-          {/* ANCHO */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-gray-500">
-              ANCHO (CM)
-            </label>
-            <input
-              placeholder="20"
-              value={ancho}
-              onChange={(e) => setAncho(e.target.value)}
-              className={`border rounded h-10 px-2 text-center text-sm ${errors.ancho ? "border-red-500 bg-red-50" : "border-gray-300 shadow-sm"}`}
-            />
-            {errors.ancho && (
-              <span className="text-[10px] text-red-600 font-medium">
-                {errors.ancho}
-              </span>
-            )}
-          </div>
-
-          {/* ALTO */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-bold text-gray-500">
-              ALTO (CM)
-            </label>
-            <input
-              placeholder="20"
-              value={alto}
-              onChange={(e) => setAlto(e.target.value)}
-              className={`border rounded h-10 px-2 text-center text-sm ${errors.alto ? "border-red-500 bg-red-50" : "border-gray-300 shadow-sm"}`}
-            />
-            {errors.alto && (
-              <span className="text-[10px] text-red-600 font-medium">
-                {errors.alto}
-              </span>
-            )}
+          <div className="border rounded-xl overflow-hidden bg-gray-50">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-100 font-bold text-gray-600 border-b">
+                <tr>
+                  <th className="p-4">Color / Talle</th>
+                  <th className="p-4">Stock</th>
+                  <th className="p-4 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {variantesData.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="p-8 text-center text-gray-400 italic"
+                    >
+                      No hay variantes agregadas aún
+                    </td>
+                  </tr>
+                ) : (
+                  variantesData.map((v) => (
+                    <tr
+                      key={v.id}
+                      className="bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="p-4 capitalize font-medium">
+                        {v.color} - {v.talle}
+                      </td>
+                      <td className="p-4">{v.seguimiento ? v.stock : "∞"}</td>
+                      <td className="p-4 flex justify-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => openDrawer(v)}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          <PencilSquareIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeVariante(v.id)}
+                          className="text-red-400 hover:text-red-600"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
-      </div>
 
-      {/* DESCRIPCIÓN */}
-      <div>
-        <label className="block text-sm font-medium mb-2">
-          Descripción del Producto
-        </label>
-        <EditorDescripcion value={descripcion} onChange={setDescripcion} />
-      </div>
-
-      {/* SECCIONES */}
-      <div>
-        <p className="font-medium mb-2 text-sm text-gray-700">
-          Secciones donde aparecerá
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {secciones.map((s) => (
-            <label
-              key={s.id}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer transition-all border text-sm ${seccionesSeleccionadas.includes(s.id) ? "bg-purple-600 border-purple-600 text-white shadow-md" : "bg-white border-gray-200 text-gray-600 hover:border-purple-300"}`}
-            >
+        {/* LOGÍSTICA */}
+        <section className="space-y-4">
+          <h3 className="font-bold text-gray-700">Envío (Correo Argentino)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Peso (kg)
+              </label>
               <input
-                type="checkbox"
-                className="hidden"
-                checked={seccionesSeleccionadas.includes(s.id)}
-                onChange={() => toggleSeccion(s.id)}
+                type="number"
+                step="0.1"
+                value={peso}
+                onChange={(e) => setPeso(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
               />
-              <span>{s.nombre}</span>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Alto (cm)
+              </label>
+              <input
+                type="number"
+                value={alto}
+                onChange={(e) => setAlto(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Ancho (cm)
+              </label>
+              <input
+                type="number"
+                value={ancho}
+                onChange={(e) => setAncho(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Largo (cm)
+              </label>
+              <input
+                type="number"
+                value={profundidad}
+                onChange={(e) => setProfundidad(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* CATEGORÍAS Y SECCIONES */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <p className="text-sm font-bold text-gray-700 mb-2">Sección</p>
+            <div className="flex flex-wrap gap-2">
+              {secciones.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setSeccionesSeleccionadas([s.id])}
+                  className={`px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all ${seccionesSeleccionadas.includes(s.id) ? "bg-purple-600 border-purple-600 text-white" : "bg-white text-gray-400"}`}
+                >
+                  {s.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-700 mb-2">Categoría</p>
+            <div className="border-2 rounded-xl p-4 h-40 overflow-y-auto bg-gray-50">
+              <CategoriaTreeSelector
+                categorias={categoriasData}
+                value={categoriasSeleccionadas}
+                onChange={setCategoriasSeleccionadas}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* FOTOS */}
+        <section>
+          <p className="text-sm font-bold text-gray-700 mb-4">
+            Fotos del producto
+          </p>
+          <div className="flex flex-wrap gap-4">
+            {previewUrls.map((url, i) => (
+              <div key={i} className="relative w-24 h-24">
+                <Image
+                  src={url}
+                  alt="preview"
+                  fill
+                  className="object-cover rounded-xl border"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImagenes((prev) => prev.filter((_, idx) => idx !== i));
+                    setPreviewUrls((prev) =>
+                      prev.filter((_, idx) => idx !== i),
+                    );
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+              <CameraIcon className="w-6 h-6 text-gray-300" />
+              <input
+                type="file"
+                multiple
+                hidden
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  setImagenes((prev) => [...prev, ...files]);
+                  setPreviewUrls((prev) => [
+                    ...prev,
+                    ...files.map((f) => URL.createObjectURL(f)),
+                  ]);
+                }}
+              />
             </label>
-          ))}
-        </div>
-      </div>
+          </div>
+        </section>
 
-      {/* CATEGORÍAS */}
-      <div>
-        <p className="font-medium mb-2 text-sm text-gray-700">
-          Categoría y Subcategoría
-        </p>
-        <div className="border rounded-xl p-3 max-h-60 overflow-auto bg-white shadow-inner">
-          <CategoriaTreeSelector
-            categorias={categoriasData}
-            value={categoriasSeleccionadas}
-            onChange={setCategoriasSeleccionadas}
+        <EditorDescripcion value={descripcion} onChange={setDescripcion} />
+
+        <button
+          type="submit"
+          disabled={loading || !isFormValid}
+          className={`w-full py-4 rounded-xl font-bold transition-all shadow-lg ${
+            loading || !isFormValid
+              ? "bg-gray-300 cursor-not-allowed text-gray-500"
+              : "bg-purple-600 text-white hover:bg-purple-700 active:scale-[0.98]"
+          }`}
+        >
+          {loading
+            ? "PUBLICANDO..."
+            : isFormValid
+              ? "PUBLICAR PRODUCTO"
+              : "FALTAN COMPLETAR DATOS"}
+        </button>
+      </form>
+
+      {/* --- DRAWER LATERAL --- */}
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsDrawerOpen(false)}
           />
-        </div>
-      </div>
-
-      {/* IMÁGENES */}
-      <div>
-        <p className="font-medium mb-2 text-sm text-gray-700">
-          Fotos del Producto
-        </p>
-        <div className="flex gap-4 flex-wrap">
-          {previewUrls.map((url, i) => (
-            <div key={i} className="relative w-24 h-24 group">
-              <img
-                src={url}
-                alt="preview"
-                className="w-full h-full object-cover rounded-xl border shadow-sm group-hover:brightness-75 transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => eliminarImagen(i)}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <XMarkIcon className="w-4 h-4" />
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl p-8 flex flex-col space-y-8 animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-800">
+                {editingId ? "Editar" : "Agregar"} Variante
+              </h3>
+              <button onClick={() => setIsDrawerOpen(false)}>
+                <XMarkIcon className="w-6 h-6 text-gray-400" />
               </button>
             </div>
-          ))}
-          <label className="w-24 h-24 border-2 border-dashed border-purple-200 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-purple-500 hover:bg-purple-50 transition-all text-purple-300">
-            <CameraIcon className="w-7 h-7" />
-            <span className="text-[10px] mt-1 font-bold">Añadir</span>
-            <input type="file" multiple hidden onChange={handleImageChange} />
-          </label>
-        </div>
-      </div>
 
-      {/* VARIANTES */}
-      <div className="grid grid-cols-3 gap-6 pt-4 border-t border-gray-100">
-        {/* Colores */}
-        <div>
-          <p className="text-sm font-bold text-gray-700 mb-3">Colores</p>
-          <div className="flex flex-col gap-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-            {OPCIONES_COLORES.map((color) => (
-              <label
-                key={color}
-                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-sm ${coloresSel.includes(color) ? "bg-purple-50 text-purple-700 font-bold" : "hover:bg-gray-50 text-gray-600"}`}
-              >
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={coloresSel.includes(color)}
-                  onChange={() =>
-                    setColoresSel((prev) =>
-                      prev.includes(color)
-                        ? prev.filter((c) => c !== color)
-                        : [...prev, color],
-                    )
-                  }
-                />
-                <div
-                  className="w-3 h-3 rounded-full border border-gray-200 shadow-sm"
-                  style={{ backgroundColor: COLOR_MAP[color] || "#eee" }}
-                />
-                <span className="capitalize">{color}</span>
-              </label>
-            ))}
+            <div className="space-y-6 overflow-y-auto pr-2">
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-3">Color</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "blanco",
+                    "negro",
+                    "gris",
+                    "azul",
+                    "marron",
+                    "crema",
+                    "verde",
+                    "rosa",
+                    "beige",
+                    "violeta",
+                    "rojo",
+                  ].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setTempColor(c)}
+                      className={`px-4 py-2 rounded-full border-2 text-xs capitalize transition-all ${tempColor === c ? "bg-black border-black text-white" : "bg-white text-gray-500 hover:border-purple-300"}`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-3">Talle</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "S",
+                    "M",
+                    "L",
+                    "XL",
+                    "XXL",
+                    "Único",
+                    "34",
+                    "36",
+                    "38",
+                    "40",
+                    "42",
+                    "44",
+                  ].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTempTalle(t)}
+                      className={`px-4 py-2 rounded-full border-2 text-xs transition-all ${tempTalle === t ? "bg-black border-black text-white" : "bg-white text-gray-500 hover:border-purple-300"}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-xl space-y-4 border">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-bold text-gray-700">
+                    Seguimiento de stock
+                  </label>
+                  <input
+                    type="checkbox"
+                    checked={tempSeguimiento}
+                    onChange={(e) => setTempSeguimiento(e.target.checked)}
+                    className="w-5 h-5 accent-purple-600"
+                  />
+                </div>
+                {tempSeguimiento && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-bold">
+                      CANTIDAD EN STOCK
+                    </label>
+                    <input
+                      type="number"
+                      value={tempStock}
+                      onChange={(e) => setTempStock(e.target.value)}
+                      className="w-full border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSaveVariante}
+              className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-purple-700 mt-auto transition-all"
+            >
+              {editingId ? "GUARDAR CAMBIOS" : "LISTO (OK)"}
+            </button>
           </div>
         </div>
-
-        {/* Talles */}
-        <div>
-          <p className="text-sm font-bold text-gray-700 mb-3">Talles</p>
-          <div className="flex flex-col gap-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-            {OPCIONES_TALLES.map((talle) => (
-              <label
-                key={talle}
-                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-sm ${tallesSel.includes(talle) ? "bg-purple-50 text-purple-700 font-bold" : "hover:bg-gray-50 text-gray-600"}`}
-              >
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={tallesSel.includes(talle)}
-                  onChange={() =>
-                    setTallesSel((prev) =>
-                      prev.includes(talle)
-                        ? prev.filter((t) => t !== talle)
-                        : [...prev, talle],
-                    )
-                  }
-                />
-                <span>{talle}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* Cortes */}
-        <div>
-          <p className="text-sm font-bold text-gray-700 mb-3">Corte</p>
-          <div className="flex flex-col gap-1 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-            {OPCIONES_CORTES.map((corte) => (
-              <label
-                key={corte}
-                className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer text-sm ${cortesSel.includes(corte) ? "bg-purple-50 text-purple-700 font-bold" : "hover:bg-gray-50 text-gray-600"}`}
-              >
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={cortesSel.includes(corte)}
-                  onChange={() =>
-                    setCortesSel((prev) =>
-                      prev.includes(corte)
-                        ? prev.filter((c) => c !== corte)
-                        : [...prev, corte],
-                    )
-                  }
-                />
-                <span className="capitalize">{corte}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        disabled={loading || Object.keys(errors).length > 0}
-        className={`w-full py-4 rounded-2xl font-black text-white shadow-xl transition-all transform active:scale-95 ${loading || Object.keys(errors).length > 0 ? "bg-gray-300 cursor-not-allowed" : "bg-purple-700 hover:bg-purple-800"}`}
-      >
-        {loading ? "PUBLICANDO..." : "PUBLICAR PRODUCTO"}
-      </button>
-    </form>
+      )}
+    </div>
   );
 }

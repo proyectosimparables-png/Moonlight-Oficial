@@ -104,8 +104,11 @@ async function procesarCategorias(
   for (const item of lista) {
     const categoria = await crearCategoria(item.nombre, parentId, seccionId);
 
-    if (item.subcategorias) {
-      await procesarCategorias(item.subcategorias, categoria.id, seccionId);
+    // Verificamos tanto 'subcategorias' como 'categorias' para que sea flexible
+    const hijos = item.subcategorias || item.categorias;
+
+    if (hijos) {
+      await procesarCategorias(hijos, categoria.id, seccionId);
     }
   }
 }

@@ -15,28 +15,28 @@ import { UnifiedAuthGuard } from 'src/auth/guards/supabase-auth.guard';
 import { AddItemDto } from './dto/add-item.dto';
 
 @Controller('cart')
-@UseGuards(UnifiedAuthGuard )
+@UseGuards(UnifiedAuthGuard)
 export class CartController {
     constructor(private readonly cartService: CartService) { }
 
     // 🧾 Obtener carrito del usuario
-  @Get()
-async getCart(@Req() req: any) {
-    const userId = req.user.id;
-    return this.cartService.getCartByUser(userId);
-}
+    @Get()
+    async getCart(@Req() req: any) {
+        const userId = req.user.id;
+        return this.cartService.getCartByUser(userId);
+    }
 
 
     // ➕ Agregar producto
-   @Post('add')
-async addItem(@Req() req: any, @Body() body: AddItemDto) {
-    const userId = req.user.id;
-    return this.cartService.addItemToCart(
-        userId,
-        body.productoId,
-        body.quantity
-    );
-}
+    @Post('add')
+    async addItem(@Req() req: any, @Body() body: AddItemDto) {
+        const userId = req.user.id;
+        return this.cartService.addItemToCart(
+            userId,
+            body.varianteId, // <--- CAMBIAR ESTO (estaba como productoId)
+            body.quantity
+        );
+    }
 
 
     // 🔁 Actualizar cantidad
@@ -52,10 +52,10 @@ async addItem(@Req() req: any, @Body() body: AddItemDto) {
     }
 
     // 🧹 Vaciar carrito
-  @Delete('clear')
-async clear(@Req() req: any) {
-    const userId = req.user.id;
-    return this.cartService.clearCart(userId);
-}
+    @Delete('clear')
+    async clear(@Req() req: any) {
+        const userId = req.user.id;
+        return this.cartService.clearCart(userId);
+    }
 
 }
