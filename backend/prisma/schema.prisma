@@ -285,3 +285,37 @@ enum TipoPromocion {
   CANTIDAD_X_CANTIDAD
   SEGUNDA_UNIDAD
 }
+
+// --- MARKETING Y CONFIGURACIÓN ---
+
+model ConfiguracionEnvio {
+  id               String   @id @default(uuid())
+  montoMinimo      Float    @default(0)    // Envío gratis si superan este monto
+  activo           Boolean  @default(true)
+  soloMenorCosto   Boolean  @default(false) // Si es true, solo el envío más barato es gratis
+  permitirCombinar Boolean  @default(true)  // ¿Se puede usar con cupones?
+  updatedAt        DateTime @updatedAt
+}
+
+model Cupon {
+  id                String         @id @default(uuid())
+  codigo            String         @unique // Ej: "MOONLIGHT10"
+  tipo              TipoDescuento
+  valor             Float          // El % o el monto fijo
+  limiteUso         Int?           // null = ilimitado
+  usados            Int            @default(0)
+  minimoCarrito     Float          @default(0) // Monto mínimo de compra para aplicar
+  activo            Boolean        @default(true)
+  acumulable        Boolean        @default(false)
+  soloPrimeraCompra Boolean        @default(false)
+  fechaInicio       DateTime?
+  fechaFin          DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+enum TipoDescuento {
+  PORCENTAJE     // Ej: 15% OFF
+  MONTO_FIJO     // Ej: $5000 OFF
+  ENVIO_GRATIS   // El cupón anula el costo de envío
+}

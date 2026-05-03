@@ -12,14 +12,14 @@ import { TipoPromocion } from '@prisma/client';
 
 export class CreatePromocionDto {
     @IsString()
-    nombre: string;
+    nombre!: string;
 
     @IsString()
     @IsOptional()
     descripcion?: string;
 
     @IsEnum(TipoPromocion)
-    tipo: TipoPromocion;
+    tipo!: TipoPromocion;
 
     @IsNumber()
     @IsOptional()

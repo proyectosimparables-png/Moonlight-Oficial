@@ -28,6 +28,7 @@ export interface OrderPayload {
     departamento?: string;
     metodoPago: string;
     notasEntrega?: string;
+    cuponCodigo?: string;
     items: OrderItem[];
 }
 

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePromocionDto } from './dto/create-promocion.dto';
+import { CreateCuponDto } from './dto/create-cupon.dto';
 
 @Injectable()
 export class PromocionService {
@@ -87,4 +88,67 @@ export class PromocionService {
             where: { id },
         });
     }
+
+    // 🔹 1. Crear Cupón
+    async createCupon(data: CreateCuponDto) {
+        try {
+            return await this.prisma.cupon.create({
+                data: {
+                    ...data,
+                    codigo: data.codigo.toUpperCase(), // Siempre en mayúsculas para evitar errores
+                    fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : null,
+                    fechaFin: data.fechaFin ? new Date(data.fechaFin) : null,
+                }
+            });
+        } catch (error: any) {
+            if (error.code === 'P2002') {
+                throw new BadRequestException('Ya existe un cupón con ese código.');
+            }
+            throw new BadRequestException('Error al crear el cupón.');
+        }
+    }
+
+    // 🔹 2. Obtener Cupones (para el Dashboard)
+    async findAllCupones() {
+        return this.prisma.cupon.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    // 🔹 3. Validar Cupón (Este es el motor para el Carrito/Checkout)
+    async validarCupon(codigo: string, subtotal: number) {
+        const cupon = await this.prisma.cupon.findUnique({
+            where: { codigo: codigo.toUpperCase() }
+        });
+
+        if (!cupon) throw new NotFoundException('Cupón no encontrado.');
+        if (!cupon.activo) throw new BadRequestException('El cupón no está activo.');
+
+        const ahora = new Date();
+        if (cupon.fechaInicio && ahora < cupon.fechaInicio) throw new BadRequestException('El cupón aún no es válido.');
+        if (cupon.fechaFin && ahora > cupon.fechaFin) throw new BadRequestException('El cupón ha expirado.');
+
+        if (cupon.limiteUso && cupon.usados >= cupon.limiteUso) {
+            throw new BadRequestException('El cupón ha agotado sus usos.');
+        }
+
+        if (subtotal < cupon.minimoCarrito) {
+            throw new BadRequestException(`El monto mínimo de compra es $${cupon.minimoCarrito}`);
+        }
+        if (Number(subtotal) < cupon.minimoCarrito) {
+            throw new BadRequestException(`El monto mínimo de compra es $${cupon.minimoCarrito}`);
+        }
+
+        return cupon;
+    }
+
+    // 🔹 4. Eliminar Cupón
+    async removeCupon(id: string) {
+        const existe = await this.prisma.cupon.findUnique({ where: { id } });
+        if (!existe) throw new NotFoundException('El cupón no existe.');
+
+        return this.prisma.cupon.delete({ where: { id } });
+    }
 }
+
+

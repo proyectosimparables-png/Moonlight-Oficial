@@ -14,51 +14,44 @@ export class PaymentsService {
     }
 
     // =========================
-    // MERCADO PAGO
+    // MERCADO PAGO - CORREGIDO
     // =========================
     async createPreference(ordenId: string) {
         const orden = await this.prisma.orden.findUnique({
             where: { id: ordenId },
-            include: { items: true },
+            // Ya no necesitamos 'include: { items: true }' porque usamos el total directo
         });
 
         if (!orden) throw new NotFoundException('Orden no encontrada');
 
         const preference = new Preference(this.client);
 
-        const itemsMP = orden.items.map((item) => {
-            const valorUnitario = (item.precioFinal && Number(item.precioFinal) > 0)
-                ? Number(item.precioFinal)
-                : Number(item.precio);
-
-            return {
-                id: item.id,
-                title: item.nombre,
-                unit_price: valorUnitario,
-                quantity: item.cantidad,
-                currency_id: 'ARS',
-            };
-        });
-
-        if (Number(orden.costoEnvio) > 0) {
-            itemsMP.push({
-                id: 'shipping_cost',
-                title: 'Costo de Envío',
-                unit_price: Number(orden.costoEnvio),
+        // Creamos un ítem único que represente el valor final de la orden.
+        // Esto garantiza que se cobre el monto exacto (ej. $18.000) 
+        // que tu OrdersService calculó con el cupón aplicado.
+        const itemsMP = [
+            {
+                id: orden.id,
+                title: `Pedido #${orden.id.slice(-6).toUpperCase()}`,
+                unit_price: Number(orden.total),
                 quantity: 1,
                 currency_id: 'ARS',
-            });
-        }
+            },
+        ];
+
         console.log("DEBUG BACK_URL SUCCESS:", `${process.env.FRONTEND_URL}/payment-success`);
+
         const body = {
             items: itemsMP,
-            payer: { email: orden.emailContacto || 'test_user_6490245370322727351@testuser.com' },
+            payer: {
+                email: orden.emailContacto || 'test_user_6490245370322727351@testuser.com'
+            },
             back_urls: {
                 success: `${process.env.FRONTEND_URL}/payment-success`,
                 failure: `${process.env.FRONTEND_URL}/checkout`,
                 pending: `${process.env.FRONTEND_URL}/payment-pending`,
             },
-            //auto_return: 'approved', // ✅ Redirección automática al finalizar
+            // auto_return: 'approved', 
             notification_url: `${process.env.BACKEND_URL}/payments/webhook`,
             external_reference: orden.id,
         };

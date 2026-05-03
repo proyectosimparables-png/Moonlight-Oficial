@@ -3,32 +3,32 @@ import { EstadoOrden, MetodoPago } from '@prisma/client';
 
 export class CreateOrdeneDto {
   @IsUUID()
-  userId: string;
+  userId!: string;
 
   // Datos de Contacto y Destinatario
   @IsEmail()
-  emailContacto: string;
+  emailContacto!: string;
 
   @IsString()
   @IsNotEmpty()
-  nombreDestinatario: string;
+  nombreDestinatario!: string;
 
   @IsString()
   @IsNotEmpty()
-  apellidoDestinatario: string;
+  apellidoDestinatario!: string;
 
   @IsString()
   @IsNotEmpty()
-  dniDestinatario: string;
+  dniDestinatario!: string;
 
   @IsString()
   @IsNotEmpty()
-  telefonoDestinatario: string;
+  telefonoDestinatario!: string;
 
   // Datos de Envío
   @IsString()
   @IsNotEmpty()
-  metodoEnvio: string; // Ej: "Correo Argentino Clásico"
+  metodoEnvio!: string; // Ej: "Correo Argentino Clásico"
 
   @IsOptional()
   @IsString()
@@ -39,27 +39,27 @@ export class CreateOrdeneDto {
   deliveredType?: string;
 
   @IsNumber()
-  costoEnvio: number;
+  costoEnvio!: number;
 
   @IsString()
   @IsNotEmpty()
-  codigoPostal: string;
+  codigoPostal!: string;
 
   @IsString()
   @IsNotEmpty()
-  provincia: string;
+  provincia!: string;
 
   @IsString()
   @IsNotEmpty()
-  localidad: string;
+  localidad!: string;
 
   @IsString()
   @IsNotEmpty()
-  calle: string;
+  calle!: string;
 
   @IsString()
   @IsNotEmpty()
-  numero: string;
+  numero!: string;
 
   @IsOptional()
   @IsString()
@@ -75,7 +75,10 @@ export class CreateOrdeneDto {
 
   // Pago
   @IsEnum(MetodoPago)
-  metodoPago: MetodoPago;
+  metodoPago!: MetodoPago;
 
+  @IsString()
+  @IsOptional()
+  cuponCodigo?: string;
 
 }

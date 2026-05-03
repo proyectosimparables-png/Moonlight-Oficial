@@ -16,6 +16,7 @@ import {
   Cloud,
   MapPin,
   Percent,
+  Ticket,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +25,7 @@ const menuItems = [
   { title: "Resumen", url: "/admin", icon: LayoutDashboard },
   { title: "Ventas", url: "/admin/ventas", icon: ShoppingCart },
   { title: "Promociones", url: "/admin/promociones", icon: Percent },
+  { title: "Cupones", url: "/admin/cupones", icon: Ticket },
   { title: "Publicar", url: "/admin/nuevo-producto", icon: Tags },
   { title: "Productos", url: "/admin/productos", icon: Package },
   { title: "Secciones", url: "/admin/secciones", icon: FolderTree },

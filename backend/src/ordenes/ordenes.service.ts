@@ -4,12 +4,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EstadoOrden, MetodoPago, TipoPromocion } from '@prisma/client';
 import { CreateOrdeneDto } from './dto/create-ordene.dto';
 import { PaymentsService } from '../payments/payments.service';
+import { PromocionService } from 'src/promocion/promocion.service';
 
 @Injectable()
 export class OrdenesService {
   constructor(
     private prisma: PrismaService,
     private paymentsService: PaymentsService,
+    private promocionService: PromocionService,
   ) { }
 
   async findAll() {
@@ -153,12 +155,38 @@ export class OrdenesService {
 
     // 5. Totales
     const totalProductos = itemsOrden.reduce((acc, i) => acc + (i.precioFinal * i.cantidad), 0);
-    let totalFinal = totalProductos + (dto.costoEnvio || 0);
-    if (dto.metodoPago === MetodoPago.TRANSFERENCIA) totalFinal *= 0.9;
+
+    // --- LÓGICA DE CUPÓN ---
+    let descuentoPorCupon = 0;
+
+    if (dto.cuponCodigo) {
+      // Validamos el cupón (ya verifica si existe, si está activo y el monto mínimo)
+      const cupon = await this.promocionService.validarCupon(dto.cuponCodigo, totalProductos);
+
+      if (cupon.tipo === 'PORCENTAJE') {
+        descuentoPorCupon = totalProductos * (cupon.valor / 100);
+      } else if (cupon.tipo === 'MONTO_FIJO') {
+        descuentoPorCupon = cupon.valor;
+      }
+    }
+
+    // Calculamos el total final: (Productos - Cupón) + Envío
+    // Usamos "let" una sola vez aquí
+    let totalFinal = (totalProductos - descuentoPorCupon) + (dto.costoEnvio || 0);
+
+    // Descuento extra por transferencia (sobre el total ya rebajado por el cupón)
+    if (dto.metodoPago === MetodoPago.TRANSFERENCIA) {
+      totalFinal *= 0.9;
+    }
 
     // 6. TRANSACCIÓN: Crear orden, descontar stock y limpiar carrito
     const nuevaOrden = await this.prisma.$transaction(async (tx) => {
-
+      if (dto.cuponCodigo) {
+        await tx.cupon.update({
+          where: { codigo: dto.cuponCodigo.toUpperCase() },
+          data: { usados: { increment: 1 } }
+        });
+      }
       // VALIDAR Y DESCONTAR STOCK
       for (const item of itemsOrden) {
         const varianteStock = await tx.variante.findUnique({

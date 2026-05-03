@@ -17,8 +17,15 @@ export type MetodoPago =
   | "UALA"
   | "";
 
-// Definimos un tipo para el tipo de entrega para reutilizarlo
 export type DeliveredType = "HOME_DELIVERY" | "PICKUP";
+
+// Definimos la interfaz para el cupón
+export interface CuponAplicado {
+  id: string;
+  codigo: string;
+  tipo: "PORCENTAJE" | "MONTO_FIJO";
+  valor: number;
+}
 
 export interface CheckoutFormData {
   email: string;
@@ -38,6 +45,7 @@ export interface CheckoutFormData {
   deliveredType: DeliveredType;
   metodoPago: MetodoPago;
   notasEntrega: string;
+  cuponCodigo?: string; // 👈 Agregamos esto para mandarlo luego al backend
 }
 
 interface CheckoutContextType {
@@ -51,6 +59,9 @@ interface CheckoutContextType {
   subtotal: number;
   descuento: number;
   totalFinal: number;
+  // --- NUEVOS CAMPOS PARA EL CUPÓN ---
+  cuponAplicado: CuponAplicado | null;
+  setCuponAplicado: (cupon: CuponAplicado | null) => void;
 }
 
 const CheckoutContext = createContext<CheckoutContextType | undefined>(
@@ -63,8 +74,12 @@ export const CheckoutProvider = ({ children }: { children: ReactNode }) => {
   const searchParams = useSearchParams();
   const { subtotal, descuentoTotal, total } = useCart();
 
+  // Estado para el cupón aplicado
+  const [cuponAplicado, setCuponAplicado] = useState<CuponAplicado | null>(
+    null,
+  );
+
   const [formData, setFormData] = useState<CheckoutFormData>(() => {
-    // Intentar recuperar de localStorage
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(CHECKOUT_STORAGE_KEY);
       if (saved) {
@@ -76,7 +91,6 @@ export const CheckoutProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Validación de tipo para DeliveredType desde la URL
     const rawType = searchParams.get("shippingType");
     const validDeliveredType: DeliveredType =
       rawType === "HOME_DELIVERY" || rawType === "PICKUP" ? rawType : "PICKUP";
@@ -99,10 +113,14 @@ export const CheckoutProvider = ({ children }: { children: ReactNode }) => {
       costoEnvio: Number(searchParams.get("shippingCost")) || 0,
       deliveredType: validDeliveredType,
       metodoPago: "",
+      cuponCodigo: "",
     };
   });
 
-  const [step, setStep] = useState(1);
+  // Sincronizar el código del cupón en formData cuando se aplica uno
+  useEffect(() => {
+    updateFormData({ cuponCodigo: cuponAplicado?.codigo || "" });
+  }, [cuponAplicado]);
 
   useEffect(() => {
     localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(formData));
@@ -114,6 +132,8 @@ export const CheckoutProvider = ({ children }: { children: ReactNode }) => {
   const updateFormData = (data: Partial<CheckoutFormData>) => {
     setFormData((prev) => ({ ...prev, ...data }));
   };
+
+  const [step, setStep] = useState(1);
 
   const isStep1Valid =
     formData.nombre.trim() !== "" &&
@@ -136,6 +156,9 @@ export const CheckoutProvider = ({ children }: { children: ReactNode }) => {
         subtotal: subtotal ?? 0,
         descuento: descuentoTotal ?? 0,
         totalFinal: total ?? 0,
+        // Exponemos el cupón
+        cuponAplicado,
+        setCuponAplicado,
       }}
     >
       {children}

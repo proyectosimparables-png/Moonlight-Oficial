@@ -107,6 +107,7 @@ const Step2Pago: React.FC = () => {
         departamento: formData.depto || undefined,
         metodoPago: formData.metodoPago,
         notasEntrega: formData.notasEntrega || "",
+        cuponCodigo: formData.cuponCodigo || undefined,
         items: cart.map((item) => ({
           productoId: item.productoId,
           cantidad: item.quantity,
