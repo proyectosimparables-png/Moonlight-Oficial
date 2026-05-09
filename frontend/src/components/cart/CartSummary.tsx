@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Store, Loader2 } from "lucide-react";
+import { Store, Loader2, Gift } from "lucide-react";
 import { getPuntosEntrega } from "@/services/entregas";
 import { getShippingRates } from "@/services/correo/correoService";
-import { CartItem } from "@/context/CartContext";
+import { CartItem, useCart } from "@/context/CartContext"; // Importamos el hook useCart
 
-// --- INTERFACES ---
+// --- INTERFACES (Se mantienen igual) ---
 interface PuntoEntrega {
   id: string;
   nombre: string;
@@ -28,7 +28,7 @@ interface CorreoRate {
 interface CartSummaryProps {
   subtotal: number;
   descuento: number;
-  totalPrice: number; // Este es el totalFinal que viene del context
+  totalPrice: number;
   postalCode: string;
   setPostalCode: (val: string) => void;
   handleCheckout: () => void;
@@ -41,12 +41,11 @@ interface CartSummaryProps {
   ) => void;
 }
 
-// Unificamos el tipo para que sea más fácil de manejar en la UI
 type SeleccionEnvio = {
   nombre: string;
   precioFinal: number;
   tipo: "HOME_DELIVERY" | "PICKUP";
-  idRef?: string; // Para distinguir puntos propios
+  idRef?: string;
 };
 
 export default function CartSummary({
@@ -60,6 +59,9 @@ export default function CartSummary({
   onShippingChange,
   items,
 }: CartSummaryProps) {
+  // 1. Extraemos los datos de envío gratis del Contexto
+  const { esEnvioGratis, montoFaltante } = useCart();
+
   const [puntos, setPuntos] = useState<PuntoEntrega[]>([]);
   const [correoRates, setCorreoRates] = useState<CorreoRate[]>([]);
   const [loadingCorreo, setLoadingCorreo] = useState(false);
@@ -91,25 +93,31 @@ export default function CartSummary({
   };
 
   const handleSelectPunto = (punto: PuntoEntrega) => {
+    // Aplicamos costo 0 si el beneficio está activo
+    const costoFinal = esEnvioGratis ? 0 : punto.costo;
+
     const nuevaSeleccion: SeleccionEnvio = {
       nombre: punto.nombre,
-      precioFinal: punto.costo,
+      precioFinal: costoFinal,
       tipo: "PICKUP",
       idRef: punto.id,
     };
     setSeleccion(nuevaSeleccion);
-    onShippingChange?.(punto.nombre, punto.costo, "PICKUP");
+    onShippingChange?.(punto.nombre, costoFinal, "PICKUP");
   };
 
   const handleSelectCorreo = (rate: CorreoRate) => {
+    // Aplicamos costo 0 si el beneficio está activo
+    const costoFinal = esEnvioGratis ? 0 : rate.precio;
     const type = rate.deliveredType === "D" ? "HOME_DELIVERY" : "PICKUP";
+
     const nuevaSeleccion: SeleccionEnvio = {
       nombre: rate.nombre,
-      precioFinal: rate.precio,
+      precioFinal: costoFinal,
       tipo: type,
     };
     setSeleccion(nuevaSeleccion);
-    onShippingChange?.(rate.nombre, rate.precio, type);
+    onShippingChange?.(rate.nombre, costoFinal, type);
   };
 
   const formatPrice = (price: number) =>
@@ -119,18 +127,40 @@ export default function CartSummary({
       minimumFractionDigits: 0,
     });
 
+  // El costo de envío ahora ya viene "morfado" por la lógica de esEnvioGratis si corresponde
   const currentShippingCost = seleccion?.precioFinal ?? 0;
   const totalFinalConEnvio = totalPrice + currentShippingCost;
-
-  // El 10% de descuento por transferencia suele ser sobre el total de productos,
-  // pero aquí lo calculamos sobre el total con envío según tu lógica actual.
   const transferPrice = totalFinalConEnvio * 0.9;
 
   const isReadyToCheckout = totalPrice > 0 && seleccion !== null;
 
   return (
     <div className="mt-8 space-y-6 border-t border-gray-100 pt-4 font-sans text-[#4A4A4A]">
-      {/* SECCIÓN DESGLOSE DE PRECIOS */}
+      {/* 🚀 NUEVO: Mensaje dinámico de Envío Gratis */}
+      <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+        {esEnvioGratis ? (
+          <div className="flex items-center gap-3 text-[#A186ED]">
+            <Gift className="w-5 h-5 animate-bounce" />
+            <span className="text-sm font-bold uppercase tracking-wider">
+              ¡Genial! Tu envío es GRATIS ✨
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 text-gray-500">
+            <div className="p-2 bg-white rounded-lg shadow-sm">
+              <Gift className="w-4 h-4 text-purple-300" />
+            </div>
+            <span className="text-xs font-medium">
+              Agregá{" "}
+              <span className="text-[#A186ED] font-bold">
+                {formatPrice(montoFaltante)}
+              </span>{" "}
+              para tener **Envío Gratis**.
+            </span>
+          </div>
+        )}
+      </div>
+
       <div className="space-y-2">
         <div className="flex justify-between items-center text-sm">
           <span className="text-gray-500">Subtotal</span>
@@ -147,16 +177,17 @@ export default function CartSummary({
         {seleccion && (
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-500">Envío ({seleccion.nombre})</span>
-            <span className="font-medium">
+            <span
+              className={`font-medium ${seleccion.precioFinal === 0 ? "text-green-600" : ""}`}
+            >
               {seleccion.precioFinal === 0
-                ? "Gratis"
+                ? "Bonificado"
                 : formatPrice(seleccion.precioFinal)}
             </span>
           </div>
         )}
       </div>
 
-      {/* MEDIOS DE ENVÍO (Misma lógica de inputs que ya tenías...) */}
       <div className="border-t border-gray-200 pt-6">
         <h3 className="text-sm font-bold mb-4 uppercase tracking-tight">
           Medios de envío
@@ -188,7 +219,7 @@ export default function CartSummary({
               <div
                 key={idx}
                 onClick={() => handleSelectCorreo(rate)}
-                className="p-4 border-b border-gray-100 cursor-pointer flex items-start gap-3"
+                className="p-4 border-b border-gray-100 cursor-pointer flex items-start gap-3 hover:bg-gray-50"
               >
                 <div
                   className={`mt-1 w-4 h-4 border flex items-center justify-center ${seleccion?.nombre === rate.nombre ? "border-black bg-black" : "border-gray-300"}`}
@@ -199,8 +230,10 @@ export default function CartSummary({
                 </div>
                 <div className="flex-1 flex justify-between">
                   <span className="text-[13px]">{rate.nombre}</span>
-                  <span className="text-[13px] font-bold">
-                    {formatPrice(rate.precio)}
+                  <span
+                    className={`text-[13px] font-bold ${esEnvioGratis ? "text-green-600" : ""}`}
+                  >
+                    {esEnvioGratis ? "Gratis" : formatPrice(rate.precio)}
                   </span>
                 </div>
               </div>
@@ -230,7 +263,9 @@ export default function CartSummary({
                 <div className="flex-1 flex justify-between">
                   <span className="text-[13px]">{punto.nombre}</span>
                   <span className="text-[13px] text-green-600 font-bold">
-                    {punto.costo === 0 ? "Gratis" : formatPrice(punto.costo)}
+                    {punto.costo === 0 || esEnvioGratis
+                      ? "Gratis"
+                      : formatPrice(punto.costo)}
                   </span>
                 </div>
               </div>
@@ -239,7 +274,6 @@ export default function CartSummary({
         </div>
       </div>
 
-      {/* TOTAL FINAL */}
       <div className="pt-6 border-t border-gray-100 space-y-1 text-right">
         <div className="flex justify-between items-end">
           <span className="text-lg font-light text-gray-400 tracking-[0.2em] uppercase">

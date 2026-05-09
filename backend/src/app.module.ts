@@ -19,6 +19,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { CorreoModule } from './correo/correo.module';
 import { ConfigModule } from '@nestjs/config';
 import { PromocionModule } from './promocion/promocion.module';
+import { ConfiguracionTiendaModule } from './configuracion-tienda/configuracion-tienda.module';
 
 
 
@@ -40,6 +41,7 @@ import { PromocionModule } from './promocion/promocion.module';
     LocalAuthModule, PuntoEntregaModule, OrdenesModule, PaymentsModule, CorreoModule,
     ConfigModule.forRoot({ isGlobal: true }),
     PromocionModule,
+    ConfiguracionTiendaModule,
 
 
   ],

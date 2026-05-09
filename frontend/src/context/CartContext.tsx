@@ -7,12 +7,20 @@ import React, {
   useState,
   useCallback,
   ReactNode,
+  useMemo, // Importamos useMemo para cálculos eficientes
 } from "react";
 import { CartService } from "@/services/cartService";
 import { useAuth } from "@/context/AuthContext";
 
-// --- INTERFACES DE DATOS ACTUALIZADAS ---
+// --- INTERFACES ---
 
+export interface ConfigEnvio {
+  id: string;
+  montoMinimo: number;
+  activo: boolean;
+}
+
+// (Tus otras interfaces se mantienen igual...)
 export interface Variante {
   id: string;
   talle?: string;
@@ -23,34 +31,26 @@ export interface Variante {
 
 export interface CartItem {
   id: string;
-  varianteId: string; // Es obligatorio según tu lógica de back
+  varianteId: string;
   quantity: number;
-
-  // La Variante es el puente hacia el Producto
   variante: {
     id: string;
     talle?: string;
     color?: string;
     sku?: string;
     producto: {
-      // ✅ El producto vive aquí adentro
       id: string;
       nombre: string;
       precio: number;
       imagenUrl?: string;
     };
   };
-
-  // Campos calculados que vienen de tu calculatePromotions en el back
   precioOriginal: number;
   precioFinalUnitario: number;
   precioUnitarioVisual?: number;
   precioFinal: number;
   ahorroItem: number;
   subtotalItem: number;
-
-  // Estos puedes mantenerlos como opcionales si el back los aplana,
-  // pero lo ideal es usar siempre item.variante.talle
   talle?: string;
   color?: string;
 }
@@ -62,7 +62,6 @@ export interface CartResponse {
   total: number;
 }
 
-// Interfaz para los datos temporales que vienen del componente visual
 interface ProductData {
   nombre: string;
   precio: number;
@@ -72,7 +71,7 @@ interface ProductData {
   varianteId?: string;
 }
 
-// --- INTERFAZ DEL CONTEXTO ---
+// --- INTERFAZ DEL CONTEXTO ACTUALIZADA ---
 
 interface CartContextType {
   cart: CartItem[];
@@ -80,10 +79,14 @@ interface CartContextType {
   descuentoTotal: number;
   total: number;
   loading: boolean;
+  // Nuevos campos para envío gratis
+  configEnvio: ConfigEnvio | null;
+  esEnvioGratis: boolean;
+  montoFaltante: number;
   addItem: (
     productoId: string,
     quantity?: number,
-    productData?: ProductData, // ✅ Ahora incluye info de variante
+    productData?: ProductData,
   ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   updateItemQuantity: (itemId: string, quantity: number) => Promise<void>;
@@ -94,8 +97,6 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
-
-// --- PROVIDER ---
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { isAuthenticated, authLoaded } = useAuth();
@@ -109,6 +110,38 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const [loading, setLoading] = useState(true);
   const [lastAddedItem, setLastAddedItem] = useState<CartItem | null>(null);
+
+  // --- NUEVO: Estado para la configuración de envío ---
+  const [configEnvio, setConfigEnvio] = useState<ConfigEnvio | null>(null);
+
+  // --- NUEVO: Cargar configuración de envío desde el back (Puerto 3000) ---
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch("http://localhost:3000/configuracion-tienda");
+        if (res.ok) {
+          const data = await res.json();
+          setConfigEnvio(data);
+        }
+      } catch (err) {
+        console.error("Error cargando configuración de envío:", err);
+      }
+    };
+    fetchConfig();
+  }, []);
+
+  // --- NUEVO: Cálculos de envío gratis ---
+  const { esEnvioGratis, montoFaltante } = useMemo(() => {
+    if (!configEnvio || !configEnvio.activo) {
+      return { esEnvioGratis: false, montoFaltante: 0 };
+    }
+    const gratis = cartData.subtotal >= configEnvio.montoMinimo;
+    const faltante = configEnvio.montoMinimo - cartData.subtotal;
+    return {
+      esEnvioGratis: gratis,
+      montoFaltante: faltante > 0 ? faltante : 0,
+    };
+  }, [cartData.subtotal, configEnvio]);
 
   const refreshCart = useCallback(async () => {
     if (!authLoaded) return;
@@ -136,10 +169,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     refreshCart();
   }, [refreshCart]);
 
-  // --- ACCIONES ---
-
-  // --- Dentro de la función addItem en CartContext.tsx ---
-
+  // --- ACCIONES (addItem, removeItem, etc. se mantienen igual) ---
   const addItem = async (
     productoId: string,
     quantity = 1,
@@ -162,17 +192,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (added) {
         setLastAddedItem(added);
       } else if (productData) {
-        // ✅ Agregamos el objeto 'variante' aquí para que coincida con la interfaz
         setLastAddedItem({
           id: "temp-" + Date.now(),
-          varianteId: productData.varianteId || "", // ✅ Aseguramos que sea string (no undefined)
+          varianteId: productData.varianteId || "",
           quantity,
           variante: {
             id: productData.varianteId || "temp-var",
             talle: productData.talle,
             color: productData.color,
             producto: {
-              // ✅ Agregamos el objeto producto aquí adentro
               id: productoId,
               nombre: productData.nombre,
               precio: productData.precio,
@@ -227,6 +255,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         descuentoTotal: cartData.descuentoTotal,
         total: cartData.total,
         loading,
+        configEnvio, // Exportamos la config
+        esEnvioGratis, // Exportamos si es gratis
+        montoFaltante, // Exportamos cuánto falta
         addItem,
         removeItem,
         updateItemQuantity,
