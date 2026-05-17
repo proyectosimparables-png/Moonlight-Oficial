@@ -14,22 +14,24 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('comentarios')
 export class ComentariosController {
-  constructor(private readonly comentariosService: ComentariosService) {}
+  constructor(private readonly comentariosService: ComentariosService) { }
 
   // ✅ Crear un nuevo comentario (solo si está autenticado)
-@Post()
-@UseGuards(UnifiedAuthGuard) // Asegúrate de usar el guard
-async crearComentario(
-  @Req() req: AuthenticatedRequest,
-  @Body('contenido') contenido: string,
-) {
-  const user = req['user']; // 🔹 aquí es user
-  if (!user) {
-    throw new UnauthorizedException('Usuario no autenticado');
-  }
+  @Post()
+  @UseGuards(UnifiedAuthGuard)
+  async crearComentario(
+    @Req() req: AuthenticatedRequest,
+    @Body('contenido') contenido: string,
+    @Body('nombre') nombre?: string, // 👈 Captura el alias del body
+  ) {
+    const user = req['user'];
+    if (!user) {
+      throw new UnauthorizedException('Usuario no autenticado');
+    }
 
-  return this.comentariosService.crearComentario(user.id, contenido);
-}
+    // Se lo pasa al servicio con los 3 argumentos correctos
+    return this.comentariosService.crearComentario(user.id, contenido, nombre);
+  }
 
   // ✅ Obtener todos los comentarios (público)
   @Get()
@@ -41,7 +43,7 @@ async crearComentario(
 
 
   // DELETE /api/comentarios/:id
-  @UseGuards(UnifiedAuthGuard )
+  @UseGuards(UnifiedAuthGuard)
   @Delete(':id')
   async deleteComentario(@Param('id') id: string) {
     await this.comentariosService.eliminarComentario(id);

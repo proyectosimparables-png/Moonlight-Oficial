@@ -29,9 +29,9 @@ export class ProductoService {
   }
 
   private formatearProducto(producto: any) {
+    if (!producto) return null;
     const imagenesUrls = producto.imagenes?.map((img: any) => img.url) || [];
 
-    // Lógica de Stock Total: Si alguna variante es NULL (infinito), el total es NULL
     const tieneStockInfinito = producto.variantes?.some((v: any) => v.stock === null);
     const stockTotal = tieneStockInfinito
       ? null
@@ -93,6 +93,43 @@ export class ProductoService {
     return this.formatearProducto(producto);
   }
 
+  // ⚡ OPTIMIZADO: Consulta directa, limpia y veloz para el catálogo
+  async findSeccionBySlug(slug: string) {
+    const seccion = await this.prisma.seccion.findUnique({
+      where: { slug },
+      include: {
+        productos: {
+          where: { producto: { published: true } }, // El filtro se hace directo en la Base de Datos, no en memoria
+          include: {
+            producto: {
+              include: {
+                imagenes: { select: { url: true } }, // Evitamos traer ids o timestamps innecesarios
+                variantes: { select: { stock: true, talle: true, color: true, sku: true } },
+                categoria: true,
+                promociones: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!seccion) return null;
+
+    const productosFormateados = seccion.productos
+      .map((sp) => this.formatearProducto(sp.producto))
+      .filter(Boolean);
+
+    return {
+      id: seccion.id,
+      nombre: seccion.nombre,
+      slug: seccion.slug,
+      createdAt: seccion.createdAt,
+      updatedAt: seccion.updatedAt,
+      productos: productosFormateados,
+    };
+  }
+
   async searchProducts(query: string) {
     if (!query) return { exactos: [], relacionados: [] };
 
@@ -139,6 +176,7 @@ export class ProductoService {
     return productos.map(p => this.formatearProducto(p));
   }
 
+  // ⚡ OPTIMIZADO: Eliminamos la recursividad lenta
   async findAllPublic(seccionId?: string, categoriaId?: string) {
     const where: Prisma.ProductoWhereInput = { published: true };
 
@@ -152,11 +190,11 @@ export class ProductoService {
     const productos = await this.prisma.producto.findMany({
       where,
       include: {
-        imagenes: true,
+        imagenes: { select: { url: true } },
         categoria: true,
         secciones: { include: { seccion: true } },
         promociones: true,
-        variantes: true,
+        variantes: { select: { stock: true, talle: true, color: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -170,8 +208,6 @@ export class ProductoService {
 
   async create(data: CreateProductoDto, imagenesUrls: string[] = []) {
     const slugFinal = this.generarSlug(data.nombre);
-
-    // Peso: Ya llega procesado del controlador en gramos
     const pesoGramos = data.peso ? Math.round(Number(data.peso)) : 0;
 
     const producto = await this.prisma.producto.create({
@@ -187,22 +223,18 @@ export class ProductoService {
         alto: Number(data.alto) || 0,
         published: data.published ?? false,
         categoriaId: data.categoriaId,
-
         secciones: {
           create: data.seccionesIds?.map((seccionId) => ({ seccionId })) || [],
         },
-
         imagenUrl: imagenesUrls[0] ?? null,
         imagenes: imagenesUrls.length
           ? { create: imagenesUrls.map((url) => ({ url })) }
           : undefined,
-
         variantes: data.variantes && data.variantes.length > 0
           ? {
             create: data.variantes.map((v) => ({
               talle: v.talle,
               color: v.color,
-              // Corrección TypeScript: Usamos String().trim() para validar vacíos
               stock: (v.stock == null || String(v.stock).trim() === "") ? null : Number(v.stock),
               sku: v.sku,
             })),
@@ -226,7 +258,6 @@ export class ProductoService {
 
     if (data.nombre) updateData.slug = this.generarSlug(data.nombre);
 
-    // Limpieza de números
     ['precio', 'precioPromocional', 'profundidad', 'ancho', 'alto', 'peso'].forEach(
       (campo) => {
         if (campo in updateData) {
@@ -249,14 +280,12 @@ export class ProductoService {
       };
     }
 
-    // Actualización de Variantes (Borrado y Re-creación para evitar conflictos)
     if (variantes && Array.isArray(variantes)) {
       updateData.variantes = {
         deleteMany: {},
         create: variantes.map((v: any) => ({
           talle: v.talle,
           color: v.color,
-          // Corrección TypeScript: Validamos stock infinito o nulo
           stock: (v.stock == null || String(v.stock).trim() === "") ? null : Number(v.stock),
           sku: v.sku,
         })),
@@ -297,24 +326,20 @@ export class ProductoService {
     return this.formatearProducto(producto);
   }
 
+  // ⚡ OPTIMIZADO EXTREMO: Para armar menús traemos solo la metadata crucial de secciones. Jamás todo el catálogo.
   async getSecciones() {
     const secciones = await this.prisma.seccion.findMany({
       orderBy: { nombre: 'asc' },
-      include: {
-        productos: {
-          include: {
-            producto: { include: { imagenes: true, variantes: true } },
-          },
-        },
-      },
+      select: {
+        id: true,
+        nombre: true,
+        slug: true,
+        createdAt: true,
+        updatedAt: true
+      }
     });
 
-    return secciones.map((s) => ({
-      ...s,
-      productos: s.productos
-        .filter((sp) => sp.producto?.published)
-        .map((sp) => this.formatearProducto(sp.producto)),
-    }));
+    return secciones.map(s => ({ ...s, productos: [] }));
   }
 
   async getTodasLasCategorias() {
@@ -327,7 +352,7 @@ export class ProductoService {
 
   async getCategoriasPorSeccion(seccionId: string) {
     return this.prisma.categoria.findMany({
-      where: { seccionId }, // ✅ Quitamos 'parentId: null'
+      where: { seccionId },
       orderBy: { nombre: 'asc' },
       include: {
         subcategorias: { orderBy: { nombre: 'asc' } },
@@ -369,16 +394,19 @@ export class ProductoService {
     return { message: 'Sección eliminada' };
   }
 
+  // ⚡ OPTIMIZADO: Consulta plana en lugar de llamadas secuenciales asíncronas recursivas
   private async getCategoriaYDescendientesIds(categoriaId: string): Promise<string[]> {
-    const hijos = await this.prisma.categoria.findMany({
+    const hijas = await this.prisma.categoria.findMany({
       where: { parentId: categoriaId },
-      select: { id: true },
+      select: { id: true, subcategorias: { select: { id: true } } },
     });
+
     const ids: string[] = [];
-    for (const hijo of hijos) {
-      ids.push(hijo.id);
-      const subIds = await this.getCategoriaYDescendientesIds(hijo.id);
-      ids.push(...subIds);
+    for (const hija of hijas) {
+      ids.push(hija.id);
+      if (hija.subcategorias) {
+        ids.push(...hija.subcategorias.map(s => s.id));
+      }
     }
     return ids;
   }

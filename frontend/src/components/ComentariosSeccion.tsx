@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getComentarios } from "@/services/comentarios";
+import { getComentarios } from "@/services/comentarios-service";
 
 interface Comentario {
   id: string;

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import HeroCarousel from "@/components/home/HeroCarousel";
 import ProductSection from "@/components/home/ProductSection";
 import ComentariosSection from "../ComentariosSeccion";
 import MoonlightClubBanner from "@/components/home/MoonlightClubBanner";
+import { apiRequest } from "@/lib/apiClient"; // 👈 Importamos tu cliente centralizado
 
 interface Product {
   id: string;
@@ -23,19 +23,13 @@ interface Section {
 
 const Home = () => {
   const [sections, setSections] = useState<Section[]>([]);
-
-  // 🟣 SOLO estas secciones se muestran en Home
   const visibleSections = ["Novedades", "Los más elegidos", "Outlet"];
 
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/productos/secciones`,
-        );
-        if (!res.ok) throw new Error("Error al obtener secciones");
-
-        const data: Section[] = await res.json();
+        // 👈 Usamos apiRequest apuntando al endpoint directo
+        const data = await apiRequest<Section[]>("/productos/secciones");
 
         const filteredAndSorted = data
           .filter((section) => visibleSections.includes(section.nombre))
@@ -68,22 +62,16 @@ const Home = () => {
                 id: p.id,
                 nombre: p.nombre,
                 precio: p.precio,
-                // Aquí está el truco: enviamos el array de imágenes
-                // Si p.imagenes no existe, enviamos un array con el placeholder
                 imagenes:
                   p.imagenes && p.imagenes.length > 0
                     ? p.imagenes
                     : ["/images/placeholder.png"],
               }))}
             />
-
-            {/* 🌙 Banner entre Novedades y Los más elegidos */}
             {section.nombre === "Novedades" && <MoonlightClubBanner />}
           </div>
         ))}
       </main>
-
-      {/* 💬 Comentarios de las clientas */}
       <ComentariosSection />
     </div>
   );

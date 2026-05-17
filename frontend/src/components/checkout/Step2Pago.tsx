@@ -12,7 +12,7 @@ import {
   createGoCuotasPayment,
   OrderPayload,
   OrderResponse,
-} from "@/services/paymentService";
+} from "@/services/pagos-service";
 import {
   ChevronRight,
   Mail,

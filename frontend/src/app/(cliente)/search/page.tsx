@@ -1,6 +1,8 @@
 // src/app/(cliente)/search/page.tsx
-
 import { SearchResults } from "@/components/search";
+import { searchProductos } from "@/services/productos-service";
+import { Producto } from "@/types/productos";
+import Link from "next/link";
 
 export default async function SearchPage(props: {
   searchParams: { q?: string } | Promise<{ q?: string }>;
@@ -11,17 +13,13 @@ export default async function SearchPage(props: {
       : props.searchParams;
   const query = params.q || "";
 
-  // Ajustamos el estado inicial al objeto que devuelve el service
-  let searchData = { exactos: [], relacionados: [] };
+  let searchData: { exactos: Producto[]; relacionados: Producto[] } = {
+    exactos: [],
+    relacionados: [],
+  };
 
   if (query.length > 0) {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/productos/search?q=${encodeURIComponent(query)}`,
-      { cache: "no-store" },
-    );
-    if (res.ok) {
-      searchData = await res.json();
-    }
+    searchData = await searchProductos(query);
   }
 
   return (
@@ -38,16 +36,16 @@ export default async function SearchPage(props: {
         resultados directos.
       </p>
 
-      {/* Le pasamos el objeto completo al componente */}
-      <SearchResults data={searchData} />
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <SearchResults data={searchData as any} />
 
       <div className="mt-10 text-center">
-        <a
+        <Link
           href="/"
           className="inline-block bg-[#7b5ca2] text-white px-6 py-2 rounded-md hover:bg-[#6c5b7b] transition-all duration-200"
         >
           ← Volver al inicio
-        </a>
+        </Link>
       </div>
     </div>
   );

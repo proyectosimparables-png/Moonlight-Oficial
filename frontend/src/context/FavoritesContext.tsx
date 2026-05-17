@@ -1,9 +1,19 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { obtenerFavoritos, agregarFavorito, eliminarFavorito } from "@/services/favoritos";
-import { Favorito } from "@/types/types-productos";
+import {
+  obtenerFavoritos,
+  agregarFavorito,
+  eliminarFavorito,
+} from "@/services/favoritos-service";
+import { Favorito } from "@/types/productos";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
@@ -14,10 +24,12 @@ interface FavoritesContextType {
   refreshFavorites: () => Promise<void>;
 }
 
-const FavoritesContext = createContext<FavoritesContextType | undefined>(undefined);
+const FavoritesContext = createContext<FavoritesContextType | undefined>(
+  undefined,
+);
 
 export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
-  const { isAuthenticated, user} = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [favorites, setFavorites] = useState<Favorito[]>([]);
   const router = useRouter();
 
@@ -39,7 +51,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
 
   // Verifica si un producto está en favoritos
   const isFavorite = (productId: string) => {
-    return favorites.some(fav => fav.productoId === productId);
+    return favorites.some((fav) => fav.productoId === productId);
   };
 
   // Agregar o eliminar favorito
@@ -56,13 +68,15 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
       if (isFavorite(productId)) {
         // Eliminar favorito
         await eliminarFavorito(userId, productId);
-        setFavorites(prev => prev.filter(fav => fav.productoId !== productId));
-        toast("Eliminado de favoritos 💔");
+        setFavorites((prev) =>
+          prev.filter((fav) => fav.productoId !== productId),
+        );
+        toast.success("Producto eliminado de favoritos ⭐");
       } else {
         // Agregar favorito
         const nuevoFav: Favorito = await agregarFavorito(userId, productId);
         // Asegúrate que el backend devuelva el objeto Favorito completo con producto incluido
-        setFavorites(prev => [...prev, nuevoFav]);
+        setFavorites((prev) => [...prev, nuevoFav]);
         toast.success("Agregado a favoritos ⭐");
       }
     } catch (error) {

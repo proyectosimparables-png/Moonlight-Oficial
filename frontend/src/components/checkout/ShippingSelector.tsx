@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Truck, Store, Loader2, AlertCircle } from "lucide-react";
-import { getPuntosEntrega } from "@/services/entregas";
-import { getShippingRates } from "@/services/correo/correoService";
+import { getPuntosEntrega } from "@/services/envios/puntos-entrega-service";
+import { getShippingRates } from "@/services/envios/correo-service";
 import { useCheckout } from "@/context/CheckoutContext";
 import { useCart } from "@/context/CartContext";
 

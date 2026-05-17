@@ -16,17 +16,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+import { getSecciones, getAllCategorias } from "@/services/productos-service";
 import {
-  eliminarSeccion,
   actualizarSeccion,
-  getSecciones,
   crearSeccion,
-  getCategorias, // 👈 importamos la función para traer categorías
-} from "@/services/productos";
+  eliminarSeccion,
+} from "@/services/admin/admin-productos-actions";
 
 type Categoria = {
   id: string;
   nombre: string;
+  seccionId?: string; // Añadido opcional por si tus categorías están vinculadas a una sección
+};
+
+// 🔹 Ajustado perfectamente a lo que devuelve tu backend real (SeccionType)
+type SeccionBase = {
+  id: string;
+  nombre: string;
+  productoCount?: number;
 };
 
 type SeccionConCategorias = {
@@ -44,7 +51,8 @@ const Secciones = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
-  const [seccionEditando, setSeccionEditando] = useState<SeccionConCategorias | null>(null);
+  const [seccionEditando, setSeccionEditando] =
+    useState<SeccionConCategorias | null>(null);
   const [nuevoNombre, setNuevoNombre] = useState("");
 
   const [nuevaSeccionNombre, setNuevaSeccionNombre] = useState("");
@@ -53,23 +61,38 @@ const Secciones = () => {
   const [seccionAEliminar, setSeccionAEliminar] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // 🔹 Cargar secciones junto con sus categorías
+  // 🔹 Cargar secciones junto con sus categorías correspondientes
   useEffect(() => {
     const cargarSeccionesConCategorias = async () => {
       try {
         setLoading(true);
-        const seccionesData = await getSecciones();
 
-        const seccionesConCategorias = await Promise.all(
-          seccionesData.map(async (sec: SeccionConCategorias) => {
-            try {
-              const categorias = await getCategorias(sec.id);
-              return { ...sec, categorias };
-            } catch {
-              return { ...sec, categorias: [] };
-            }
-          })
-        );
+        // 1. Traemos las secciones crudas del back
+        const seccionesData: SeccionBase[] = await getSecciones();
+
+        // 2. Traemos TODAS las categorías (ya que getAllCategorias() no acepta ID por parámetro)
+        let todasLasCategorias: Categoria[] = [];
+        try {
+          todasLasCategorias = await getAllCategorias();
+        } catch (catErr) {
+          console.error("Error al traer categorías globales:", catErr);
+        }
+
+        // 3. Armamos el estado vinculando cada sección con sus categorías mapeadas
+        const seccionesConCategorias: SeccionConCategorias[] =
+          seccionesData.map((sec) => {
+            // Si tus categorías tienen 'seccionId', las filtramos. Si no, dejamos el array vacío o manejamos el fallback.
+            const categoriasDeEstaSeccion = todasLasCategorias.filter(
+              (cat) => cat.seccionId === sec.id,
+            );
+
+            return {
+              id: sec.id,
+              nombre: sec.nombre,
+              productoCount: sec.productoCount ?? 0,
+              categorias: categoriasDeEstaSeccion,
+            };
+          });
 
         setSecciones(seccionesConCategorias);
         setError(null);
@@ -109,14 +132,23 @@ const Secciones = () => {
     setIsUpdating(true);
 
     try {
-      const seccionActualizada = await actualizarSeccion(seccionEditando.id, {
-        nombre: nuevoNombre,
-      });
+      const seccionActualizada: SeccionBase = await actualizarSeccion(
+        seccionEditando.id,
+        {
+          nombre: nuevoNombre,
+        },
+      );
 
       setSecciones((prev) =>
         prev.map((sec) =>
-          sec.id === seccionActualizada.id ? { ...seccionActualizada, categorias: sec.categorias } : sec
-        )
+          sec.id === seccionActualizada.id
+            ? {
+                ...sec,
+                nombre: seccionActualizada.nombre,
+                categorias: sec.categorias,
+              }
+            : sec,
+        ),
       );
 
       toast.success("Sección actualizada");
@@ -136,10 +168,19 @@ const Secciones = () => {
     }
 
     try {
-      const nueva = await crearSeccion({ nombre: nuevaSeccionNombre });
+      const nueva: SeccionBase = await crearSeccion({
+        nombre: nuevaSeccionNombre,
+      });
 
-      // Cargar las categorías (vacías por defecto)
-      setSecciones((prev) => [...prev, { ...nueva, categorias: [] }]);
+      setSecciones((prev) => [
+        ...prev,
+        {
+          id: nueva.id,
+          nombre: nueva.nombre,
+          productoCount: 0,
+          categorias: [],
+        },
+      ]);
       toast.success("Sección creada correctamente");
 
       setNuevaSeccionNombre("");
@@ -155,15 +196,15 @@ const Secciones = () => {
       {/* 🔹 Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[var(--text-heading)]">
+          <h1 className="text-3xl font-bold tracking-tight text-(--text-heading)">
             Secciones
           </h1>
-          <p className="text-[var(--color-dark-gray)]">
+          <p className="text-(--color-dark-gray)">
             Organiza tus productos por secciones
           </p>
         </div>
         <Button
-          className="bg-[var(--color-dark)] hover:bg-[var(--color-lilac)] text-white transition-all"
+          className="bg-(--color-dark) hover:bg-(--color-lilac) text-white transition-all"
           onClick={() => setIsNewModalOpen(true)}
         >
           <Plus className="h-4 w-4" />
@@ -176,7 +217,7 @@ const Secciones = () => {
         {secciones.map((seccion) => (
           <Card
             key={seccion.id}
-            className="relative hover:shadow-lg transition-all border min-w-[220px]"
+            className="relative hover:shadow-lg transition-all border min-w-55"
           >
             <CardHeader>
               <div className="absolute top-2 right-2 flex gap-2 z-10">
@@ -184,7 +225,10 @@ const Secciones = () => {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  style={{ backgroundColor: "var(--color-dark)", color: "white" }}
+                  style={{
+                    backgroundColor: "var(--color-dark)",
+                    color: "white",
+                  }}
                   onClick={() => abrirModalEdicion(seccion)}
                 >
                   <Edit className="h-4 w-4" />
@@ -214,7 +258,7 @@ const Secciones = () => {
                   />
                 </div>
                 <div>
-                  <CardTitle className="text-lg text-[var(--text-heading)] break-words">
+                  <CardTitle className="text-lg text-(--text-heading) wrap-break-word">
                     {seccion.nombre}
                   </CardTitle>
                 </div>
@@ -224,7 +268,7 @@ const Secciones = () => {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--color-dark-gray)]">
+                  <span className="text-sm text-(--color-dark-gray)">
                     Productos
                   </span>
                   <Badge variant="secondary">{seccion.productoCount}</Badge>
@@ -232,7 +276,7 @@ const Secciones = () => {
 
                 {/* 🔹 Categorías */}
                 <div>
-                  <p className="text-sm font-medium mb-2 text-[var(--text-heading)]">
+                  <p className="text-sm font-medium mb-2 text-(--text-heading)">
                     Categorías:
                   </p>
                   {seccion.categorias && seccion.categorias.length > 0 ? (
@@ -241,14 +285,16 @@ const Secciones = () => {
                         <Badge
                           key={cat.id}
                           variant="outline"
-                          className="text-xs text-[var(--text-heading)] border-[var(--color-purple)]"
+                          className="text-xs text-(--text-heading) border-(--color-purple)"
                         >
                           {cat.nombre}
                         </Badge>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-gray-500 italic">Sin categorías</p>
+                    <p className="text-xs text-gray-500 italic">
+                      Sin categorías
+                    </p>
                   )}
                 </div>
               </div>
@@ -259,14 +305,15 @@ const Secciones = () => {
 
       {/* 🗑️ MODAL CONFIRMAR ELIMINACIÓN */}
       <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-100">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-red-600">
               Confirmar eliminación
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">
-            ¿Estás seguro de que deseas eliminar esta sección? Esta acción no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar esta sección? Esta acción no se
+            puede deshacer.
           </p>
           <DialogFooter className="mt-6 flex justify-end space-x-2">
             <Button
@@ -279,7 +326,8 @@ const Secciones = () => {
             <Button
               className="bg-red-600 hover:bg-red-700 text-white transition-all"
               onClick={async () => {
-                if (seccionAEliminar) await handleEliminarSeccion(seccionAEliminar);
+                if (seccionAEliminar)
+                  await handleEliminarSeccion(seccionAEliminar);
                 setIsConfirmModalOpen(false);
                 setSeccionAEliminar(null);
               }}
@@ -292,9 +340,11 @@ const Secciones = () => {
 
       {/* 🟣 MODAL CREAR NUEVA SECCIÓN */}
       <Dialog open={isNewModalOpen} onOpenChange={setIsNewModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-106.25">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Nueva Sección</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">
+              Nueva Sección
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 pt-2">
             <div className="space-y-2">
@@ -318,7 +368,7 @@ const Secciones = () => {
               Cancelar
             </Button>
             <Button
-              className="bg-[var(--color-dark)] hover:bg-[var(--color-lilac)] text-white transition-all"
+              className="bg-(--color-dark) hover:bg-(--color-lilac) text-white transition-all"
               onClick={handleCrearSeccion}
             >
               Crear
@@ -352,7 +402,7 @@ const Secciones = () => {
               Cancelar
             </Button>
             <Button
-              className="bg-[var(--color-dark)] hover:bg-[var(--color-lilac)] text-white transition-all"
+              className="bg-(--color-dark) hover:bg-(--color-lilac) text-white transition-all"
               onClick={guardarEdicion}
               disabled={isUpdating}
             >

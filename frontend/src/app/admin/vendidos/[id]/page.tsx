@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { notFound } from "next/navigation";
 import OrderHeader from "@/components/admin/Vendidos";
-import { adminOrderService } from "@/services/adminOrderService";
+import { adminOrderService } from "@/services/admin/admin-ordenes-service";
 import StatusActionButton from "@/components/admin/StatusCardActions";
 import AdminNotesSection from "@/components/admin/AdminNotesSection";
 

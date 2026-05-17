@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,26 +11,8 @@ import {
   TrendingUp,
   Loader2,
 } from "lucide-react";
-import { fetchResumenGeneral } from "@/services/dashboardAdmin";
-
-// Interfaces corregidas según tu esquema de Prisma
-interface OrdenReciente {
-  id: string;
-  total: number;
-  createdAt: string;
-  user?: {
-    name: string;
-    email: string;
-    image?: string; // Corregido: User usa 'image' en el schema
-  };
-}
-
-interface ProductoPopular {
-  productoId: string;
-  nombre: string;
-  vendidos: number;
-  imagen?: string;
-}
+import { fetchResumenGeneral } from "@/services/admin/admin-dashboard-service";
+import { OrdenReciente, ProductoPopular } from "@/types/dashboard";
 
 const Dashboard = () => {
   const { data, isLoading, isError } = useQuery({
@@ -54,11 +37,10 @@ const Dashboard = () => {
     );
   }
 
-  // Prevenimos undefined en los porcentajes y valores
   const statsCards = [
     {
       title: "Total Productos",
-      value: data.totalProductos ?? 0,
+      value: data.totalProductos,
       change: "",
       label: "en catálogo actual",
       icon: Package,
@@ -66,7 +48,7 @@ const Dashboard = () => {
     },
     {
       title: "Órdenes Activas",
-      value: data.ordenesActivas ?? 0,
+      value: data.ordenesActivas,
       change: "Pendientes",
       label: "esperando gestión",
       icon: ShoppingCart,
@@ -74,19 +56,19 @@ const Dashboard = () => {
     },
     {
       title: "Usuarios Registrados",
-      value: data.usuariosRegistrados ?? 0,
-      change: `${data.cambioUsuarios ?? 0}%`,
+      value: data.usuariosRegistrados,
+      change: `${data.cambioUsuarios}%`,
       label: "vs. mes pasado",
       icon: Users,
-      trend: (data.cambioUsuarios ?? 0) >= 0 ? "up" : "down",
+      trend: data.cambioUsuarios >= 0 ? "up" : "down",
     },
     {
       title: "Ventas del Mes",
-      value: `$${(data.ventasDelMes ?? 0).toLocaleString("es-AR")}`,
-      change: `${data.cambioVentas ?? 0}%`,
+      value: `$${data.ventasDelMes.toLocaleString("es-AR")}`,
+      change: `${data.cambioVentas}%`,
       label: "vs. mes pasado",
       icon: TrendingUp,
-      trend: (data.cambioVentas ?? 0) >= 0 ? "up" : "down",
+      trend: data.cambioVentas >= 0 ? "up" : "down",
     },
   ];
 
@@ -101,6 +83,7 @@ const Dashboard = () => {
         </p>
       </div>
 
+      {/* TARJETAS DE MÉTRICAS */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statsCards.map((stat) => (
           <Card
@@ -140,14 +123,14 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        {/* Ventas Recientes */}
+        {/* VENTAS RECIENTES */}
         <Card className="col-span-4 border border-(--color-purple)/20 bg-(--color-cream)">
           <CardHeader>
             <CardTitle>Ventas Recientes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {data.ventasRecientes?.map((orden: OrdenReciente) => (
+              {data.ventasRecientes.map((orden: OrdenReciente) => (
                 <div key={orden.id} className="flex items-center gap-4">
                   <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-purple-100 bg-white">
                     <Image
@@ -158,7 +141,6 @@ const Dashboard = () => {
                       alt={orden.user?.name || "User"}
                       fill
                       className="object-cover"
-                      // Agregamos esto para permitir el SVG de ui-avatars sin errores
                       unoptimized
                     />
                   </div>
@@ -180,14 +162,14 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Productos Populares */}
+        {/* PRODUCTOS POPULARES */}
         <Card className="col-span-3 border border-(--color-purple)/20 bg-(--color-cream)">
           <CardHeader>
             <CardTitle>Productos Populares</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {data.productosPopulares?.map((product: ProductoPopular) => (
+              {data.productosPopulares.map((product: ProductoPopular) => (
                 <div
                   key={product.productoId}
                   className="flex items-center gap-4"

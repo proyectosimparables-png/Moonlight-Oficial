@@ -9,7 +9,7 @@ import {
   ReactNode,
 } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { ExtendedUser } from "@/types/types-user";
+import { ExtendedUser } from "@/types/user";
 import type { Session } from "@supabase/supabase-js";
 import { usePathname } from "next/navigation";
 

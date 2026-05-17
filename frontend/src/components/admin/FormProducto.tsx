@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getSecciones, getCategoriasTree } from "@/services/productos-service";
+// ✅ Traemos las acciones de creación y publicación desde su ubicación real
 import {
   createProducto,
   publicarProducto,
-  getSecciones,
-  getCategoriasTree,
-} from "@/services/productos";
+} from "@/services/admin/admin-productos-actions";
 import toast from "react-hot-toast";
 import EditorDescripcion from "./EditorDescripcion";
 import {
@@ -231,12 +231,38 @@ export default function FormProducto() {
       const prod = await createProducto(formData);
       console.log("✅ Producto creado:", prod);
 
-      await publicarProducto(prod.id);
+      await publicarProducto(String(prod.id));
       console.log("📢 Producto publicado correctamente.");
 
       toast.success("¡Producto publicado en Moonlight!");
-      // Descomenta para recargar después de verificar los logs
-      // window.location.reload();
+
+      // 🌟 REINICIO TOTAL DEL FORMULARIO TRAS EL ÉXITO 🌟
+      // Revocamos las URLs temporales de las imágenes para liberar memoria
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+
+      // Limpieza de campos de texto y precios
+      setNombre("");
+      setPrecio("");
+      setPrecioPromocional("");
+      setDescripcion("");
+
+      // Limpieza de logística
+      setPeso("");
+      setAlto("");
+      setAncho("");
+      setProfundidad("");
+
+      // Limpieza de archivos y previsualizaciones
+      setImagenes([]);
+      setPreviewUrls([]);
+
+      // Limpieza de relaciones y variantes
+      setSeccionesSeleccionadas([]);
+      setCategoriasSeleccionadas([]);
+      setVariantesData([]);
+
+      // Desactivamos el estado de carga
+      setLoading(false);
     } catch (error) {
       console.error("❌ Error fatal al crear/publicar:", error);
       toast.error("Error al crear el producto");

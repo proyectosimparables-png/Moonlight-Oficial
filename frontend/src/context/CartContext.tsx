@@ -9,7 +9,7 @@ import React, {
   ReactNode,
   useMemo, // Importamos useMemo para cálculos eficientes
 } from "react";
-import { CartService } from "@/services/cartService";
+import { CartService } from "@/services/carrito-service";
 import { useAuth } from "@/context/AuthContext";
 
 // --- INTERFACES ---

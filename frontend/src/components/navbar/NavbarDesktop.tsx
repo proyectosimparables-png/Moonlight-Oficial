@@ -7,17 +7,14 @@ import { ChevronDown } from "lucide-react";
 import { CartButton } from "./CartButton";
 import { AuthButton } from "./AuthButton";
 import { SearchInput } from "../search/SearchInput";
-import { useState, useEffect } from "react"; // 1. Agregamos useEffect
+import { useState, useEffect } from "react";
 
 export const NavbarDesktop = () => {
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const [productsOpen, setProductsOpen] = useState(false);
   const [howToBuyOpen, setHowToBuyOpen] = useState(false);
-
-  // 2. Estado para controlar la hidratación
   const [mounted, setMounted] = useState(false);
 
-  // 3. Se activa solo en el cliente tras el primer render
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -36,8 +33,6 @@ export const NavbarDesktop = () => {
     setOpenMenus({});
   };
 
-  // 4. Si no está montado, mostramos una versión simplificada o nula
-  // para que coincida con el servidor y evitar el error de IDs
   if (!mounted) {
     return <div className="hidden md:block w-full h-36 bg-[#fafcef]/80" />;
   }
@@ -113,6 +108,21 @@ export const NavbarDesktop = () => {
                   <ChevronDown className="ml-2 h-3 w-3 -rotate-90" />
                 </DropdownMenu.SubTrigger>
                 <DropdownMenu.SubContent className="bg-[#fafcef] shadow-lg rounded-md py-2 text-sm text-[#7b5ca2] min-w-56 border border-purple-50">
+                  {/* ✨ AGREGADO: Ver todo en Indumentaria */}
+                  <DropdownMenu.Item
+                    className="outline-none"
+                    onClick={closeAll}
+                  >
+                    <Link
+                      href="/indumentaria"
+                      className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold text-[#4e3f73]"
+                    >
+                      Ver todo en Indumentaria
+                    </Link>
+                  </DropdownMenu.Item>
+
+                  <DropdownMenu.Separator className="h-px bg-purple-50 my-1" />
+
                   {/* REMERAS */}
                   <DropdownMenu.Sub
                     open={openMenus["remeras"]}
@@ -150,7 +160,7 @@ export const NavbarDesktop = () => {
                                 onClick={closeAll}
                               >
                                 <Link
-                                  href="/productos/indumentaria/remeras/bts"
+                                  href="/indumentaria/remeras/bts"
                                   className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold"
                                 >
                                   Ver todo BTS
@@ -174,7 +184,7 @@ export const NavbarDesktop = () => {
                                   onClick={closeAll}
                                 >
                                   <Link
-                                    href={`/productos/indumentaria/remeras/bts/${m.toLowerCase().replace(/\s+/g, "-")}`}
+                                    href={`/indumentaria/remeras/bts/${m.toLowerCase().replace(/\s+/g, "-")}`}
                                     className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
                                   >
                                     {m}
@@ -197,7 +207,7 @@ export const NavbarDesktop = () => {
                             onClick={closeAll}
                           >
                             <Link
-                              href={`/productos/indumentaria/remeras/${g.toLowerCase().replace(/\s+/g, "-")}`}
+                              href={`/indumentaria/remeras/${g.toLowerCase().replace(/\s+/g, "-")}`}
                               className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
                             >
                               {g}
@@ -210,7 +220,7 @@ export const NavbarDesktop = () => {
                           onClick={closeAll}
                         >
                           <Link
-                            href="/productos/indumentaria/remeras"
+                            href="/indumentaria/remeras"
                             className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold italic"
                           >
                             Ver todas las Remeras
@@ -260,7 +270,7 @@ export const NavbarDesktop = () => {
                                     onClick={closeAll}
                                   >
                                     <Link
-                                      href={`/productos/indumentaria/abrigos/${type.toLowerCase()}/${g.toLowerCase().replace(/\s+/g, "-")}`}
+                                      href={`/indumentaria/abrigos/${type.toLowerCase()}/${g.toLowerCase().replace(/\s+/g, "-")}`}
                                       className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
                                     >
                                       {g}
@@ -273,7 +283,7 @@ export const NavbarDesktop = () => {
                                   onClick={closeAll}
                                 >
                                   <Link
-                                    href={`/productos/indumentaria/abrigos/${type.toLowerCase()}`}
+                                    href={`/indumentaria/abrigos/${type.toLowerCase()}`}
                                     className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold"
                                   >
                                     Ver todos los {type}
@@ -289,7 +299,7 @@ export const NavbarDesktop = () => {
                           onClick={closeAll}
                         >
                           <Link
-                            href="/productos/indumentaria/abrigos"
+                            href="/indumentaria/abrigos"
                             className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold italic"
                           >
                             Ver todos los Abrigos
@@ -326,7 +336,7 @@ export const NavbarDesktop = () => {
                         onClick={closeAll}
                       >
                         <Link
-                          href={`/productos/bangtan-limited-edition/${item.toLowerCase().replace(/\s+/g, "-")}`}
+                          href={`/bangtan-limited-edition/${item.toLowerCase().replace(/\s+/g, "-")}`}
                           className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
                         >
                           {item}
@@ -340,7 +350,7 @@ export const NavbarDesktop = () => {
                     onClick={closeAll}
                   >
                     <Link
-                      href="/productos/bangtan-limited-edition"
+                      href="/bangtan-limited-edition"
                       className="flex w-full px-4 py-2 hover:bg-[#f3eefb] font-bold"
                     >
                       Ver todo Limited Edition
@@ -352,7 +362,7 @@ export const NavbarDesktop = () => {
 
             <DropdownMenu.Item className="outline-none" onClick={closeAll}>
               <Link
-                href="/productos/gift-cards"
+                href="/gift-cards"
                 className="flex w-full px-4 py-2 hover:bg-[#f3eefb]"
               >
                 Gift Cards

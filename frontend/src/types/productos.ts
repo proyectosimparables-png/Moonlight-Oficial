@@ -1,4 +1,4 @@
-// types/types-productos.ts
+// types/productos.ts
 
 export type SeccionType = {
   id: string;

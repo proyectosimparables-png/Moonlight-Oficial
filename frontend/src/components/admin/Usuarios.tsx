@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { getAllUsers } from "@/services/userService";
+import { getAllUsers } from "@/services/perfil-usuario-service";
 
 interface Usuario {
   id: string;
@@ -26,8 +26,8 @@ const UsuariosPage: React.FC = () => {
         const usersArray: Usuario[] = Array.isArray(data)
           ? data
           : Array.isArray(data.users)
-          ? data.users
-          : [];
+            ? data.users
+            : [];
 
         // Agregamos avatar real o uno generado automáticamente
         const enrichedUsers: Usuario[] = usersArray.map((user) => {
@@ -36,7 +36,7 @@ const UsuariosPage: React.FC = () => {
 
           // Si no, generamos con UI Avatars usando el nombre
           const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            user.name || "Sin Nombre"
+            user.name || "Sin Nombre",
           )}&background=8b5cf6&color=fff&size=128`;
 
           return { ...user, image: avatarUrl };
@@ -97,8 +97,12 @@ const UsuariosPage: React.FC = () => {
                   />
                   <span>{u.name || "Sin nombre"}</span>
                 </td>
-                <td className="px-4 py-3 text-purple-800 font-medium">{u.email}</td>
-                <td className="px-4 py-3 text-purple-800 font-medium">{u.role}</td>
+                <td className="px-4 py-3 text-purple-800 font-medium">
+                  {u.email}
+                </td>
+                <td className="px-4 py-3 text-purple-800 font-medium">
+                  {u.role}
+                </td>
                 <td className="px-4 py-3 text-purple-800 font-medium">
                   {new Date(u.createdAt).toLocaleDateString("es-ES")}
                 </td>

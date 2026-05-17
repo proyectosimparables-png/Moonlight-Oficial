@@ -3,7 +3,7 @@
 import { useContext, useState } from "react";
 import Image from "next/image";
 import { AuthContext } from "@/context/AuthContext";
-import { updateUserAddress } from "@/services/userService";
+import { updateUserAddress } from "@/services/perfil-usuario-service";
 import toast from "react-hot-toast";
 
 // Tipo común para ambas respuestas
@@ -27,7 +27,11 @@ export default function UserProfile() {
   const { user, provider, isAuthenticated, logout, authLoaded, setUser } = auth;
 
   if (!authLoaded)
-    return <div className="p-4 text-center text-gray-600">Cargando datos del usuario...</div>;
+    return (
+      <div className="p-4 text-center text-gray-600">
+        Cargando datos del usuario...
+      </div>
+    );
 
   if (!isAuthenticated) {
     return (
@@ -47,7 +51,7 @@ export default function UserProfile() {
       user?.user_metadata?.name ??
       user?.name ??
       user?.email?.split("@")[0] ??
-      "Sin nombre"
+      "Sin nombre",
   );
 
   // -------------------------------
@@ -58,7 +62,7 @@ export default function UserProfile() {
     user?.user_metadata?.picture ??
     user?.image ??
     `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      name
+      name,
     )}&background=8b5cf6&color=fff&size=128`;
 
   // -------------------------------
@@ -74,7 +78,8 @@ export default function UserProfile() {
 
       // 👉 Si usuario Supabase
       if (provider === "supabase") {
-        const { editUserAddress } = await import("@/services/userService");
+        const { editUserAddress } =
+          await import("@/services/perfil-usuario-service");
         res = await editUserAddress(addressInput);
       }
       // 👉 Si usuario local
@@ -101,7 +106,6 @@ export default function UserProfile() {
   return (
     <div className="flex justify-center items-center min-h-[80vh] bg-transparent">
       <div className="relative w-full max-w-md bg-pastel-lilac text-color-dark rounded-2xl shadow-xl p-8 text-center animate-fadeIn border-2 border-lilac overflow-hidden group">
-
         {/* Imagen */}
         <div className="relative flex justify-center mb-5 z-10">
           <Image

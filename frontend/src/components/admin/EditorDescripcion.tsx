@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react"; // 🌟 Importamos useEffect
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Color } from "@tiptap/extension-color";
@@ -20,7 +21,6 @@ export default function EditorDescripcion({
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
-      // StarterKit incluye BulletList y OrderedList por defecto
       StarterKit.configure({
         bulletList: { keepAttributes: true, keepMarks: true },
         orderedList: { keepAttributes: true, keepMarks: true },
@@ -45,6 +45,17 @@ export default function EditorDescripcion({
       },
     },
   });
+
+  // 🌟 EL SENSOR DE RESETEO:
+  // Si el valor externo cambia a vacío y el editor todavía tiene texto adentro, lo limpiamos de forma manual.
+  useEffect(() => {
+    if (!editor) return;
+
+    // Si el padre limpió el estado externo, forzamos el vaciado del editor
+    if (value === "" && editor.getHTML() !== "<p></p>") {
+      editor.commands.setContent("");
+    }
+  }, [value, editor]);
 
   if (!editor) return null;
 

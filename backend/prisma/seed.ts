@@ -133,6 +133,9 @@ async function main() {
   await prisma.categoria.deleteMany();
   await prisma.seccion.deleteMany();
 
+  await prisma.configuracionEnvio.deleteMany();
+  await prisma.configuracionTienda.deleteMany();
+
   console.log("🚀 Iniciando seed...");
 
   for (const sec of estructura) {
@@ -147,7 +150,31 @@ async function main() {
       await procesarCategorias(sec.categorias, null, seccion.id);
     }
   }
+  /* ---------------- CONFIGURACIONES INICIALES ---------------- */
+  console.log("⚙️ Creando configuraciones iniciales...");
 
+  // Configuración de Envío
+  await prisma.configuracionEnvio.upsert({
+    where: { id: 'default-shipping' }, // Usamos un ID fijo para evitar duplicados
+    update: {},
+    create: {
+      id: 'default-shipping',
+      montoMinimo: 50000,
+      activo: true,
+    },
+  });
+
+  // Configuración de Tienda (Mantenimiento)
+  await prisma.configuracionTienda.upsert({
+    where: { id: 'default-store-config' },
+    update: {},
+    create: {
+      id: 'default-store-config',
+      mantenimientoActivo: false,
+      mantenimientoMensaje: 'Estamos renovando la tienda y está quedando increíble. ¡Volvé en unos días!',
+      mantenimientoCodigo: 'MOONLIGHT_VIP',
+    },
+  });
   console.log("✨ Seed completado con éxito.");
 }
 

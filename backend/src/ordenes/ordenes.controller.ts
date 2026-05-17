@@ -44,4 +44,12 @@ export class OrdenesController {
     return this.ordenesService.actualizarNotasAdmin(id, notasAdmin);
   }
 
+  @Patch(':id/cancelar')
+  cancelar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: { motivo: string; restaurarStock: boolean; enviarEmail: boolean }
+  ) {
+    return this.ordenesService.cancelarOrden(id, dto);
+  }
+
 }

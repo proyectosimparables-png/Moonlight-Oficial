@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { Ticket, Percent, Calendar, Users, Loader2 } from "lucide-react";
-import { Cupon } from "./ListaCupones";
+import { CuponResponse } from "@/types/promociones";
+import { promocionesService } from "@/services/admin/admin-promociones-service";
 
 interface FormCuponProps {
-  cuponData?: Cupon;
+  cuponData?: CuponResponse;
   onSuccess: () => void;
 }
 
@@ -40,16 +41,27 @@ const FormCupon = ({ cuponData, onSuccess }: FormCuponProps) => {
 
   useEffect(() => {
     if (cuponData) {
+      // Normalizamos el tipo por si el backend guardó "FIJO" en vez de "MONTO_FIJO"
+      let tipoForm: "PORCENTAJE" | "MONTO_FIJO" | "ENVIO_GRATIS" = "PORCENTAJE";
+      if (cuponData.tipo === "FIJO" || cuponData.tipo === "MONTO_FIJO")
+        tipoForm = "MONTO_FIJO";
+      if (cuponData.tipo === "ENVIO_GRATIS") tipoForm = "ENVIO_GRATIS";
+
       setFormData({
-        ...cuponData,
+        codigo: cuponData.codigo,
+        tipo: tipoForm,
+        valor: cuponData.valor,
+        minimoCarrito: cuponData.minimoCarrito,
+        activo: cuponData.activo,
+        acumulable: cuponData.acumulable ?? false,
+        soloPrimeraCompra: cuponData.soloPrimeraCompra ?? false,
+        limiteUso: cuponData.limiteUso ?? "",
         fechaInicio: cuponData.fechaInicio
           ? new Date(cuponData.fechaInicio).toISOString().split("T")[0]
           : "",
         fechaFin: cuponData.fechaFin
           ? new Date(cuponData.fechaFin).toISOString().split("T")[0]
           : "",
-        limiteUso: cuponData.limiteUso ?? "",
-        valor: cuponData.valor,
       });
     }
   }, [cuponData]);
@@ -58,39 +70,31 @@ const FormCupon = ({ cuponData, onSuccess }: FormCuponProps) => {
     setLoading(true);
     const isEditing = !!cuponData;
 
-    // Aseguramos que la URL use "promociones" en plural y tenga el formato correcto
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-    const url = isEditing
-      ? `${baseUrl}/promociones/cupon/${cuponData?.id}`
-      : `${baseUrl}/promociones/cupon`;
-
-    const method = isEditing ? "PATCH" : "POST";
+    const payload = {
+      ...formData,
+      valor: Number(formData.valor),
+      minimoCarrito: Number(formData.minimoCarrito),
+      limiteUso: formData.limiteUso !== "" ? Number(formData.limiteUso) : null,
+      fechaInicio: formData.fechaInicio || null,
+      fechaFin: formData.fechaFin || null,
+    };
 
     try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // Agregado para consistencia con tu login/productos
-        body: JSON.stringify({
-          ...formData,
-          valor: Number(formData.valor),
-          minimoCarrito: Number(formData.minimoCarrito),
-          limiteUso:
-            formData.limiteUso !== "" ? Number(formData.limiteUso) : null,
-          fechaInicio: formData.fechaInicio || null,
-          fechaFin: formData.fechaFin || null,
-        }),
-      });
-
-      if (res.ok) {
-        onSuccess();
+      if (isEditing && cuponData.id) {
+        await promocionesService.updateCupon(cuponData.id, payload);
       } else {
-        const errorData = await res.json();
-        alert(errorData.message || "Error al procesar la solicitud");
+        await promocionesService.createCupon(payload);
       }
-    } catch (error) {
-      console.error("Error en submit:", error);
-      alert("Error de conexión con el servidor");
+
+      onSuccess();
+    } catch (error: unknown) {
+      // 👈 Cambiado a 'unknown' para silenciar ESLint de forma segura
+      console.error("Error al procesar el cupón a través del servicio:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error al intentar guardar el cupón.";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -13,7 +13,7 @@ import {
 import {
   getConfigEnvio,
   updateConfigEnvio,
-} from "@/services/configEnvioService";
+} from "@/services/envios/config-envio-service";
 
 // --- INTERFAZ ---
 interface ConfigEnvioData {
@@ -69,7 +69,7 @@ export default function ConfigEnvio() {
       } else {
         alert("Error al guardar");
       }
-    } catch (error) {
+    } catch {
       alert("Error de conexión");
     } finally {
       setIsSaving(false);
@@ -87,7 +87,7 @@ export default function ConfigEnvio() {
   // --- VISTA DE EDICIÓN (FORMULARIO) ---
   if (isEditing) {
     return (
-      <div className="max-w-2xl bg-white rounded-[2rem] shadow-sm border border-purple-100 overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div className="max-w-2xl bg-white rounded-4xl shadow-sm border border-purple-100 overflow-hidden animate-in fade-in zoom-in duration-300">
         <div className="p-6 border-b border-gray-50 flex items-center justify-between">
           <button
             onClick={() => setIsEditing(false)}
@@ -121,7 +121,7 @@ export default function ConfigEnvio() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-6 bg-purple-50 rounded-[1.5rem] border border-purple-100">
+          <div className="flex items-center justify-between p-6 bg-purple-50 rounded-3xl border border-purple-100">
             <div>
               <p className="font-bold text-purple-900">Estado del beneficio</p>
               <p className="text-xs text-purple-400 font-medium">
@@ -158,7 +158,7 @@ export default function ConfigEnvio() {
   // --- VISTA DE LISTA (CARD PRINCIPAL) ---
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div className="bg-white p-7 rounded-[2rem] shadow-sm border border-gray-100 hover:border-purple-200 transition-all group relative">
+      <div className="bg-white p-7 rounded-4xl shadow-sm border border-gray-100 hover:border-purple-200 transition-all group relative">
         {/* Botón de Editar con estilo Moonlight */}
         <button
           onClick={() => setIsEditing(true)}

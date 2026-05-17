@@ -115,7 +115,33 @@ export class PromocionService {
         });
     }
 
-    // 🔹 3. Validar Cupón (Este es el motor para el Carrito/Checkout)
+    // ✨ 🔹 3. Actualizar Cupón (¡NUEVO MÉTODO!)
+    // Gestiona los cambios parciales enviados desde el modal o formulario del administrador
+    async updateCupon(id: string, data: Partial<CreateCuponDto>) {
+        const existe = await this.prisma.cupon.findUnique({ where: { id } });
+        if (!existe) throw new NotFoundException('El cupón que intenta actualizar no existe.');
+
+        try {
+            return await this.prisma.cupon.update({
+                where: { id },
+                data: {
+                    ...data,
+                    // Si cambian el código, mantenemos la coherencia de pasarlo a mayúsculas
+                    codigo: data.codigo ? data.codigo.toUpperCase() : undefined,
+                    // Si vienen fechas, se parsean correctamente a objetos Date nativos
+                    fechaInicio: data.fechaInicio ? new Date(data.fechaInicio) : undefined,
+                    fechaFin: data.fechaFin ? new Date(data.fechaFin) : undefined,
+                }
+            });
+        } catch (error: any) {
+            if (error.code === 'P2002') {
+                throw new BadRequestException('Ya existe otro cupón activo con ese código.');
+            }
+            throw new BadRequestException('Error al actualizar el cupón.');
+        }
+    }
+
+    // 🔹 4. Validar Cupón (Este es el motor para el Carrito/Checkout)
     async validarCupon(codigo: string, subtotal: number) {
         const cupon = await this.prisma.cupon.findUnique({
             where: { codigo: codigo.toUpperCase() }
@@ -142,7 +168,7 @@ export class PromocionService {
         return cupon;
     }
 
-    // 🔹 4. Eliminar Cupón
+    // 🔹 5. Eliminar Cupón
     async removeCupon(id: string) {
         const existe = await this.prisma.cupon.findUnique({ where: { id } });
         if (!existe) throw new NotFoundException('El cupón no existe.');

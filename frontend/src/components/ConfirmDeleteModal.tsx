@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import React, { FC } from "react";
 
@@ -23,9 +29,9 @@ const ConfirmDeleteModal: FC<ConfirmDeleteModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[350px]">
+      <DialogContent className="sm:max-w-87.5">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-[var(--color-purple-dark)]">
+          <DialogTitle className="text-lg font-semibold text-(--color-purple-dark)]">
             {title}
           </DialogTitle>
         </DialogHeader>
@@ -35,14 +41,14 @@ const ConfirmDeleteModal: FC<ConfirmDeleteModalProps> = ({
             variant="outline"
             onClick={onClose}
             disabled={loading}
-            className="hover:bg-[var(--color-purple-light)] transition"
+            className="hover:bg-(--color-purple-light) transition"
           >
             Cancelar
           </Button>
 
           {/* Botón de eliminar único, con ancho fijo para evitar que se mueva */}
           <Button
-            className="bg-red-600 hover:bg-red-700 text-white transition-all min-w-[100px]" // min-width fijo
+            className="bg-red-600 hover:bg-red-700 text-white transition-all min-w-25" // min-width fijo
             onClick={onConfirm}
             disabled={loading}
           >

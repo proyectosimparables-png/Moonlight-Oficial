@@ -1,7 +1,7 @@
-//frontend/src/services/useProductDetails.ts
-
+// frontend/src/services/useProductDetails.ts
 import { useState, useEffect } from "react";
-import { Producto } from "@/types/types-productos";
+import { apiRequest } from "@/lib/apiClient";
+import { Producto } from "@/types/productos";
 
 export const useProductDetails = (productId: string) => {
     const [product, setProduct] = useState<Producto | null>(null);
@@ -11,12 +11,11 @@ export const useProductDetails = (productId: string) => {
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/productos/${productId}`
-                );
-                if (!res.ok) throw new Error("Producto no encontrado");
+                setLoading(true);
 
-                const data: Producto = await res.json();
+                // Reemplazamos el fetch nativo por el cliente inteligente y tipado
+                const data = await apiRequest<Producto>(`/productos/${productId}`);
+
                 setProduct(data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Error desconocido");
@@ -25,10 +24,10 @@ export const useProductDetails = (productId: string) => {
             }
         };
 
-        fetchProduct();
+        if (productId) {
+            fetchProduct();
+        }
     }, [productId]);
 
     return { product, loading, error };
 };
-
-

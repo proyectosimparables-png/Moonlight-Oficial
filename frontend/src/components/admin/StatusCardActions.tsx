@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Loader2 } from "lucide-react";
-import { adminOrderService } from "@/services/adminOrderService";
+import { adminOrderService } from "@/services/admin/admin-ordenes-service";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 

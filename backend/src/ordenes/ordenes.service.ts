@@ -5,6 +5,7 @@ import { EstadoOrden, MetodoPago, TipoPromocion } from '@prisma/client';
 import { CreateOrdeneDto } from './dto/create-ordene.dto';
 import { PaymentsService } from '../payments/payments.service';
 import { PromocionService } from 'src/promocion/promocion.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Injectable()
 export class OrdenesService {
@@ -12,6 +13,7 @@ export class OrdenesService {
     private prisma: PrismaService,
     private paymentsService: PaymentsService,
     private promocionService: PromocionService,
+    private mailService: MailService,
   ) { }
 
   async findAll() {
@@ -31,7 +33,7 @@ export class OrdenesService {
       include: {
         items: {
           include: {
-            variante: { // 👈 CAMBIO: Entramos por variante
+            variante: {
               include: {
                 producto: {
                   include: {
@@ -53,9 +55,9 @@ export class OrdenesService {
                 }
               }
             }
-          },
-        },
-      },
+          }
+        }
+      }
     });
 
     if (!carrito || carrito.items.length === 0) {
@@ -71,7 +73,6 @@ export class OrdenesService {
       const p = v.producto;
       const precioBase = Number(p.precio);
 
-      // Unificamos promociones de Producto, Categoría y Secciones
       const promosSecciones = p.secciones.flatMap(ps => ps.seccion.promociones || []);
       const todasLasPromos = [
         ...(p.promociones || []),
@@ -79,18 +80,16 @@ export class OrdenesService {
         ...promosSecciones
       ].sort((a, b) => (b.prioridad || 0) - (a.prioridad || 0));
 
-      // Promo de porcentaje directo
       const promoPorcentaje = todasLasPromos.find(pr => pr.tipo === TipoPromocion.PORCENTAJE);
       let precioConDctoDirecto = precioBase;
       if (promoPorcentaje) {
         precioConDctoDirecto = precioBase * (1 - ((promoPorcentaje.valor || 0) / 100));
       }
 
-      // Nombre descriptivo para la orden (incluye talle/color si existen)
       const nombreCompleto = `${p.nombre}${v.talle ? ' - ' + v.talle : ''}${v.color ? ' - ' + v.color : ''}`;
 
       const itemProcesado = {
-        varianteId: v.id, // Guardamos el ID de variante
+        varianteId: v.id,
         nombre: nombreCompleto,
         precio: precioBase,
         precioFinal: precioConDctoDirecto,
@@ -102,7 +101,6 @@ export class OrdenesService {
       };
       itemsOrden.push(itemProcesado);
 
-      // Promos de volumen (2x1, etc.)
       const promoVolumen = todasLasPromos.find(pr =>
         pr.tipo === TipoPromocion.CANTIDAD_X_CANTIDAD || pr.tipo === TipoPromocion.SEGUNDA_UNIDAD
       );
@@ -121,7 +119,7 @@ export class OrdenesService {
       }
     });
 
-    // 3. Calcular descuentos por volumen (2x1, 3x2, etc.)
+    // 3. Calcular descuentos por volumen
     unidadesParaCombos.forEach((unidades) => {
       const config = unidades[0].config;
       unidades.sort((a, b) => a.precio - b.precio);
@@ -155,14 +153,10 @@ export class OrdenesService {
 
     // 5. Totales
     const totalProductos = itemsOrden.reduce((acc, i) => acc + (i.precioFinal * i.cantidad), 0);
-
-    // --- LÓGICA DE CUPÓN ---
     let descuentoPorCupon = 0;
 
     if (dto.cuponCodigo) {
-      // Validamos el cupón (ya verifica si existe, si está activo y el monto mínimo)
       const cupon = await this.promocionService.validarCupon(dto.cuponCodigo, totalProductos);
-
       if (cupon.tipo === 'PORCENTAJE') {
         descuentoPorCupon = totalProductos * (cupon.valor / 100);
       } else if (cupon.tipo === 'MONTO_FIJO') {
@@ -170,16 +164,13 @@ export class OrdenesService {
       }
     }
 
-    // Calculamos el total final: (Productos - Cupón) + Envío
-    // Usamos "let" una sola vez aquí
     let totalFinal = (totalProductos - descuentoPorCupon) + (dto.costoEnvio || 0);
 
-    // Descuento extra por transferencia (sobre el total ya rebajado por el cupón)
     if (dto.metodoPago === MetodoPago.TRANSFERENCIA) {
       totalFinal *= 0.9;
     }
 
-    // 6. TRANSACCIÓN: Crear orden, descontar stock y limpiar carrito
+    // 6. TRANSACCIÓN
     const nuevaOrden = await this.prisma.$transaction(async (tx) => {
       if (dto.cuponCodigo) {
         await tx.cupon.update({
@@ -187,19 +178,16 @@ export class OrdenesService {
           data: { usados: { increment: 1 } }
         });
       }
-      // VALIDAR Y DESCONTAR STOCK
+
       for (const item of itemsOrden) {
         const varianteStock = await tx.variante.findUnique({
           where: { id: item.varianteId }
         });
 
-        // 1. Verificamos que la variante exista
-        // 2. Si el stock NO es null (es limitado), verificamos que alcance
         if (!varianteStock || (varianteStock.stock !== null && varianteStock.stock < item.cantidad)) {
           throw new BadRequestException(`Stock insuficiente para la variante ${item.nombre}`);
         }
 
-        // 🔥 CORRECCIÓN AQUÍ: Solo descontamos si NO es infinito (null)
         if (varianteStock.stock !== null) {
           await tx.variante.update({
             where: { id: item.varianteId },
@@ -288,11 +276,64 @@ export class OrdenesService {
     });
   }
 
-  async cancelarOrden(id: string) {
-    return this.prisma.orden.update({
-      where: { id },
-      data: { estado: EstadoOrden.CANCELADO },
+  async cancelarOrden(id: string, dto: { motivo: string; restaurarStock: boolean; enviarEmail: boolean }) {
+    const { motivo, restaurarStock, enviarEmail } = dto;
+
+    const ordenActualizada = await this.prisma.$transaction(async (tx) => {
+      // 1. Buscamos la orden con sus ítems
+      const orden = await tx.orden.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+
+      if (!orden) throw new NotFoundException('La orden no existe');
+      if (orden.estado === EstadoOrden.CANCELADO) {
+        throw new BadRequestException('La orden ya se encuentra cancelada');
+      }
+
+      // 2. Restauración de Stock
+      if (restaurarStock) {
+        for (const item of orden.items) {
+          if (item.varianteId) {
+            const variante = await tx.variante.findUnique({
+              where: { id: item.varianteId }
+            });
+
+            if (variante && variante.stock !== null) {
+              await tx.variante.update({
+                where: { id: item.varianteId },
+                data: { stock: { increment: item.cantidad } }
+              });
+            }
+          }
+        }
+      }
+
+      // 3. Actualizamos estado
+      return await tx.orden.update({
+        where: { id },
+        data: {
+          estado: EstadoOrden.CANCELADO,
+          notasAdmin: motivo,
+        },
+      });
     });
+
+    // 4. Enviar Email (Fuera de la transacción por seguridad)
+    if (enviarEmail && ordenActualizada.emailContacto) {
+      try {
+        await this.mailService.sendOrderCancelledNotification(
+          ordenActualizada.emailContacto!,
+          ordenActualizada.nombreDestinatario ?? 'Cliente',
+          ordenActualizada.id,
+          motivo
+        );
+      } catch (error) {
+        console.error("Error al enviar email de cancelación:", error);
+      }
+    }
+
+    return ordenActualizada;
   }
 
   async actualizarNotasAdmin(id: string, notasAdmin: string) {

@@ -13,7 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Trash2, Search } from "lucide-react";
-import { getComentarios, deleteComentario } from "@/services/comentarios";
+import {
+  getComentarios,
+  deleteComentario,
+} from "@/services/comentarios-service";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import toast from "react-hot-toast";
 import React from "react";
@@ -33,17 +36,19 @@ const ComentariosAdmin = () => {
   const [comentarios, setComentarios] = useState<ComentarioType[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [comentarioAEliminar, setComentarioAEliminar] = useState<string | null>(null);
+  const [comentarioAEliminar, setComentarioAEliminar] = useState<string | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Función para obtener la URL del avatar
   const getAvatarUrl = (user: ComentarioType["user"]) => {
     if (user.image) return user.image;
-    
+
     // Si no hay imagen, usamos UI Avatars con el nombre (o el email como fallback)
     const seed = user.name || user.email || "Usuario";
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      seed
+      seed,
     )}&background=8b5cf6&color=fff&size=128`;
   };
 
@@ -54,8 +59,9 @@ const ComentariosAdmin = () => {
 
   const fetchComentarios = async () => {
     try {
-      const data = await getComentarios();
-      setComentarios(data);
+      // ⚡ SOLUCIÓN TS: Le pasamos el tipo genérico explícito al servicio unificado
+      const data = await getComentarios<ComentarioType[]>();
+      setComentarios(data || []);
     } catch (error) {
       console.error("Error fetching comentarios:", error);
       toast.error("❌ No se pudieron cargar los comentarios");
@@ -72,7 +78,9 @@ const ComentariosAdmin = () => {
 
     try {
       await deleteComentario(comentarioAEliminar);
-      setComentarios((prev) => prev.filter((c) => c.id !== comentarioAEliminar));
+      setComentarios((prev) =>
+        prev.filter((c) => c.id !== comentarioAEliminar),
+      );
       toast.success("✅ Comentario eliminado correctamente");
     } catch (error) {
       console.error("Error al eliminar comentario:", error);
@@ -87,8 +95,8 @@ const ComentariosAdmin = () => {
   const filteredComentarios = comentarios.filter(
     (c) =>
       c.contenido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      (c.user?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.user?.email || "").toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -97,7 +105,9 @@ const ComentariosAdmin = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Comentarios</h1>
-            <p className="text-muted-foreground">Gestiona los comentarios de los usuarios</p>
+            <p className="text-muted-foreground">
+              Gestiona los comentarios de los usuarios
+            </p>
           </div>
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -116,7 +126,8 @@ const ComentariosAdmin = () => {
               <TableRow>
                 <TableHead>Usuario</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="min-w-[300px]">Comentario</TableHead>
+                {/* ⚡ SOLUCIÓN TW: Cambiamos min-w-[300px] por min-w-75 */}
+                <TableHead className="min-w-75">Comentario</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -125,29 +136,37 @@ const ComentariosAdmin = () => {
             <TableBody>
               {filteredComentarios.length > 0 ? (
                 filteredComentarios.map((c) => (
-                  <TableRow key={c.id} className="hover:bg-muted/30 transition-colors">
+                  <TableRow
+                    key={c.id}
+                    className="hover:bg-muted/30 transition-colors"
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <div className="relative h-9 w-9 shrink-0">
                           <Image
                             src={getAvatarUrl(c.user)}
-                            alt={c.user.name}
+                            alt={c.user?.name || "Usuario"}
                             fill
                             className="rounded-full object-cover border border-border"
                           />
                         </div>
-                        <span className="font-medium">{c.user.name || "Sin nombre"}</span>
+                        <span className="font-medium">
+                          {c.user?.name || "Sin nombre"}
+                        </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{c.user.email}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {c.user?.email}
+                    </TableCell>
                     <TableCell className="max-w-md italic text-foreground/80">
-                      "{c.contenido}"
+                      {/* ⚡ SOLUCIÓN ESLINT: Escapamos las comillas usando &quot; */}
+                      &quot;{c.contenido}&quot;
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {new Date(c.createdAt).toLocaleDateString("es-ES", {
                         day: "2-digit",
                         month: "short",
-                        year: "numeric"
+                        year: "numeric",
                       })}
                     </TableCell>
                     <TableCell className="text-right">
@@ -164,7 +183,10 @@ const ComentariosAdmin = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-muted-foreground"
+                  >
                     No se encontraron comentarios.
                   </TableCell>
                 </TableRow>
@@ -179,6 +201,7 @@ const ComentariosAdmin = () => {
         onClose={() => setModalOpen(false)}
         onConfirm={handleDeleteConfirm}
         loading={isDeleting}
+        message="¿Estás seguro que deseas eliminar este comentario? Esta acción no se puede deshacer."
       />
     </div>
   );

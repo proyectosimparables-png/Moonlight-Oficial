@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Trash2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { useFavorites } from "@/context/FavoritesContext";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import ProductCard from "../home/ProductCard";
-import { Favorito } from "@/types/types-productos";
+import { Favorito } from "@/types/productos";
 
 export default function FavoritosList() {
   const { favorites, toggleFavorite } = useFavorites();
@@ -16,11 +16,13 @@ export default function FavoritosList() {
     setLoading(false);
   }, []);
 
-  const handleEliminarFavorito = async (e: React.MouseEvent, productoId: string) => {
-    e.stopPropagation(); 
+  const handleEliminarFavorito = async (
+    e: React.MouseEvent,
+    productoId: string,
+  ) => {
+    e.stopPropagation();
     try {
       await toggleFavorite(productoId);
-      toast.success("Producto eliminado de favoritos ⭐");
     } catch (error) {
       console.error(error);
       toast.error("No se pudo eliminar el producto ⭐");
@@ -31,7 +33,9 @@ export default function FavoritosList() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-[#7b5ca2] animate-pulse">
         <StarBeat />
-        <p className="text-sm text-gray-500 mt-4">⭐ Cargando tus favoritos...</p>
+        <p className="text-sm text-gray-500 mt-4">
+          ⭐ Cargando tus favoritos...
+        </p>
       </div>
     );
   }
@@ -41,7 +45,9 @@ export default function FavoritosList() {
       <div className="flex flex-col items-center justify-center py-16 text-[#7b5ca2]">
         <StarBeat />
         <p className="mt-4 text-lg font-medium">¡Aún no tienes favoritos! ⭐</p>
-        <p className="text-sm text-gray-500 mt-1">Agrega productos con la estrella para verlos aquí 💫</p>
+        <p className="text-sm text-gray-500 mt-1">
+          Agrega productos con la estrella para verlos aquí 💫
+        </p>
       </div>
     );
   }
@@ -55,12 +61,12 @@ export default function FavoritosList() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {favorites.map((fav: Favorito) => (
           <div key={fav.id} className="relative group">
-            <ProductCard 
+            <ProductCard
               id={fav.productoId}
               nombre={fav.producto?.nombre || ""}
               precio={fav.producto?.precio?.toString() || "0"}
               imagenUrl={fav.producto?.imagenUrl}
-              imagenHoverUrl={fav.producto?.imagenHoverUrl ?? undefined} 
+              imagenHoverUrl={fav.producto?.imagenHoverUrl ?? undefined}
             />
 
             {/* BOTÓN ELIMINAR OPTIMIZADO: visible en móvil, hover en escritorio */}

@@ -118,6 +118,7 @@ model Seccion {
 model Comentario {
   id        String   @id @default(uuid())
   contenido String
+  nombre    String?
   createdAt DateTime @default(now())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
@@ -318,4 +319,19 @@ enum TipoDescuento {
   PORCENTAJE     // Ej: 15% OFF
   MONTO_FIJO     // Ej: $5000 OFF
   ENVIO_GRATIS   // El cupón anula el costo de envío
+}
+
+// --- CONFIGURACIÓN GLOBAL ---
+model ConfiguracionTienda {
+  id                   String   @id @default(uuid())
+  
+  // Mantenimiento
+  mantenimientoActivo  Boolean  @default(false)
+  mantenimientoMensaje String   @default("Estamos renovando la tienda y está quedando increíble. ¡Volvé en unos días!")
+  mantenimientoCodigo  String   @default("MOONLIGHT_VIP")
+
+  // Podés aprovechar para agregar otras cosas globales a futuro aquí
+  notificacionBanner   String?  // Ej: "¡Envío gratis esta semana!"
+  
+  updatedAt            DateTime @updatedAt
 }

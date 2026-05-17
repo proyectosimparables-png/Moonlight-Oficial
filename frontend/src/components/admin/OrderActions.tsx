@@ -1,3 +1,4 @@
+// src/components/admin/OrderActions.tsx
 "use client";
 
 import { Fragment, useState } from "react";
@@ -33,34 +34,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { adminOrderService } from "@/services/adminOrderService";
+import { adminOrderService } from "@/services/admin/admin-ordenes-service";
+import { ModalCancelarVenta } from "@/components/admin/ModalCancelarVenta";
+import { OrderResponse } from "@/types/ordenes";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-// --- Interfaces ---
-export interface OrdenItem {
-  id: string;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  imagenUrl: string;
+interface CancelData {
+  motivo: string;
+  restaurarStock: boolean;
+  enviarEmail: boolean;
 }
 
-export interface OrdenReal {
-  id: string;
-  total: number;
-  estado: string;
-  createdAt: string;
-  user: { name: string | null; email: string };
-  metodoEnvio: string | null;
-  metodoPago?: string;
-  items: OrdenItem[];
-}
-
-export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
+export default function OrdenesTable({
+  ordenes,
+}: {
+  ordenes: OrderResponse[];
+}) {
   const router = useRouter();
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
 
   const ordenesFiltradas = ordenes.filter((o) => o.estado !== "CARRITO");
 
@@ -80,9 +74,6 @@ export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
   };
 
   const handleAction = async (id: string, action: string) => {
-    if (action === "CANCELADO") {
-      if (!confirm("¿Estás seguro de cancelar esta venta?")) return;
-    }
     const loadingToast = toast.loading("Actualizando...");
     try {
       if (action === "REFUND") await adminOrderService.refundOrder(id);
@@ -92,13 +83,37 @@ export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
       toast.success("Orden actualizada", { id: loadingToast });
       router.refresh();
     } catch (error) {
-      console.error(error);
-      toast.error("Error al procesar", { id: loadingToast });
+      const message =
+        error instanceof Error ? error.message : "Error desconocido";
+      toast.error(message, { id: loadingToast });
+    }
+  };
+
+  const handleConfirmCancel = async (data: CancelData) => {
+    if (!orderToCancel) return;
+
+    const loadingToast = toast.loading("Cancelando venta...");
+    try {
+      await adminOrderService.cancelOrder(orderToCancel, data);
+      toast.success("Venta cancelada correctamente", { id: loadingToast });
+      setOrderToCancel(null);
+      router.refresh();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Error al cancelar";
+      toast.error(errorMessage, { id: loadingToast });
     }
   };
 
   return (
     <div className="flex flex-col gap-6">
+      <ModalCancelarVenta
+        isOpen={!!orderToCancel}
+        orderId={orderToCancel || ""}
+        onClose={() => setOrderToCancel(null)}
+        onConfirm={handleConfirmCancel}
+      />
+
       {/* --- 1. RESUMEN SUPERIOR --- */}
       <div className="flex flex-wrap gap-4">
         {[
@@ -236,11 +251,7 @@ export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
                       <div className="flex flex-col gap-0.5">
                         <Badge
                           variant="outline"
-                          className={`w-fit text-[9px] font-bold px-2 py-0 border-none ${
-                            isPagado
-                              ? "bg-green-50 text-green-600"
-                              : "bg-amber-50 text-amber-600"
-                          }`}
+                          className={`w-fit text-[9px] font-bold px-2 py-0 border-none ${isPagado ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600"}`}
                         >
                           {isPagado ? "RECIBIDO" : "PENDIENTE"}
                         </Badge>
@@ -256,8 +267,7 @@ export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
                           variant="outline"
                           className="w-fit bg-gray-50 text-gray-500 border-transparent text-[9px] font-bold px-2 py-0"
                         >
-                          {orden.estado === "PENDIENTE" ||
-                          orden.estado === "PAGADO"
+                          {["PENDIENTE", "PAGADO"].includes(orden.estado)
                             ? "POR EMPAQUETAR"
                             : orden.estado.toUpperCase()}
                         </Badge>
@@ -292,13 +302,11 @@ export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
                             <Package size={14} className="mr-2" /> Marcar como
                             empaquetado
                           </DropdownMenuItem>
-
                           <DropdownMenuItem
                             onClick={() => handleAction(orden.id, "ENVIADO")}
                           >
                             <Send size={14} className="mr-2" /> Notificar envío
                           </DropdownMenuItem>
-
                           <DropdownMenuItem
                             onClick={() =>
                               router.push(`/admin/vendidos/editar/${orden.id}`)
@@ -306,18 +314,15 @@ export default function OrdenesTable({ ordenes }: { ordenes: OrdenReal[] }) {
                           >
                             <Pencil size={14} className="mr-2" /> Editar venta
                           </DropdownMenuItem>
-
                           <DropdownMenuItem
                             onClick={() => handleAction(orden.id, "ARCHIVAR")}
                           >
                             <Archive size={14} className="mr-2" /> Archivar
                           </DropdownMenuItem>
-
                           <DropdownMenuSeparator />
-
                           <DropdownMenuItem
-                            onClick={() => handleAction(orden.id, "CANCELADO")}
-                            className="text-red-600"
+                            onClick={() => setOrderToCancel(orden.id)}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
                           >
                             <Ban size={14} className="mr-2" /> Cancelar
                           </DropdownMenuItem>

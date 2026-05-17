@@ -4,59 +4,21 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Ticket, Plus, Tag, Trash2, Edit3, Loader2 } from "lucide-react";
 import FormCupon from "@/components/admin/FormCupon";
 
-export interface Cupon {
-  id: string;
-  codigo: string;
-  tipo: "PORCENTAJE" | "MONTO_FIJO" | "ENVIO_GRATIS";
-  valor: number;
-  usados: number;
-  limiteUso?: number;
-  minimoCarrito: number;
-  activo: boolean;
-  fechaInicio?: string;
-  fechaFin?: string;
-  acumulable: boolean;
-  soloPrimeraCompra: boolean;
-}
+import { CuponResponse } from "@/types/promociones";
+import { promocionesService } from "@/services/admin/admin-promociones-service";
 
 export default function ListaCupones() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [cupones, setCupones] = useState<Cupon[]>([]);
+  const [cupones, setCupones] = useState<CuponResponse[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [cuponAEditar, setCuponAEditar] = useState<Cupon | null>(null);
-
-  // Usamos la misma variable que ya sabes que funciona
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const [cuponAEditar, setCuponAEditar] = useState<CuponResponse | null>(null);
 
   const fetchCupones = useCallback(async () => {
     setCargando(true);
-    try {
-      // Aplicamos el mismo patrón: URL absoluta + credentials
-      const res = await fetch(`${API_URL}/promociones/cupon`, {
-        method: "GET",
-        credentials: "include", // Importante si manejas sesiones
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(
-          `Error ${res.status}: No se encontró la ruta en el backend`,
-        );
-      }
-
-      const data = await res.json();
-
-      // Saneamos la data por si viene envuelta en un objeto (común en NestJS)
-      const listaFinal = Array.isArray(data) ? data : data.data || [];
-      setCupones(listaFinal);
-    } catch (error) {
-      console.error("Error cargando cupones:", error);
-    } finally {
-      setCargando(false);
-    }
-  }, [API_URL]);
+    const data = await promocionesService.getCupones();
+    setCupones(data);
+    setCargando(false);
+  }, []);
 
   useEffect(() => {
     fetchCupones();
@@ -65,25 +27,19 @@ export default function ListaCupones() {
   const handleEliminar = async (id: string) => {
     if (!confirm("¿Estás segura de eliminar este cupón?")) return;
     try {
-      const res = await fetch(`${API_URL}/promocion/cupon/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        setCupones((prev) => prev.filter((c) => c.id !== id));
-      }
+      await promocionesService.deleteCupon(id);
+      // Actualizamos el estado de manera reactiva localmente
+      setCupones((prev) => prev.filter((c) => c.id !== id));
     } catch (error) {
-      console.error("Error al eliminar:", error);
+      console.error("Error al eliminar el cupón a través del servicio:", error);
     }
   };
 
-  const handleEditar = (cupon: Cupon) => {
+  const handleEditar = (cupon: CuponResponse) => {
     setCuponAEditar(cupon);
     setMostrarFormulario(true);
   };
 
-  // Lógica de renderizado (Formulario o Lista)
   if (mostrarFormulario) {
     return (
       <div className="relative animate-in fade-in duration-300">
@@ -186,8 +142,7 @@ export default function ListaCupones() {
             No se encontraron cupones
           </h2>
           <p className="text-gray-400">
-            Asegúrate de que la ruta <b>/promocion/cupon</b> exista en tu
-            controlador de NestJS.
+            Comenzá creando un nuevo cupón de descuento para Moonlight.
           </p>
         </div>
       )}

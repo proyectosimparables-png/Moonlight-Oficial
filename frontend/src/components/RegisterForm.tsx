@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { registerLocal, resendCodeLocal, verifyEmailLocal } from "@/services/authService";
+import {
+  registerLocal,
+  resendCodeLocal,
+  verifyEmailLocal,
+} from "@/services/autenticacion-service";
 // Importamos los iconos (opcional, puedes usar emojis si prefieres)
 import { Eye, EyeOff } from "lucide-react";
 
@@ -17,7 +21,7 @@ export default function RegisterForm() {
     name: "",
     email: "",
     password: "",
-    address: ""
+    address: "",
   });
 
   const [verificationCode, setVerificationCode] = useState("");
@@ -42,7 +46,8 @@ export default function RegisterForm() {
 
   const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (verificationCode.length < 6) return toast.error("Ingresa los 6 dígitos");
+    if (verificationCode.length < 6)
+      return toast.error("Ingresa los 6 dígitos");
     setLoading(true);
     try {
       await verifyEmailLocal(verificationCode);
@@ -79,9 +84,13 @@ export default function RegisterForm() {
       <div className="w-full max-w-md bg-white border border-[#e6dff1] rounded-2xl shadow-xl p-8 text-center animate-fadeIn">
         {step === "register" ? (
           <>
-            <h2 className="text-3xl font-semibold text-[#7b5ca2] mb-6">Crear Cuenta ✨</h2>
+            <h2 className="text-3xl font-semibold text-[#7b5ca2] mb-6">
+              Crear Cuenta ✨
+            </h2>
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
-              <label htmlFor="name" className="sr-only">Nombre</label>
+              <label htmlFor="name" className="sr-only">
+                Nombre
+              </label>
               <input
                 name="name"
                 required
@@ -90,7 +99,9 @@ export default function RegisterForm() {
                 onChange={handleChange}
                 className="w-full p-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7b5ca2]"
               />
-              <label htmlFor="email" className="sr-only">Email</label>
+              <label htmlFor="email" className="sr-only">
+                Email
+              </label>
               <input
                 name="email"
                 required
@@ -99,10 +110,12 @@ export default function RegisterForm() {
                 onChange={handleChange}
                 className="w-full p-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7b5ca2]"
               />
-              
+
               {/* CONTENEDOR DE CONTRASEÑA */}
               <div className="relative">
-                <label htmlFor="password" className="sr-only">Contraseña</label>
+                <label htmlFor="password" className="sr-only">
+                  Contraseña
+                </label>
                 <input
                   name="password"
                   required
@@ -119,7 +132,9 @@ export default function RegisterForm() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <label htmlFor="address" className="sr-only">Domicilio</label>
+              <label htmlFor="address" className="sr-only">
+                Domicilio
+              </label>
               <input
                 name="address"
                 required
@@ -140,7 +155,9 @@ export default function RegisterForm() {
         ) : (
           /* Resto del código de verificación igual... */
           <div className="animate-fadeIn">
-            <h2 className="text-3xl font-semibold text-[#7b5ca2] mb-2">Verifica tu Email 📧</h2>
+            <h2 className="text-3xl font-semibold text-[#7b5ca2] mb-2">
+              Verifica tu Email 📧
+            </h2>
             <p className="text-sm text-gray-500 mb-6">
               Hemos enviado un código de 6 dígitos a <br />
               <span className="font-medium text-[#7b5ca2]">{form.email}</span>
@@ -151,7 +168,9 @@ export default function RegisterForm() {
                 maxLength={6}
                 value={verificationCode}
                 placeholder="000000"
-                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) =>
+                  setVerificationCode(e.target.value.replace(/\D/g, ""))
+                }
                 className="w-full text-center text-3xl tracking-[10px] font-bold p-3 border-2 border-[#e6dff1] rounded-lg focus:outline-none focus:border-[#7b5ca2] text-[#7b5ca2]"
               />
               <button
@@ -163,15 +182,24 @@ export default function RegisterForm() {
               </button>
               <div className="mt-6">
                 {timer > 0 ? (
-                  <p className="text-sm text-gray-400 italic">Puedes reenviar el código en {timer} segundos</p>
+                  <p className="text-sm text-gray-400 italic">
+                    Puedes reenviar el código en {timer} segundos
+                  </p>
                 ) : (
-                  <button type="button" onClick={handleResend} className="text-sm font-semibold text-[#7b5ca2] hover:underline">
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    className="text-sm font-semibold text-[#7b5ca2] hover:underline"
+                  >
                     ¿No recibiste el código? Reenviar código
                   </button>
                 )}
               </div>
             </form>
-            <button onClick={() => setStep("register")} className="mt-4 text-xs text-gray-400 hover:text-[#7b5ca2] underline transition-colors">
+            <button
+              onClick={() => setStep("register")}
+              className="mt-4 text-xs text-gray-400 hover:text-[#7b5ca2] underline transition-colors"
+            >
               Volver atrás / Corregir email
             </button>
           </div>
@@ -179,7 +207,10 @@ export default function RegisterForm() {
 
         <p className="mt-5 text-[#7b5ca2] text-sm">
           ¿Ya tienes una cuenta?{" "}
-          <span onClick={() => router.push("/login")} className="font-semibold underline cursor-pointer">
+          <span
+            onClick={() => router.push("/login")}
+            className="font-semibold underline cursor-pointer"
+          >
             Inicia sesión
           </span>
         </p>

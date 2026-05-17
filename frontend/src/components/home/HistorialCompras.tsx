@@ -1,31 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUserHistorial } from "@/services/historialService";
+import { getUserHistorial } from "@/services/historial-service";
+import { HistorialResponse, HistorialOrden } from "@/types/ordenes";
 import Image from "next/image";
-
-// 🔹 Tipado de la estructura de datos
-interface OrdenItem {
-  id: string;
-  nombre: string;
-  precio: number;
-  cantidad: number;
-  imagenUrl?: string;
-}
-
-interface Orden {
-  id: string;
-  total: number;
-  estado: string; // Basado en el Enum EstadoOrden de Prisma
-  createdAt: string;
-  items: OrdenItem[];
-}
-
-interface HistorialResponse {
-  historial: Orden[];
-  total: number;
-  cantidad: number;
-}
 
 // 🔹 Configuración de colores y etiquetas por estado
 const ESTADOS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -64,7 +42,7 @@ const ESTADOS_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 export default function HistorialCompras() {
-  const [historial, setHistorial] = useState<Orden[]>([]);
+  const [historial, setHistorial] = useState<HistorialOrden[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [cantidad, setCantidad] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -73,10 +51,13 @@ export default function HistorialCompras() {
     const fetchHistorial = async () => {
       try {
         setLoading(true);
-        const data: HistorialResponse = await getUserHistorial();
-        setHistorial(data.historial);
-        setTotal(data.total);
-        setCantidad(data.cantidad);
+        const data = await getUserHistorial<HistorialResponse>();
+
+        if (data) {
+          setHistorial(data.historial || []);
+          setTotal(data.total || 0);
+          setCantidad(data.cantidad || 0);
+        }
       } catch (err) {
         console.error("Error al cargar el historial:", err);
       } finally {
@@ -169,10 +150,10 @@ export default function HistorialCompras() {
 
                 {/* Items de la Orden */}
                 <div className="space-y-4">
-                  {orden.items.map((producto) => (
+                  {orden.items?.map((producto) => (
                     <div key={producto.id} className="flex items-center group">
                       {producto.imagenUrl && (
-                        <div className="relative w-14 h-14 mr-4 flex-shrink-0">
+                        <div className="relative w-14 h-14 mr-4 shrink-0">
                           <Image
                             src={producto.imagenUrl}
                             alt={producto.nombre}

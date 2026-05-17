@@ -1,386 +1,790 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { updateProductoFlexible, removeImagenProducto, getCategoriasTree } from "@/services/productos";
-import { getSecciones } from "@/services/productos"; // Asumo que tienes este servicio
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { CategoriaTreeSelector } from "@/components/CategoriaTreeSelector";
+import { useEffect, useState } from "react";
+import { getSecciones, getCategoriasTree } from "@/services/productos-service";
+import {
+  updateProductoFlexible,
+  removeImagenProducto,
+} from "@/services/admin/admin-productos-actions";
 import toast from "react-hot-toast";
-import { ImagePlus, Loader2 } from "lucide-react";
-import type { Producto } from "@/types/types-productos";
-import type { Categoria } from "@/types/Categorias";
-import { COLOR_MAP, OPCIONES_COLORES, OPCIONES_CORTES, OPCIONES_TALLES } from "@/lib/colores";
+import EditorDescripcion from "./EditorDescripcion";
+import {
+  XMarkIcon,
+  CameraIcon,
+  PlusIcon,
+  TrashIcon,
+  PencilSquareIcon,
+} from "@heroicons/react/24/solid";
+import { CategoriaTreeSelector } from "../CategoriaTreeSelector";
+import Image from "next/image";
+import { Loader2 } from "lucide-react";
+
+// --- INTERFACES DE TIPADO ---
+interface VarianteEstado {
+  id: string;
+  talle: string;
+  color: string;
+  stock: string;
+  seguimiento: boolean;
+}
+
+interface Seccion {
+  id: string;
+  nombre: string;
+}
+
+interface CategoriaNode {
+  id: string;
+  nombre: string;
+  children?: CategoriaNode[];
+}
+
+// Buscá esto en EditarProductoForm.tsx y reemplazalo:
+interface ProductoBackendOriginal {
+  id: string | number;
+  nombre: string;
+  descripcion?: string | null;
+  precio: number | string;
+  precioPromocional?: number | string | null;
+  peso?: number | string;
+  alto?: number | string;
+  ancho?: number | string;
+  profundidad?: number | string;
+  secciones?: Array<{ id?: string; seccionId?: string; nombre?: string }>;
+
+  // ✅ Cambiamos 'any' por 'unknown' para que ESLint no proteste
+  categoria?: { id: string; nombre?: string; [key: string]: unknown } | null;
+
+  imagenes?: Array<string | { id: string | number; url: string }>;
+  variantes?: Array<{
+    id?: string;
+    talle: string;
+    color: string;
+    stock: number | null;
+  }>;
+
+  // ✅ El truco maestro: permitimos que el objeto traiga propiedades extra
+  // como 'published', 'createdAt', etc., sin que TypeScript se ponga estricto.
+  [key: string]: unknown;
+}
 
 interface EditarProductoFormProps {
-  producto: Producto;
+  producto: ProductoBackendOriginal;
   onCancel: () => void;
   onUpdate: () => void;
 }
 
-export default function EditarProductoForm({ producto, onCancel, onUpdate }: EditarProductoFormProps) {
-  // --- ESTADOS DE DATOS ---
-  const [nombre, setNombre] = useState<string>(producto.nombre);
-  const [descripcion, setDescripcion] = useState<string>(producto.descripcion || "");
-  // Busca donde declaras el estado del precio y cámbialo por esto:
-  const [precio, setPrecio] = useState<number>(() => {
-    if (typeof producto.precio === 'number') return producto.precio;
-    // Si viene como "$ 50.000", quitamos todo lo que no sea número
-    const limpio = String(producto.precio).replace(/[^0-23456789]/g, '');
-    return limpio ? Number(limpio) : 0;
+export default function EditarProductoForm({
+  producto,
+  onCancel,
+  onUpdate,
+}: EditarProductoFormProps) {
+  // --- DATOS BÁSICOS ---
+  const [nombre, setNombre] = useState(producto.nombre || "");
+  const [precio, setPrecio] = useState(String(producto.precio || ""));
+  const [precioPromocional, setPrecioPromocional] = useState(
+    producto.precioPromocional ? String(producto.precioPromocional) : "",
+  );
+  const [descripcion, setDescripcion] = useState(producto.descripcion || "");
+
+  // --- LOGÍSTICA (Correo Argentino) ---
+  const [peso, setPeso] = useState(String(producto.peso || ""));
+  const [profundidad, setProfundidad] = useState(
+    String(producto.profundidad || ""),
+  );
+  const [ancho, setAncho] = useState(String(producto.ancho || ""));
+  const [alto, setAlto] = useState(String(producto.alto || ""));
+
+  // --- IMÁGENES EXISTENTES Y NUEVAS ---
+  const [imagenesExistentes, setImagenesExistentes] = useState<
+    Array<{ id: string; url: string }>
+  >(() => {
+    return (
+      (producto.imagenes || [])
+        .map((img, idx) => {
+          // 1. Si es un string directo (ej: la URL), le armamos un ID temporal seguro
+          if (typeof img === "string") {
+            return { id: `old-${idx}`, url: img };
+          }
+
+          // 2. Si es un objeto válido y tiene la propiedad 'url', extraemos el ID de forma segura
+          if (img && typeof img === "object" && "url" in img) {
+            const objImg = img as { id?: string | number; url: string };
+            return {
+              id: objImg.id ? String(objImg.id) : `old-obj-${idx}`,
+              url: objImg.url,
+            };
+          }
+
+          // 3. Si es cualquier otra estructura rota o null, devolvemos null
+          return null;
+        })
+        // 4. Limpiamos el arreglo sacando cualquier elemento roto (null)
+        .filter((img): img is { id: string; url: string } => img !== null)
+    );
   });
-  const [stock, setStock] = useState<number>(producto.stock || 0);
 
-  // --- ESTADOS DE RELACIONES ---
-  const [seccionesLista, setSeccionesLista] = useState<any[]>([]);
-  const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState<string[]>(
-    (producto as any).secciones?.map((s: any) => s.seccionId || s.id) || []
-  );
-  const [categoriasData, setCategoriasData] = useState<Categoria[]>([]);
-  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<string[]>(
-    producto.categoria?.id ? [producto.categoria.id] : []
-  );
-
-  // --- ESTADOS DE IMÁGENES ---
   const [imagenesNuevas, setImagenesNuevas] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [imagenUrlActual, setImagenUrlActual] = useState<string | null>(producto.imagenUrl || null);
-  const [imagenesGaleria, setImagenesGaleria] = useState<any[]>(producto.imagenes || []);
+  // --- RELACIONES Y CATEGORÍAS ---
+  const [secciones, setSecciones] = useState<Seccion[]>([]);
+  const [categoriasData, setCategoriasData] = useState<CategoriaNode[]>([]);
+  const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState<
+    string[]
+  >(() => {
+    return (
+      producto.secciones
+        ?.map((s) => s.seccionId || s.id || "")
+        .filter(Boolean) || []
+    );
+  });
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<
+    string[]
+  >(producto.categoria?.id ? [producto.categoria.id] : []);
+
+  // --- VARIANTES ---
+  const [variantesData, setVariantesData] = useState<VarianteEstado[]>(() => {
+    return (producto.variantes || []).map((v, idx) => ({
+      id: v.id || `${v.color}-${v.talle}-${idx}`,
+      color: v.color,
+      talle: v.talle,
+      stock: v.stock !== null ? String(v.stock) : "0",
+      seguimiento: v.stock !== null,
+    }));
+  });
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  // --- ESTADO TEMPORAL DEL DRAWER ---
+  const [tempColor, setTempColor] = useState("");
+  const [tempTalle, setTempTalle] = useState("");
+  const [tempStock, setTempStock] = useState("0");
+  const [tempSeguimiento, setTempSeguimiento] = useState(true);
+
   const [loading, setLoading] = useState(false);
-  const [imagenesExistentes, setImagenesExistentes] = useState<any[]>(producto.imagenes || []);
 
-  //colores y tallas//
-  const [coloresSel, setColoresSel] = useState<string[]>(producto.colores || []);
-  const [tallesSel, setTallesSel] = useState<string[]>(producto.talles || []);
-  const [cortesSel, setCortesSel] = useState<string[]>(producto.cortes || []);
+  // --- VALIDACIÓN DE FORMULARIO ---
+  const isFormValid =
+    nombre.trim() !== "" &&
+    precio !== "" &&
+    peso !== "" &&
+    alto !== "" &&
+    ancho !== "" &&
+    profundidad !== "" &&
+    seccionesSeleccionadas.length > 0 &&
+    categoriasSeleccionadas.length > 0 &&
+    variantesData.length > 0 &&
+    (imagenesExistentes.length > 0 || imagenesNuevas.length > 0);
 
-  // 1. Cargar todas las secciones disponibles al montar
+  // Carga inicial de secciones
   useEffect(() => {
-    getSecciones().then(setSeccionesLista).catch(console.error);
+    getSecciones()
+      .then((data: Seccion[]) => setSecciones(data))
+      .catch((err) => console.error("❌ Error al cargar secciones:", err));
   }, []);
 
-  // 2. Cargar el árbol de categorías cuando cambie la sección seleccionada
+  // Carga reactiva de categorías dinámicas basadas en la sección elegida
   useEffect(() => {
-    if (seccionesSeleccionadas.length > 0) {
-      getCategoriasTree(seccionesSeleccionadas[0])
-        .then(setCategoriasData)
-        .catch((err) => {
-          console.warn("Esta sección no tiene categorías aún");
-          setCategoriasData([]); // Limpiamos el árbol en lugar de lanzar error
-        });
+    async function fetchCategorias() {
+      if (seccionesSeleccionadas.length > 0) {
+        const ultimaSeccionId =
+          seccionesSeleccionadas[seccionesSeleccionadas.length - 1];
+        if (!ultimaSeccionId || typeof ultimaSeccionId !== "string") return;
+
+        try {
+          const data = await getCategoriasTree(ultimaSeccionId);
+          if (Array.isArray(data)) {
+            setCategoriasData(data);
+          } else {
+            setCategoriasData([]);
+          }
+        } catch (err) {
+          console.error("❌ Error en getCategoriasTree:", err);
+          setCategoriasData([]);
+        }
+      } else {
+        setCategoriasData([]);
+      }
     }
+    fetchCategorias();
   }, [seccionesSeleccionadas]);
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const newFiles = Array.from(files);
-    setImagenesNuevas((prev) => [...prev, ...newFiles]);
 
-    newFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onloadend = () => setPreviewUrls((prev) => [...prev, reader.result as string]);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      // Obtenemos el último ID seleccionado del árbol
-      const categoriaIdFinal = categoriasSeleccionadas.length > 0
-        ? categoriasSeleccionadas[categoriasSeleccionadas.length - 1]
-        : null;
-
-      const data: any = {
-        nombre,
-        descripcion,
-        precio: Number(precio),
-        stock: Number(stock),
-        colores: coloresSel,
-        talles: tallesSel,
-        cortes: cortesSel,
-        seccionesIds: seccionesSeleccionadas.length > 0 ? seccionesSeleccionadas : undefined,
-      };
-
-      // VITAL: Solo agregamos categoriaId si realmente hay un valor string válido
-      if (typeof categoriaIdFinal === "string" && categoriaIdFinal.trim() !== "") {
-        data.categoriaId = categoriaIdFinal;
-      }
-
-      if (imagenesNuevas.length > 0) {
-        data.imagenes = imagenesNuevas;
-      }
-
-      console.log("Objeto construido para el servicio:", data);
-
-      await updateProductoFlexible(producto.id.toString(), data);
-      toast.success("✅ Producto actualizado correctamente");
-      onUpdate();
-    } catch (error: any) {
-      console.error(error);
-      toast.error("❌ Error al actualizar");
-    } finally {
-      setLoading(false);
+  // --- ACCIONES DEL DRAWER DE VARIANTES ---
+  const openDrawer = (variante?: VarianteEstado) => {
+    if (variante) {
+      setEditingId(variante.id);
+      setTempColor(variante.color);
+      setTempTalle(variante.talle);
+      setTempStock(variante.stock);
+      setTempSeguimiento(variante.seguimiento);
+    } else {
+      setEditingId(null);
+      setTempColor("");
+      setTempTalle("");
+      setTempStock("0");
+      setTempSeguimiento(true);
     }
-  };
-  const toggleSeccion = (id: string) => {
-    setSeccionesSeleccionadas((prev) =>
-      prev.includes(id)
-        ? prev.filter((item) => item !== id) // Si ya está, la quita
-        : [...prev, id]                    // Si no está, la agrega
-    );
+    setIsDrawerOpen(true);
   };
 
-  const handleRemoveExistente = async (imagenId: string) => {
+  const handleSaveVariante = () => {
+    if (!tempColor || !tempTalle)
+      return toast.error("Seleccioná color y talle");
+    const id = `${tempColor}-${tempTalle}`;
+
+    if (
+      !editingId &&
+      variantesData.find((v) => v.color === tempColor && v.talle === tempTalle)
+    ) {
+      return toast.error("Esta variante ya existe");
+    }
+
+    const nueva: VarianteEstado = {
+      id: editingId || id,
+      color: tempColor,
+      talle: tempTalle,
+      stock: tempStock,
+      seguimiento: tempSeguimiento,
+    };
+
+    if (editingId) {
+      setVariantesData(
+        variantesData.map((v) => (v.id === editingId ? nueva : v)),
+      );
+    } else {
+      setVariantesData([...variantesData, nueva]);
+    }
+    setIsDrawerOpen(false);
+    toast.success(editingId ? "Variante actualizada" : "Variante agregada");
+  };
+
+  const removeVariante = (id: string) => {
+    setVariantesData(variantesData.filter((v) => v.id !== id));
+  };
+
+  // --- ENVÍO DE DATOS ACTUALIZADOS ---
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isFormValid) return;
+
+    setLoading(true);
+    console.group("🚀 Moonlight: Actualizando Producto");
+
+    const formData = new FormData();
+
+    // 1. Mapear variantes al contrato definitivo del backend
+    const variantesFinal = variantesData.map((v) => ({
+      talle: v.talle,
+      color: v.color,
+      stock: v.seguimiento ? parseInt(v.stock) || 0 : null,
+      sku: `${nombre.substring(0, 3).toUpperCase()}-${v.color.substring(0, 3).toUpperCase()}-${v.talle}`,
+    }));
+
+    // 2. Adjuntar las imágenes físicas nuevas
+    imagenesNuevas.forEach((img) => formData.append("files", img));
+
+    // 3. Adjuntar campos nativos
+    formData.append("nombre", nombre);
+    formData.append("descripcion", descripcion);
+    formData.append("precio", precio);
+    formData.append("peso", peso);
+    formData.append("profundidad", profundidad);
+    formData.append("ancho", ancho);
+    formData.append("alto", alto);
+
+    // 4. Categoría e Identificadores de Secciones
+    const catId = categoriasSeleccionadas[categoriasSeleccionadas.length - 1];
+    formData.append("categoriaId", catId);
+    seccionesSeleccionadas.forEach((id) => formData.append("seccionesIds", id));
+
+    // 5. Variantes estructuradas y precio promocional opcional
+    formData.append("variantes", JSON.stringify(variantesFinal));
+    if (precioPromocional)
+      formData.append("precioPromocional", precioPromocional);
+
+    console.groupEnd();
+
     try {
-      setLoading(true);
-      // Asumiendo que removeImagenProducto llama a un endpoint DELETE
-      await removeImagenProducto(imagenId);
-      setImagenesExistentes(prev => prev.filter(img => img.id !== imagenId));
-      toast.success("Imagen eliminada");
+      // LLamada al backend pasando los datos serializados en FormData
+      await updateProductoFlexible(
+        producto.id.toString(),
+        formData as unknown as Parameters<typeof updateProductoFlexible>[1],
+      );
+      toast.success("¡Producto actualizado correctamente!");
+
+      // Liberar memoria de blobs
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      onUpdate();
     } catch (error) {
-      toast.error("No se pudo eliminar la imagen");
+      console.error("❌ Error fatal al actualizar:", error);
+      toast.error("Error al actualizar el producto");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl border shadow-sm text-black">
-      <h2 className="text-xl font-bold border-b pb-2">Editar Producto</h2>
+    <div className="relative pb-10 text-black">
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100 space-y-10"
+      >
+        <div className="flex justify-between items-center border-b pb-4">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Editar Producto: {producto.nombre}
+          </h2>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600 font-semibold text-sm"
+          >
+            Volver
+          </button>
+        </div>
 
-      {/* Fila: Nombre y Precio */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold mb-1">Nombre</label>
-          <Input value={nombre} onChange={(e) => setNombre(e.target.value)} required />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1">Precio</label>
-          <Input
-            type="number"
-            step="0.01"
-            value={precio === 0 ? "" : precio}
-            onChange={(e) => {
-              const val = e.target.value;
-              setPrecio(val === "" ? 0 : parseFloat(val));
-            }}
-            placeholder="Ej: 50000"
-            required
-          />
-        </div>
-      </div>
-
-      {/* Fila: Stock y Sección */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-semibold mb-1">Stock</label>
-          <Input
-            type="number"
-            value={stock}
-            onChange={(e) => setStock(Number(e.target.value))}
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-bold mb-2">Secciones donde aparecerá</label>
-          <div className="flex flex-wrap gap-2 p-3 border rounded-md bg-gray-50">
-            {seccionesLista.map((sec) => {
-              const isSelected = seccionesSeleccionadas.includes(sec.id);
-              return (
-                <button
-                  key={sec.id}
-                  type="button"
-                  onClick={() => toggleSeccion(sec.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border ${isSelected
-                    ? "bg-purple-600 text-white border-purple-600"
-                    : "bg-white text-gray-600 border-gray-300 hover:border-purple-400"
-                    }`}
-                >
-                  {sec.nombre}
-                  {isSelected ? " ✓" : " +"}
-                </button>
-              );
-            })}
-            {seccionesLista.length === 0 && (
-              <span className="text-gray-400 text-xs">Cargando secciones...</span>
-            )}
+        {/* DATOS BÁSICOS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="col-span-2">
+            <label className="block text-xs font-bold text-gray-500 mb-1">
+              NOMBRE DEL PRODUCTO
+            </label>
+            <input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Nombre del producto"
+              className="w-full border-2 p-3 rounded-xl outline-none focus:border-purple-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">
+              PRECIO ($)
+            </label>
+            <input
+              type="number"
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              placeholder="Precio ($)"
+              className="w-full border-2 p-3 rounded-xl outline-none focus:border-purple-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 mb-1">
+              PRECIO PROMOCIONAL (OPCIONAL)
+            </label>
+            <input
+              type="number"
+              value={precioPromocional}
+              onChange={(e) => setPrecioPromocional(e.target.value)}
+              placeholder="Precio Promocional"
+              className="w-full border-2 p-3 rounded-xl outline-none focus:border-purple-500"
+            />
           </div>
         </div>
-      </div>
 
-      {/* Bloque: Categoría Tree */}
-      <div className="border rounded-lg p-4 bg-gray-50">
-        <label className="block text-sm font-bold mb-3 text-purple-700">
-          Categoría (Selecciona para corregir)
-        </label>
-        <div className="max-h-60 overflow-y-auto">
-          <CategoriaTreeSelector
-            categorias={categoriasData}
-            value={categoriasSeleccionadas}
-            onChange={setCategoriasSeleccionadas}
-          />
-        </div>
-      </div>
+        {/* VARIANTES ACTUALES */}
+        <section className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-gray-700">Variantes de stock</h3>
+            <button
+              type="button"
+              onClick={() => openDrawer()}
+              className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors"
+            >
+              <PlusIcon className="w-4 h-4" /> Agregar Variante
+            </button>
+          </div>
 
-      {/* Fila: Descripción */}
-      <div className="space-y-1">
-        <label className="block text-sm font-bold text-gray-700">Descripción del Producto</label>
+          <div className="border rounded-xl overflow-hidden bg-gray-50">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-100 font-bold text-gray-600 border-b">
+                <tr>
+                  <th className="p-4">Color / Talle</th>
+                  <th className="p-4">Stock</th>
+                  <th className="p-4 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {variantesData.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="p-8 text-center text-gray-400 italic"
+                    >
+                      No hay variantes agregadas aún
+                    </td>
+                  </tr>
+                ) : (
+                  variantesData.map((v) => (
+                    <tr
+                      key={v.id}
+                      className="bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="p-4 capitalize font-medium">
+                        {v.color} - {v.talle}
+                      </td>
+                      <td className="p-4">{v.seguimiento ? v.stock : "∞"}</td>
+                      <td className="p-4 flex justify-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => openDrawer(v)}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          <PencilSquareIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeVariante(v.id)}
+                          className="text-red-400 hover:text-red-600"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <div
-          // Esta propiedad hace que el DIV se comporte como un Input/Textarea
-          contentEditable={true}
-          // Pasamos el HTML que ya tenemos
-          dangerouslySetInnerHTML={{ __html: descripcion }}
-          // Cuando el usuario escribe, guardamos el contenido en el estado
-          onBlur={(e) => setDescripcion(e.currentTarget.innerHTML)}
-          className="min-h-[150px] p-3 bg-white text-black border rounded-md overflow-auto focus:outline-none focus:ring-2 focus:ring-[#7b5ca2] break-words leading-relaxed 
-               [&>ul]:list-disc [&>ul]:ml-5 [&>ol]:list-decimal [&>ol]:ml-5"
-        />
-        <p className="text-[10px] text-gray-400">Haz clic sobre el texto para editarlo directamente.</p>
-      </div>
-      {/* Bloque: Imágenes con Preview */}
-      <div className="space-y-4">
-        <label className="block text-sm font-bold">Imágenes del Producto</label>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* LOGÍSTICA CORREO ARGENTINO */}
+        <section className="space-y-4">
+          <h3 className="font-bold text-gray-700">Envío (Correo Argentino)</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Peso (kg)
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                value={peso}
+                onChange={(e) => setPeso(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Alto (cm)
+              </label>
+              <input
+                type="number"
+                value={alto}
+                onChange={(e) => setAlto(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Ancho (cm)
+              </label>
+              <input
+                type="number"
+                value={ancho}
+                onChange={(e) => setAncho(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Largo (cm)
+              </label>
+              <input
+                type="number"
+                value={profundidad}
+                onChange={(e) => setProfundidad(e.target.value)}
+                className="border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                required
+              />
+            </div>
+          </div>
+        </section>
 
-          {/* 1. Imágenes Actuales (Galería guardada en DB) */}
-          {imagenesGaleria.map((img) => (
-            <div key={img.id} className="relative group border rounded-lg overflow-hidden h-32">
-              <img src={img.url} className="h-full w-full object-cover" alt="Actual" />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Button
+        {/* CATEGORÍAS Y SECCIONES */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <p className="text-sm font-bold text-gray-700 mb-2">
+              Sección active
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {secciones.map((s) => (
+                <button
+                  key={s.id}
                   type="button"
-                  variant="destructive"
-                  size="sm"
+                  onClick={() => setSeccionesSeleccionadas([s.id])}
+                  className={`px-4 py-2 rounded-xl border-2 text-xs font-bold transition-all ${
+                    seccionesSeleccionadas.includes(s.id)
+                      ? "bg-purple-600 border-purple-600 text-white"
+                      : "bg-white text-gray-400"
+                  }`}
+                >
+                  {s.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-700 mb-2">Categoría</p>
+            <div className="border-2 rounded-xl p-4 h-40 overflow-y-auto bg-gray-50">
+              <CategoriaTreeSelector
+                categorias={categoriasData}
+                value={categoriasSeleccionadas}
+                onChange={setCategoriasSeleccionadas}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* CONTROL DE FOTOS (EXISTENTES + PREVIEWS) */}
+        <section>
+          <p className="text-sm font-bold text-gray-700 mb-4">
+            Fotos del producto
+          </p>
+          <div className="flex flex-wrap gap-4">
+            {/* Galería ya subida a Moonlight anteriormente */}
+            {imagenesExistentes.map((img) => (
+              <div key={img.id} className="relative w-24 h-24 group">
+                <Image
+                  src={img.url}
+                  alt="Actual del base"
+                  fill
+                  className="object-cover rounded-xl border"
+                  unoptimized
+                />
+                <button
+                  type="button"
                   onClick={async () => {
                     try {
-                      // Llama a tu servicio para eliminar de la DB
+                      // Eliminar físicamente del servidor usando su identificador único
                       await removeImagenProducto(img.id);
-                      // Filtra el estado para que desaparezca de la vista
-                      setImagenesGaleria(prev => prev.filter(item => item.id !== img.id));
-                      toast.success("Imagen quitada");
-                    } catch (error) {
-                      toast.error("Error al quitar imagen");
+                      setImagenesExistentes((prev) =>
+                        prev.filter((item) => item.id !== img.id),
+                      );
+                      toast.success("Imagen eliminada de Moonlight");
+                    } catch {
+                      toast.error("Error al remover del servidor");
                     }
                   }}
+                  className="absolute -top-2 -right-2 bg-red-600 text-white p-1 rounded-full shadow-md opacity-90 hover:opacity-100"
                 >
-                  Quitar
-                </Button>
+                  <TrashIcon className="w-3 h-3" />
+                </button>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {/* 2. Previews Nuevas (Las que estás subiendo ahora) */}
-          {previewUrls.map((url, index) => (
-            <div key={index} className="relative group border rounded-lg overflow-hidden h-32">
-              <img src={url} className="h-full w-full object-cover" alt="Preview" />
-              <div className="absolute top-1 right-1">
+            {/* Nuevas cargas pendientes de guardarse */}
+            {previewUrls.map((url, i) => (
+              <div
+                key={i}
+                className="relative w-24 h-24 border-2 border-purple-400 rounded-xl"
+              >
+                <Image
+                  src={url}
+                  alt="preview nueva"
+                  fill
+                  className="object-cover rounded-xl"
+                  unoptimized
+                />
                 <button
                   type="button"
                   onClick={() => {
-                    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-                    setImagenesNuevas(prev => prev.filter((_, i) => i !== index));
+                    setImagenesNuevas((prev) =>
+                      prev.filter((_, idx) => idx !== i),
+                    );
+                    setPreviewUrls((prev) =>
+                      prev.filter((_, idx) => idx !== i),
+                    );
                   }}
-                  className="bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-lg"
+                  className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md"
                 >
-                  X
+                  <XMarkIcon className="w-3 h-3" />
                 </button>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {/* 3. Botón Añadir */}
-          <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg h-32 cursor-pointer hover:bg-gray-50 transition-colors">
-            <ImagePlus className="w-8 h-8 text-gray-400" />
-            <span className="text-[10px] text-gray-500 mt-1">Añadir más</span>
-            <input type="file" multiple className="hidden" onChange={handleImageChange} accept="image/*" />
-          </label>
+            <label className="w-24 h-24 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+              <CameraIcon className="w-6 h-6 text-gray-300" />
+              <input
+                type="file"
+                multiple
+                hidden
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  setImagenesNuevas((prev) => [...prev, ...files]);
+                  setPreviewUrls((prev) => [
+                    ...prev,
+                    ...files.map((f) => URL.createObjectURL(f)),
+                  ]);
+                }}
+                accept="image/*"
+              />
+            </label>
+          </div>
+        </section>
+
+        <EditorDescripcion value={descripcion} onChange={setDescripcion} />
+
+        {/* BOTONES FINALES DE EDICIÓN */}
+        <div className="flex gap-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="w-1/3 py-4 rounded-xl border-2 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+          >
+            CANCELAR
+          </button>
+
+          <button
+            type="submit"
+            disabled={loading || !isFormValid}
+            className={`w-2/3 py-4 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 ${
+              loading || !isFormValid
+                ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                : "bg-purple-600 text-white hover:bg-purple-700 active:scale-[0.98]"
+            }`}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin h-5 w-5" />
+                GUARDANDO CAMBIOS...
+              </>
+            ) : isFormValid ? (
+              "GUARDAR CAMBIOS"
+            ) : (
+              "FALTAN COMPLETAR DATOS"
+            )}
+          </button>
         </div>
-      </div>
+      </form>
 
-      {/* VARIANTES: COLORES, TALLES, CORTES */}
-      <div className="space-y-4 border-t pt-4">
-        <h3 className="font-bold text-lg text-gray-700">Variantes de Prenda</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* --- DRAWER LATERAL DE VARIANTES (Sincronizado al 100% con nuevo form) --- */}
+      {isDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setIsDrawerOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl p-8 flex flex-col space-y-8 animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h3 className="text-xl font-bold text-gray-800">
+                {editingId ? "Editar" : "Agregar"} Variante
+              </h3>
+              <button onClick={() => setIsDrawerOpen(false)}>
+                <XMarkIcon className="w-6 h-6 text-gray-400" />
+              </button>
+            </div>
 
-          {/* Selector de Colores */}
-          <div>
-            <p className="text-sm font-medium mb-2">Colores</p>
-            <div className="border rounded-lg bg-white overflow-hidden shadow-sm">
-              <div className="max-h-48 overflow-y-auto p-2 space-y-1">
-                {OPCIONES_COLORES.map((color) => (
-                  <label key={color} className={`flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors ${coloresSel.includes(color) ? "bg-purple-50" : "hover:bg-gray-50"}`}>
-                    <input
-                      type="checkbox"
-                      className="hidden"
-                      checked={coloresSel.includes(color)}
-                      onChange={() => setColoresSel(prev => prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color])}
-                    />
-                    <div className="w-5 h-5 rounded-full border border-gray-300" style={{ backgroundColor: COLOR_MAP[color.toLowerCase()] || "#eee" }} />
-                    <span className={`text-sm ${coloresSel.includes(color) ? "font-bold text-purple-700" : "text-gray-600"}`}>{color}</span>
+            <div className="space-y-6 overflow-y-auto pr-2">
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-3">Color</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "blanco",
+                    "negro",
+                    "gris",
+                    "azul",
+                    "marron",
+                    "crema",
+                    "verde",
+                    "rosa",
+                    "beige",
+                    "violeta",
+                    "rojo",
+                  ].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setTempColor(c)}
+                      className={`px-4 py-2 rounded-full border-2 text-xs capitalize transition-all ${
+                        tempColor === c
+                          ? "bg-black border-black text-white"
+                          : "bg-white text-gray-500 hover:border-purple-300"
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-3">Talle</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "S",
+                    "M",
+                    "L",
+                    "XL",
+                    "XXL",
+                    "Único",
+                    "34",
+                    "36",
+                    "38",
+                    "40",
+                    "42",
+                    "44",
+                  ].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTempTalle(t)}
+                      className={`px-4 py-2 rounded-full border-2 text-xs transition-all ${
+                        tempTalle === t
+                          ? "bg-black border-black text-white"
+                          : "bg-white text-gray-500 hover:border-purple-300"
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-xl space-y-4 border">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-bold text-gray-700">
+                    Seguimiento de stock
                   </label>
-                ))}
+                  <input
+                    type="checkbox"
+                    checked={tempSeguimiento}
+                    onChange={(e) => setTempSeguimiento(e.target.checked)}
+                    className="w-5 h-5 accent-purple-600"
+                  />
+                </div>
+                {tempSeguimiento && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-bold">
+                      CANTIDAD EN STOCK
+                    </label>
+                    <input
+                      type="number"
+                      value={tempStock}
+                      onChange={(e) => setTempStock(e.target.value)}
+                      className="w-full border-2 p-2 rounded-lg outline-none focus:border-purple-500"
+                    />
+                  </div>
+                )}
               </div>
             </div>
-          </div>
 
-          {/* Selector de Talles (Repetir lógica similar para talles) */}
-          <div>
-            <p className="text-sm font-medium mb-2">Talles</p>
-            <div className="border rounded-lg bg-white p-2 max-h-48 overflow-y-auto">
-              {OPCIONES_TALLES.map((talle) => (
-                <label key={talle} className="flex items-center gap-2 p-1">
-                  <input
-                    type="checkbox"
-                    checked={tallesSel.includes(talle)}
-                    onChange={() => setTallesSel(prev => prev.includes(talle) ? prev.filter(t => t !== talle) : [...prev, talle])}
-                  />
-                  <span className="text-sm">{talle}</span>
-                </label>
-              ))}
-            </div>
+            <button
+              type="button"
+              onClick={handleSaveVariante}
+              className="w-full bg-purple-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-purple-700 mt-auto transition-all"
+            >
+              {editingId ? "GUARDAR CAMBIOS" : "LISTO (OK)"}
+            </button>
           </div>
-
-          {/* Selector de Cortes (Repetir lógica similar para cortes) */}
-          <div>
-            <p className="text-sm font-medium mb-2">Estilos</p>
-            <div className="border rounded-lg bg-white p-2 max-h-48 overflow-y-auto">
-              {OPCIONES_CORTES.map((corte) => (
-                <label key={corte} className="flex items-center gap-2 p-1">
-                  <input
-                    type="checkbox"
-                    checked={cortesSel.includes(corte)}
-                    onChange={() => setCortesSel(prev => prev.includes(corte) ? prev.filter(c => c !== corte) : [...prev, corte])}
-                  />
-                  <span className="text-sm">{corte}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
         </div>
-      </div>
-
-      {/* Botones de Acción */}
-      <div className="flex gap-3 justify-end pt-4 border-t">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-          Cancelar
-        </Button>
-        <Button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white" disabled={loading}>
-          {loading ? (
-            <>
-              <Loader2 className="animate-spin mr-2 h-4 w-4" />
-              Cargando...
-            </>
-          ) : (
-            "Guardar Cambios"
-          )}
-        </Button>
-      </div>
-    </form>
+      )}
+    </div>
   );
 }

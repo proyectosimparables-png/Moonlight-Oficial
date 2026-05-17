@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { PencilLine, Check, X, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { adminOrderService } from "@/services/adminOrderService";
+import { adminOrderService } from "@/services/admin/admin-ordenes-service";
 import { useRouter } from "next/navigation";
 
 export default function AdminNotesSection({

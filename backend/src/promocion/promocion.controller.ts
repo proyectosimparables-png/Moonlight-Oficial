@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Delete, Param, Query, ParseFloatPipe } from '@nestjs/common';
+import { Controller, Post, Get, Body, Delete, Param, Query, ParseFloatPipe, Patch } from '@nestjs/common';
 import { PromocionService } from './promocion.service';
 import { CreatePromocionDto } from './dto/create-promocion.dto';
 import { CreateCuponDto } from './dto/create-cupon.dto';
@@ -33,6 +33,14 @@ export class PromocionController {
     @Get('cupon')
     findAllCupones() {
         return this.promocionService.findAllCupones();
+    }
+
+    @Patch('cupon/:id')
+    updateCupon(
+        @Param('id') id: string,
+        @Body() updateCuponDto: Partial<CreateCuponDto>
+    ) {
+        return this.promocionService.updateCupon(id, updateCuponDto);
     }
 
     // Endpoint clave para el carrito de Moonlight

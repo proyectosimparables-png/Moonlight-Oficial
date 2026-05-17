@@ -1,19 +1,33 @@
+// src/types/dashboard.ts
+
 export interface UsuarioResumen {
-  id: string;
   name: string | null;
   email: string;
-  imagenUrl: string | null;
+  image: string | null;
 }
 
 export interface OrdenReciente {
   id: string;
   total: number;
-  createdAt: string; // llega como string JSON
-  user: UsuarioResumen;
+  createdAt: string;
+  user: UsuarioResumen | null;
 }
+
 export interface ProductoPopular {
-  productoId: string | null;
+  productoId: string;
   nombre: string;
   vendidos: number;
-  imagen: string;
+  imagen: string | null;
+}
+
+// 👑 Esta es la que te estaba reclamando el Service:
+export interface ResumenGeneralResponse {
+  totalProductos: number;
+  ordenesActivas: number;
+  usuariosRegistrados: number;
+  ventasDelMes: number;
+  cambioVentas: number;
+  cambioUsuarios: number;
+  productosPopulares: ProductoPopular[];
+  ventasRecientes: OrdenReciente[];
 }

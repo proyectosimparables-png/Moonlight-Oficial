@@ -3,7 +3,7 @@ import { DashboardService } from './dashboard.service';
 
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(private readonly dashboardService: DashboardService) { }
 
   @Get('total-productos')
   getTotalProductos() {
@@ -35,31 +35,9 @@ export class DashboardController {
     return this.dashboardService.getProductosPopulares();
   }
 
- @Get('resumen')
-async getResumenGeneral() {
-  const [
-    totalProductos, 
-    ordenesActivas, 
-    usuariosRegistrados, 
-    ventasDelMes,
-    ventasRecientes,      // <--- Agregamos esto
-    productosPopulares    // <--- Agregamos esto
-  ] = await Promise.all([
-    this.dashboardService.getTotalProductos(),
-    this.dashboardService.getOrdenesActivas(),
-    this.dashboardService.getUsuariosRegistrados(),
-    this.dashboardService.getVentasDelMes(),
-    this.dashboardService.getVentasRecientes(),
-    this.dashboardService.getProductosPopulares(),
-  ]);
-
-  return {
-    totalProductos,
-    ordenesActivas,
-    usuariosRegistrados,
-    ventasDelMes,
-    ventasRecientes,    // <--- Ahora viajan en el JSON
-    productosPopulares,  // <--- Ahora viajan en el JSON
-  };
-}
+  // ✅ Simplificado: Devolvemos directo el resumen super completo que procesa tu Service
+  @Get('resumen')
+  async getResumenGeneral() {
+    return this.dashboardService.getResumenGeneral();
+  }
 }

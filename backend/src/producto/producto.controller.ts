@@ -67,6 +67,16 @@ export class ProductoController {
     return this.productoService.findAllPublic(sId, cId);
   }
 
+  // 🌟 NUEVO ENDPOINT OPTIMIZADO PARA MÓNLIGHT
+  @Get('secciones/slug/:slug')
+  async findSeccionBySlug(@Param('slug') slug: string) {
+    const seccion = await this.productoService.findSeccionBySlug(slug);
+    if (!seccion) {
+      throw new NotFoundException(`La sección con slug '${slug}' no existe`);
+    }
+    return seccion;
+  }
+
   @Get('admin')
   findAllAdmin(@Query('seccionId') sId?: string, @Query('categoriaId') cId?: string) {
     return this.productoService.findAllAdmin(sId, cId);

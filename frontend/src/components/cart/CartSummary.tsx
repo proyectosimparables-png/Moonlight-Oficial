@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Store, Loader2, Gift } from "lucide-react";
-import { getPuntosEntrega } from "@/services/entregas";
-import { getShippingRates } from "@/services/correo/correoService";
+import { getPuntosEntrega } from "@/services/envios/puntos-entrega-service";
+import { getShippingRates } from "@/services/envios/correo-service";
 import { CartItem, useCart } from "@/context/CartContext"; // Importamos el hook useCart
 
 // --- INTERFACES (Se mantienen igual) ---

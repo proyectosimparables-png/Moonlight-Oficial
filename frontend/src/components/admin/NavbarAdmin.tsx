@@ -18,6 +18,7 @@ import {
   Percent,
   Ticket,
   Truck,
+  Wrench,
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +32,7 @@ const menuItems = [
   { title: "Productos", url: "/admin/productos", icon: Package },
   { title: "Secciones", url: "/admin/secciones", icon: FolderTree },
   { title: "Usuarios", url: "/admin/usuarios", icon: Users },
+  { title: "Mantenimiento", url: "/admin/mantenimiento", icon: Wrench },
   { title: "Ajustes de Envío", url: "/admin/configuracion-envio", icon: Truck },
   { title: "Puntos de Entrega", url: "/admin/puntos-entrega", icon: MapPin },
   { title: "Comentarios", url: "/admin/comentarios", icon: Cloud },

@@ -15,25 +15,36 @@ import {
   CheckSquare,
   Calendar,
 } from "lucide-react";
-import { createPromocion } from "@/services/promoService";
+
 import {
   getSecciones,
   getCategoriasTree,
-  getProductos,
-} from "@/services/productos";
+  getProductosAdmin as getProductos,
+} from "@/services/productos-service";
 import { CategoriaTreeSelector } from "../CategoriaTreeSelector";
+import { promocionesService } from "@/services/admin/admin-promociones-service";
+
+// Interfaz local simple para evitar el uso de 'any' exigido por ESLint
+interface CategoriaNode {
+  id: string;
+  nombre: string;
+  children?: CategoriaNode[];
+  [key: string]: unknown;
+}
 
 export const FormPromocion = () => {
   const router = useRouter();
 
   /* --- ESTADOS DE DATOS --- */
-  const [productos, setProductos] = useState<{ id: string; nombre: string }[]>(
+  // 🔢 Mantenemos el ID como number porque getProductos() los trae así de la DB
+  const [productos, setProductos] = useState<{ id: number; nombre: string }[]>(
     [],
   );
   const [secciones, setSecciones] = useState<{ id: string; nombre: string }[]>(
     [],
   );
-  const [categoriasData, setCategoriasData] = useState([]);
+  // ✅ Solución al ESLint no-explicit-any usando la interfaz limpia
+  const [categoriasData, setCategoriasData] = useState<CategoriaNode[]>([]);
 
   /* --- ESTADOS DE SELECCIÓN --- */
   const [seccionesSeleccionadas, setSeccionesSeleccionadas] = useState<
@@ -43,15 +54,13 @@ export const FormPromocion = () => {
     string[]
   >([]);
   const [productosSeleccionados, setProductosSeleccionados] = useState<
-    string[]
+    number[]
   >([]);
 
   /* --- ESTADOS DE UI --- */
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [tab, setTab] = useState<"productos" | "categorias">("productos");
   const [loading, setLoading] = useState(false);
-
-  // Nuevo: Controla qué sección estamos "editando" actualmente en el panel
   const [seccionActivaTree, setSeccionActivaTree] = useState<string | null>(
     null,
   );
@@ -73,7 +82,7 @@ export const FormPromocion = () => {
     getProductos().then(setProductos).catch(console.error);
   }, []);
 
-  // Carga el árbol solo de la sección que el usuario clickea para expandir
+  // Carga el árbol de categorías dinámicamente según la sección activa
   useEffect(() => {
     if (!seccionActivaTree) {
       setCategoriasData([]);
@@ -81,7 +90,7 @@ export const FormPromocion = () => {
     }
     getCategoriasTree(seccionActivaTree)
       .then((data) => {
-        if (data) setCategoriasData(data);
+        if (data) setCategoriasData(data as CategoriaNode[]);
       })
       .catch(console.error);
   }, [seccionActivaTree]);
@@ -103,25 +112,32 @@ export const FormPromocion = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Separamos acumulable para que no se envíe duplicado o con nombre incorrecto
+      const { acumulable, ...restFormData } = formData;
+
       const payload = {
-        ...formData,
-        esCombinable: formData.acumulable,
+        ...restFormData,
+        prioridad: 1,
+        esCombinable: acumulable,
         activa: true,
-        productosIds: productosSeleccionados,
+        // ✨ SOLUCIÓN AL ERROR 2345: Convertimos los numbers a strings antes de mandar el payload
+        productosIds: productosSeleccionados.map((id) => String(id)),
         categoriasIds: categoriasSeleccionadas,
         seccionesIds: seccionesSeleccionadas,
         fechaInicio: formData.fechaInicio
           ? new Date(formData.fechaInicio).toISOString()
-          : undefined,
+          : null,
         fechaFin: formData.fechaFin
           ? new Date(formData.fechaFin).toISOString()
-          : undefined,
+          : null,
       };
-      await createPromocion(payload);
-      toast.success("Promoción creada");
+
+      await promocionesService.createPromocion(payload);
+      toast.success("Promoción creada con éxito");
       router.push("/admin/promociones");
     } catch (error) {
-      toast.error("Error al crear");
+      console.error("Error al crear la promoción:", error);
+      toast.error("Error al crear la promoción");
     } finally {
       setLoading(false);
     }
@@ -172,7 +188,7 @@ export const FormPromocion = () => {
           </div>
         </section>
 
-        {/* 2. FECHAS (Recuperadas) */}
+        {/* 2. FECHAS */}
         <section className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-500 flex items-center gap-2">
@@ -239,7 +255,7 @@ export const FormPromocion = () => {
           </button>
         </div>
 
-        {/* 4. CONFIGURACIÓN TÉCNICA */}
+        {/* 4. CONFIGURACIÓN TÉCNICA DINÁMICA */}
         <section className="bg-purple-50 p-4 rounded-2xl border border-purple-100 space-y-4">
           {formData.tipo === "PORCENTAJE" && (
             <div>
@@ -252,10 +268,42 @@ export const FormPromocion = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, valor: Number(e.target.value) })
                 }
-                className="w-full mt-1 border rounded-lg p-2"
+                className="w-full mt-1 border rounded-lg p-2 focus:ring-2 focus:ring-purple-400 outline-none"
               />
             </div>
           )}
+
+          {formData.tipo === "CANTIDAD_X_CANTIDAD" && (
+            <div className="grid grid-cols-2 gap-4 bg-white p-3 rounded-xl border border-purple-100">
+              <div>
+                <label className="text-xs font-bold text-gray-500 block">
+                  LLEVA (CANTIDAD)
+                </label>
+                <input
+                  type="number"
+                  value={formData.lleva}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lleva: Number(e.target.value) })
+                  }
+                  className="w-full mt-1 border rounded-lg p-2"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 block">
+                  PAGA (CANTIDAD)
+                </label>
+                <input
+                  type="number"
+                  value={formData.paga}
+                  onChange={(e) =>
+                    setFormData({ ...formData, paga: Number(e.target.value) })
+                  }
+                  className="w-full mt-1 border rounded-lg p-2"
+                />
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-purple-100">
             <input
               type="checkbox"
@@ -365,7 +413,7 @@ export const FormPromocion = () => {
                                 s.id,
                               ]);
                             }
-                            setSeccionActivaTree(s.id); // Al tocar, lo ponemos como activo para ver su árbol
+                            setSeccionActivaTree(s.id);
                           }}
                         >
                           <div className="flex justify-between items-center">
@@ -397,7 +445,6 @@ export const FormPromocion = () => {
                     </div>
                   </div>
 
-                  {/* 2. ARBOL DINÁMICO: Solo muestra el árbol de la sección que clickeaste arriba */}
                   <div className="border-t pt-6">
                     <p className="text-[10px] font-black text-gray-400 uppercase mb-3">
                       2. Categorías{" "}
@@ -406,7 +453,7 @@ export const FormPromocion = () => {
                         : ""}
                     </p>
                     {seccionActivaTree ? (
-                      <div className="bg-white border rounded-2xl p-4 shadow-inner min-h-[200px]">
+                      <div className="bg-white border rounded-2xl p-4 shadow-inner min-h-50">
                         <CategoriaTreeSelector
                           categorias={categoriasData}
                           value={categoriasSeleccionadas}

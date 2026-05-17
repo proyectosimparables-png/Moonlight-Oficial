@@ -1,24 +1,35 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getComentarios, createComentario } from "@/services/comentarios";
+import {
+  getComentarios,
+  createComentario,
+} from "@/services/comentarios-service";
 import { Send } from "lucide-react";
 
-type Comentario = {
-  id: number;
+type ComentarioBackend = {
+  id: string | number;
   contenido: string;
-  nombre?: string;
+  userId: string;
+  user?: {
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
 };
 
-type Star = Comentario & {
+type Star = {
+  id: string | number;
+  contenido: string;
+  nombre: string;
   x: number;
   y: number;
 };
 
 export default function MoonlightExperience() {
   const [stars, setStars] = useState<Star[]>([]);
-  const [hovered, setHovered] = useState<number | null>(null);
-  const [nombre, setNombre] = useState("");
+  const [hovered, setHovered] = useState<string | number | null>(null);
+  const [nombre, setNombre] = useState(""); // 👈 Volvemos a activar el estado del alias
   const [contenido, setContenido] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -30,13 +41,16 @@ export default function MoonlightExperience() {
 
   const fetchComentarios = async () => {
     try {
-      const data: Comentario[] = await getComentarios();
-      // Posicionamiento de las estrellas (ajustado para que no toquen bordes)
-      const positioned = data.map((c, i) => ({
-        ...c,
+      const data = await getComentarios<ComentarioBackend[]>();
+
+      const positioned: Star[] = (data || []).map((c, i) => ({
+        id: c.id,
+        contenido: c.contenido,
+        nombre: c.user?.name || "Anónimo",
         x: 10 + ((i * 18) % 80),
         y: 20 + ((i * 25) % 60),
       }));
+
       setStars(positioned);
     } catch (error) {
       console.error(error);
@@ -49,11 +63,17 @@ export default function MoonlightExperience() {
 
     try {
       setEnviando(true);
-      const nuevo = await createComentario(contenido, nombre);
 
-      // Generar una nueva posición aleatoria pero centrada
+      // ⚡ Pasamos el contenido y el alias (ej: "Maqui") al servicio tipado puro
+      const nuevo = await createComentario<ComentarioBackend>(
+        contenido,
+        nombre,
+      );
+
       const nuevaStar: Star = {
-        ...nuevo,
+        id: nuevo.id,
+        contenido: nuevo.contenido,
+        nombre: nombre.trim() || nuevo.user?.name || "Anónimo", // Priorizamos el alias que acaba de escribir
         x: Math.random() * 80 + 10,
         y: Math.random() * 60 + 20,
       };
@@ -70,28 +90,22 @@ export default function MoonlightExperience() {
 
   return (
     <section className="w-full px-4 py-10 bg-[#fdf2f8]">
-      {/* 1. SECCIÓN DE CONSTELACIÓN (Sola) */}
-      <div
-        // CORRECCIÓN: min-h-200 (desde tailwind.config) y bg-linear-to-b (sugerencia de TW)
-        className="relative w-full h-[600px] overflow-hidden 
-        bg-linear-to-b from-[#4c1d95] via-[#a855f7] to-[#f9a8d4] rounded-[50px] shadow-2xl"
-      >
-        {/* Estrellas de fondo (pulsando muy suave) */}
+      {/* 1. SECCIÓN DE CONSTELACIÓN */}
+      <div className="relative w-full h-150 overflow-hidden bg-linear-to-b from-[#4c1d95] via-[#a855f7] to-[#f9a8d4] rounded-[50px] shadow-2xl">
         {[...Array(40)].map((_, i) => (
           <div
             key={`bg-${i}`}
-            className="absolute bg-white/30 rounded-full animate-pulse" // Pulso estándar suave
+            className="absolute bg-white/30 rounded-full animate-pulse"
             style={{
               width: "2px",
               height: "2px",
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
-              animationDuration: `${2 + Math.random() * 2}s`, // Variar velocidad de fondo
+              animationDuration: `${2 + Math.random() * 2}s`,
             }}
           />
         ))}
 
-        {/* Líneas de Constelación */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none">
           {stars.map((s, i) =>
             stars[i + 1] ? (
@@ -101,14 +115,13 @@ export default function MoonlightExperience() {
                 y1={`${s.y}%`}
                 x2={`${stars[i + 1].x}%`}
                 y2={`${stars[i + 1].y}%`}
-                stroke="rgba(255,255,255,0.3)" // Líneas sutiles
+                stroke="rgba(255,255,255,0.3)"
                 strokeWidth="1"
               />
             ) : null,
           )}
         </svg>
 
-        {/* Estrellas Interactivas (Los Puntos Blancos) */}
         {stars.map((s, i) => (
           <div
             key={s.id}
@@ -116,42 +129,35 @@ export default function MoonlightExperience() {
             style={{
               left: `${s.x}%`,
               top: `${s.y}%`,
-              // El centrado lo manejamos con transform para el centrado perfecto y el pulso
             }}
             onMouseEnter={() => setHovered(s.id)}
             onMouseLeave={() => setHovered(null)}
           >
-            {/* AQUÍ ESTÁ LA CORRECCIÓN DE LA ANIMACIÓN DE LATIDO */}
             <div
-              // Usamos la animación lenta definida en tailwind.config, o 'animate-pulse'
               className="w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_15px_white] transition-transform group-hover:scale-150 cursor-pointer animate-slow-beat"
               style={{
-                // Desfase aleatorio para que no todos latan a la vez
                 animationDelay: `${i * 0.1}s`,
               }}
             />
 
-            {/* Tooltip con el mensaje */}
             {hovered === s.id && (
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-48 p-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 text-white text-center shadow-xl z-50 animate-in fade-in zoom-in duration-200">
-                {/* CORRECCIÓN: Comillas escapadas para ESLint */}
                 <p className="italic text-sm">&quot;{s.contenido}&quot;</p>
                 <p className="mt-1 text-[10px] uppercase opacity-70">
-                  - {s.nombre || "Anónimo"}
+                  - {s.nombre}
                 </p>
               </div>
             )}
           </div>
         ))}
 
-        {/* Título de la Constelación */}
         <div className="relative pt-16 text-center text-white z-20 pointer-events-none">
           <h2 className="text-5xl font-serif">Experiencia Moonlight</h2>
           <p className="opacity-80 mt-2">Muro de constelaciones ✨</p>
         </div>
       </div>
 
-      {/* 2. SECCIÓN DEL FORMULARIO (Debajo y fuera) */}
+      {/* 2. SECCIÓN DEL FORMULARIO */}
       <div className="flex flex-col items-center mt-12">
         <form
           onSubmit={handleSubmit}
@@ -163,9 +169,10 @@ export default function MoonlightExperience() {
           </div>
 
           <div className="space-y-4">
+            {/* ⚡ El input del Alias para que pongan Maqui/Macu */}
             <input
               type="text"
-              placeholder="Tu nombre (opcional)"
+              placeholder="¿Cómo querés que figure tu estrella? (opcional)"
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               className="w-full bg-purple-50 border-none rounded-2xl p-4 text-purple-900 placeholder:text-purple-300 outline-none focus:ring-2 ring-purple-200 transition"

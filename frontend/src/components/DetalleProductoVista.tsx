@@ -5,7 +5,7 @@ import { QuantitySelector } from "@/components/cart/QuantitySelector";
 import { useCart } from "@/context/CartContext";
 import { useState, useRef, useMemo, useEffect } from "react";
 import { AddedToCartModal } from "@/components/cart/AddedToCartModal";
-import { Producto } from "@/types/types-productos";
+import { Producto } from "@/types/productos";
 import { COLOR_MAP } from "@/lib/colores";
 import { ChevronLeft, ChevronRight, Info } from "lucide-react"; // Importamos Info para el icono de GOcuotas
 import { toast } from "react-hot-toast";
