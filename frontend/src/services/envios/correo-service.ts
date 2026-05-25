@@ -1,6 +1,6 @@
 // src/services/correo/correoService.ts
 import { apiRequest } from "@/lib/apiClient";
-import { CartItemInput, ShippingRateResult } from "@/types/envios";
+import { CartItemInput, ShippingRateResult } from "@/types/shipping";
 
 /**
  * Consulta las tarifas de correo en tiempo real basándose en el CP y los ítems del carrito

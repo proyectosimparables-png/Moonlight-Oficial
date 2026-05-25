@@ -1,4 +1,4 @@
-import Mayoristas from "@/componentes/info-para-los-clientes/Mayoristas";
+import Mayoristas from "@/components/client-info/Wholesalers";
 
 const MayoristasPage = () => {
   return <Mayoristas />;

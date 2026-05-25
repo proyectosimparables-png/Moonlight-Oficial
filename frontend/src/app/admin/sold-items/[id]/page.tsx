@@ -1,17 +1,12 @@
 import Image from "next/image";
 import { Mail, Phone, Package, CreditCard } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/componentes/ui/card";
-import { Badge } from "@/componentes/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { notFound } from "next/navigation";
-import OrderHeader from "@/componentes/admin/Vendidos";
-import { adminOrderService } from "@/services/admin/admin-ordenes-service";
-import StatusActionButton from "@/componentes/admin/StatusCardActions";
-import AdminNotesSection from "@/componentes/admin/AdminNotesSection";
+import OrderHeader from "@/components/admin/Sales-History";
+import { adminOrderService } from "@/services/admin/admin-orders-service";
+import StatusActionButton from "@/components/admin/Status-Card-Actions";
+import AdminNotesSection from "@/componentes/admin/Admin-notes-section";
 
 interface OrderItem {
   id: string;

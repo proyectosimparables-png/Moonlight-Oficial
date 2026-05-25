@@ -1,7 +1,7 @@
 // src/app/(cliente)/search/page.tsx
-import { SearchResults } from "@/componentes/search";
-import { searchProductos } from "@/services/productos-service";
-import { Producto } from "@/types/productos";
+import { SearchResults } from "@/components/search";
+import { searchProductos } from "@/services/products-service";
+import { Producto } from "@/types/products";
 import Link from "next/link";
 
 export default async function SearchPage(props: {

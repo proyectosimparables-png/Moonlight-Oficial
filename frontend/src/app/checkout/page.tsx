@@ -1,6 +1,6 @@
 // src/app/checkout/page.tsx
 
-import CheckoutContainer from "@/componentes/pagos/CheckoutContainer";
+import CheckoutContainer from "@/components/checkout/Checkout-Container";
 
 export const metadata = {
   title: "Checkout | Moonlight",

@@ -9,10 +9,10 @@ import {
   Dancing_Script,
 } from "next/font/google";
 
-import Providers from "../Proveedores";
-import { AddedToCartModal } from "@/componentes/carrito/AddedToCartModal";
-import CookieConsent from "@/componentes/home/Cookies";
-import SkyBackground from "@/componentes/compartidos/Fondo-cielo"; // Asegúrate que el nombre coincida
+import Providers from "../Providers";
+import { AddedToCartModal } from "@/components/cart/Added-To-Cart-Modal";
+import CookieConsent from "@/components/home/Cookies";
+import SkyBackground from "@/components/shared/Sky-Background"; // Asegúrate que el nombre coincida
 
 const loveStory = Love_Ya_Like_A_Sister({
   variable: "--font-love-story",

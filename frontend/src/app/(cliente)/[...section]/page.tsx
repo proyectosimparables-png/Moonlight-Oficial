@@ -1,14 +1,14 @@
 // app/(cliente)/[...seccion]/page.tsx
 import { notFound } from "next/navigation";
-import { CategoriaView } from "@/componentes/products/CategoriaView";
-import DetailsProducts from "@/componentes/products/DetalleProductoVista";
+import { CategoriaView } from "@/components/products/Categoria-View";
+import DetailsProducts from "@/components/products/Product-Detail-View";
 import {
   getSeccionBySlug,
   getProductosPublicosFiltrados,
   getCategoriasTree,
   getProductoBySlug,
-} from "@/services/productos-service";
-import { Producto } from "@/types/productos";
+} from "@/services/products-service";
+import { Producto } from "@/types/products";
 
 export const revalidate = 300;
 

@@ -1,7 +1,7 @@
 // app/(cliente)/productos/page.tsx
-import { ProductGridView } from "@/componentes/products/ProductGridView";
-import { getProductosPublicos } from "@/services/productos-service";
-import { Producto } from "@/types/productos";
+import { ProductGridView } from "@/components/products/Product-Grid-View";
+import { getProductosPublicos } from "@/services/products-service";
+import { Producto } from "@/types/products";
 
 export const revalidate = 300;
 

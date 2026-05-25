@@ -1,4 +1,4 @@
-import QuienesSomos from "@/componentes/info-para-los-clientes/QuienesSomos";
+import QuienesSomos from "@/components/client-info/About-Us";
 
 const QuienesSomosPage = () => {
   return <QuienesSomos />;

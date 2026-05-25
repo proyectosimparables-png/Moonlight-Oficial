@@ -1,7 +1,7 @@
 // src/app/admin/ventas/page.tsx
 
 import OrdenesTable from "@/componentes/admin/OrderActions";
-import { adminOrderService } from "@/services/admin/admin-ordenes-service";
+import { adminOrderService } from "@/services/admin/admin-orders-service";
 
 export default async function VentasPage() {
   // Consumimos directamente el servicio limpio que respeta variables de entorno

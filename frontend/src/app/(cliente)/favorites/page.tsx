@@ -1,4 +1,4 @@
-import Favoritos from "@/componentes/home/Favoritos";
+import Favoritos from "@/components/home/Favorites";
 
 const favoritosPage = () => {
   return <Favoritos userId={""} />;

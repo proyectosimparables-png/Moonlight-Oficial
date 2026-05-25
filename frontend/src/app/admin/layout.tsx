@@ -1,10 +1,11 @@
 // app/admin/layout.tsx (o donde tengas AdminLayout)
 "use client";
 import { useRouter } from "next/navigation";
-import { useUserRole } from "@/hooks/use-user-role";
-import AdminNavbar from "@/componentes/admin/NavbarAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
+
 import { ReactNode, useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
+import AdminNavbar from "@/components/admin/Admin-Navbar";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { role, loading } = useUserRole();

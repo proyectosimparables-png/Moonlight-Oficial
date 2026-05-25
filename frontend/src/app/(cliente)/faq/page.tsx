@@ -1,5 +1,5 @@
 //Preguntas frecuentes (Frequently Asked Questions)
-import PreguntasFrecuentes from "@/componentes/info-para-los-clientes/PreguntasFrecuentes";
+import PreguntasFrecuentes from "@/components/client-info/Faq";
 
 const PreguntasFrecuentesPage = () => {
   return <PreguntasFrecuentes />;

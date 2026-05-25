@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ClearCartRedirect from "@/componentes/pagos/ClearCartRedirect";
+import ClearCartRedirect from "@/components/checkout/Clear-Cart-Redirect";
 
 export default function PaymentSuccessPage() {
   return (

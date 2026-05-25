@@ -1,4 +1,4 @@
-import PoliticasCompra from "@/componentes/info-para-los-clientes/Politicas-de-Compra";
+import PoliticasCompra from "@/components/client-info/Shopping-Policies";
 
 const PoliticasCompraPage = () => {
   return <PoliticasCompra />;

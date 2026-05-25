@@ -1,5 +1,5 @@
-import ComentarSection from "@/componentes/comentarios/Comentar";
-import ProtectedRoute from "@/componentes/protected-route/ProtectedRoute";
+import ComentarSection from "@/components/comments/Review";
+import ProtectedRoute from "@/components/protected-route/Protected-Route";
 
 const ComentarPage = () => {
   return (

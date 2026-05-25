@@ -1,4 +1,4 @@
-import ComoComprar from "@/componentes/info-para-los-clientes/ComoComprar";
+import ComoComprar from "@/components/client-info/How-To-Buy";
 
 const ComoComprarPage = () => {
   return <ComoComprar />;

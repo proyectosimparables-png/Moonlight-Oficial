@@ -1,5 +1,5 @@
-import Perfil from "@/componentes/home/Perfil";
-import ProtectedRoute from "@/componentes/protected-route/ProtectedRoute";
+import Perfil from "@/components/home/Profile";
+import ProtectedRoute from "@/components/protected-route/Protected-Route";
 
 const UserProfile = () => {
   return (

@@ -1,4 +1,4 @@
-import GuiaDeTalles from "@/componentes/info-para-los-clientes/GuiaDeTalles";
+import GuiaDeTalles from "@/components/client-info/Size-Guide";
 
 const GuiaDeTallesPage = () => {
   return <GuiaDeTalles />;
