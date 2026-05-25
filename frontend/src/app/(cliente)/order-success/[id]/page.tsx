@@ -1,4 +1,4 @@
-import TransferPaymentView from "@/components/TransferPaymentView";
+import TransferPaymentView from "@/componentes/pagos/Pago-transferencia";
 
 interface Props {
   params: Promise<{ id: string }>;

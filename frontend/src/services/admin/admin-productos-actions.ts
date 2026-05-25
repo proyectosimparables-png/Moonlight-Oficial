@@ -1,60 +1,24 @@
-//services/admin/productos-actions.ts
 "use server";
 
 import { apiRequest } from "@/lib/apiClient";
-import { Producto, CategoriaType, SeccionType, ProductoForm, ProductoBackend } from "@/types/productos";
+import { Producto, CategoriaType, SeccionType, ProductoBackend } from "@/types/productos";
 
 // ==========================================================================================
 // 📦 EXCLUSIVO: MUTACIONES Y ESCRITURA (SERVER ACTIONS REALES) 🛠️
 // ==========================================================================================
 
+/**
+ * Actualiza un producto de forma flexible utilizando FormData.
+ * Esto permite enviar datos nativos, variantes en JSON y múltiples archivos físicos en la misma petición.
+ */
 export async function updateProductoFlexible(
     id: string,
-    data: ProductoForm & { colores?: string[]; talles?: string[]; cortes?: string[]; stock?: number | string }
+    formData: FormData
 ): Promise<Producto> {
-    if (data.imagenes && data.imagenes.length > 0) {
-        const formData = new FormData();
-        formData.append("nombre", data.nombre);
-        formData.append("descripcion", data.descripcion || "");
-        formData.append("precio", String(data.precio));
-        if (data.stock) formData.append("stock", String(data.stock));
-
-        data.colores?.forEach((c: string) => formData.append("colores", c));
-        data.talles?.forEach((t: string) => formData.append("talles", t));
-        data.cortes?.forEach((cor: string) => formData.append("cortes", cor));
-
-        if (data.categoriaId && typeof data.categoriaId === "string") {
-            formData.append("categoriaId", data.categoriaId);
-        }
-
-        if (data.seccionIds && Array.isArray(data.seccionIds)) {
-            data.seccionIds.forEach((sId: string) => {
-                formData.append("seccionesIds", sId);
-            });
-        }
-
-        data.imagenes.forEach((file: File | { url: string } | unknown) => {
-            if (file instanceof File) {
-                formData.append("files", file);
-            } else if (file && typeof file === "object" && "url" in file) {
-                formData.append("files", (file as { url: string }).url);
-            } else {
-                formData.append("files", String(file));
-            }
-        });
-
-        return await apiRequest<Producto>(`/productos/${id}/upload`, {
-            method: "PUT",
-            body: formData,
-        });
-    }
-
-    const cleanData = Object.fromEntries(
-        Object.entries(data).filter(([key, v]) => key !== "imagenes" && v != null)
-    );
-    return await apiRequest<Producto>(`/productos/${id}`, {
+    // Mandamos el FormData limpio y directo al endpoint multi-part de tu backend
+    return await apiRequest<Producto>(`/productos/${id}/upload`, {
         method: "PUT",
-        body: JSON.stringify(cleanData),
+        body: formData, // Al pasar un FormData nativo, el runtime de Next.js/Vercel configura el Content-Type correcto automáticamente
     });
 }
 

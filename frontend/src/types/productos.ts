@@ -9,10 +9,10 @@ export type CategoriaType = {
   id: string;
   nombre: string;
   parent?: CategoriaType | null;
+  seccionId?: string | null; // 💡 ¡TIP EXTRA! Agregalo acá también si querés que la categoría sepa a qué sección pertenece
 };
 
 // 1. EL NÚCLEO: La Variante
-// Esta es la representación de la fila en tu tabla de Variantes (Prisma)
 export type Variante = {
   id: string;
   productoId: number;
@@ -22,36 +22,41 @@ export type Variante = {
 };
 
 // 2. PRODUCTO PARA EL FRONTEND
-// Lo que consume DetailsProducts
 export type Producto = {
   id: number;
   nombre: string;
   descripcion: string;
   precio: number;
+  precioPromocional?: number | null; // 💡 ¡Ojo! Agregamos el promocional que usás en el form
   published: boolean;
   imagenUrl?: string;
-  imagenes: string[]; // Simplificado a array de strings para las URLs
+  imagenes: string[];
   categoria?: {
     id: string;
     nombre: string;
   };
   secciones?: SeccionType[];
 
+  // 📦 DATOS DE LOGÍSTICA PARA CORREO ARGENTINO
+  peso: number;
+  alto: number;
+  ancho: number;
+  profundidad: number; // o 'largo' según tu BD
+
   // Datos derivados para los selectores
   talles: string[];
   colores: string[];
-
-  // Relación completa con variantes
   variantes: Variante[];
 };
 
-// 3. RESPUESTA DEL BACKEND (NidJS + Prisma)
-// Refleja exactamente cómo vienen los datos del include de Prisma
+// 3. RESPUESTA DEL BACKEND (NestJS + Prisma)
+// ⚠️ ACÁ ES DONDE SÍ O SÍ TIENEN QUE ESTAR PARA QUE VIAJEN EN LA API
 export type ProductoBackend = {
   id: number;
   nombre: string;
   descripcion: string;
   precio: number;
+  precioPromocional?: number | null; // 💡 También acá
   published: boolean;
   imagenUrl: string | null;
   imagenHoverUrl: string | null;
@@ -60,7 +65,13 @@ export type ProductoBackend = {
     seccion: SeccionType;
   }[];
   imagenes: { url: string }[];
-  variantes: Variante[]; // Fundamental para el stock por talle/color
+  variantes: Variante[];
+
+  // 📦 DATOS DE LOGÍSTICA (Asegurate que se llamen igual en tu Schema de Prisma)
+  peso: number;
+  alto: number;
+  ancho: number;
+  profundidad: number;
 };
 
 // 4. PARA FORMULARIOS Y CREACIÓN
@@ -69,31 +80,44 @@ export type ProductoForm = {
   nombre: string;
   descripcion: string;
   precio: number;
+  precioPromocional?: string; // Para el input
   categoriaId: string;
   seccionIds: string[];
   published: boolean;
   imagenUrl?: string;
   imagenes: { url: string }[];
+
+  // 📦 DATOS DE LOGÍSTICA PARA LOS INPUTS
+  peso: string;
+  alto: string;
+  ancho: string;
+  profundidad: string;
 };
 
 export type CreateProductoDto = {
   nombre: string;
   descripcion: string;
   precio: number;
+  precioPromocional?: number | null;
   categoriaId: string;
   seccionIds?: string[];
-  // Las variantes suelen enviarse como un array aparte al crear
   variantes?: {
     talle: string;
     color: string;
     stock: number | null;
   }[];
+
+  // 📦 DATOS DE LOGÍSTICA EN EL DTO
+  peso: number;
+  alto: number;
+  ancho: number;
+  profundidad: number;
 };
 
 // 5. FAVORITOS
 export interface Favorito {
   id: string;
-  productoId: number; // Cambiado a number para coincidir con Producto.id
+  productoId: number;
   userId: string;
   producto?: {
     id: number;

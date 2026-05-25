@@ -7,7 +7,7 @@ import {
   useState,
   ReactNode,
 } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import {
   obtenerFavoritos,
   agregarFavorito,

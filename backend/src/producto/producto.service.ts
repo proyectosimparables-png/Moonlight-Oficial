@@ -37,19 +37,47 @@ export class ProductoService {
       ? null
       : (producto.variantes?.reduce((acc: number, v: any) => acc + (v.stock || 0), 0) || 0);
 
+    // ✅ Extracción limpia de IDs de secciones
+    const seccionesIds = producto.secciones?.map((s: any) => {
+      if (typeof s === 'string') return s;
+      return s.seccionId || s.id || s.seccion?.id;
+    }).filter(Boolean) || [];
+
+    // ✅ Si la categoría no tiene seccionId pero el producto está asociado a una sección, se lo prestamos
+    const categoriaFormateada = producto.categoria ? {
+      ...producto.categoria,
+      seccionId: producto.categoria.seccionId || seccionesIds[0] || null
+    } : null;
+
     return {
-      ...producto,
+      id: producto.id,
+      nombre: producto.nombre,
+      slug: producto.slug,
+      descripcion: producto.descripcion,
       precio: Number(producto.precio),
       precioPromocional: producto.precioPromocional ? Number(producto.precioPromocional) : null,
+
+      // 📦 LOGÍSTICA FORZADA: Conservamos tu excelente mapeo numérico
+      peso: producto.peso !== undefined && producto.peso !== null ? Number(producto.peso) : 0,
+      alto: producto.alto !== undefined && producto.alto !== null ? Number(producto.alto) : 0,
+      ancho: producto.ancho !== undefined && producto.ancho !== null ? Number(producto.ancho) : 0,
+      profundidad: producto.profundidad !== undefined && producto.profundidad !== null ? Number(producto.profundidad) : 0,
+
+      published: Boolean(producto.published),
+      createdAt: producto.createdAt,
+      updatedAt: producto.updatedAt,
+      categoriaId: producto.categoriaId,
+
+      categoria: categoriaFormateada, // 👈 Pasamos la categoría con el fix del seccionId
+      variantes: producto.variantes || [],
       promociones: producto.promociones || [],
       stock: stockTotal,
-      published: Boolean(producto.published),
-      categoria: producto.categoria || null,
-      variantes: producto.variantes || [],
       imagenUrl: producto.imagenUrl || imagenesUrls[0] || "/images/placeholder.png",
       imagenHoverUrl: imagenesUrls[1] || null,
       imagenes: imagenesUrls,
-      secciones: producto.secciones?.map((s: any) => s.seccion?.nombre).filter(Boolean) || [],
+      secciones: producto.secciones || [],
+      seccionesNombres: producto.secciones?.map((s: any) => s.seccion?.nombre || s.nombre).filter(Boolean) || [],
+      seccionesIds: seccionesIds, // 👈 Enviamos el array plano que el formulario necesita para hacer match
     };
   }
 
@@ -164,7 +192,13 @@ export class ProductoService {
     const productos = await this.prisma.producto.findMany({
       where,
       include: {
-        categoria: { include: { parent: true } },
+        // Enlazamos la categoría con su sección padre
+        categoria: {
+          include: {
+            parent: true,
+            seccion: true // 👈 ¡CLAVE! Trae los datos de la sección de la categoría
+          }
+        },
         secciones: { include: { seccion: true } },
         imagenes: true,
         promociones: true,

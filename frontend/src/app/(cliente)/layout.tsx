@@ -1,6 +1,6 @@
-import Navbar from "@/components/navbar/Navbar";
-import Footer from "@/components/home/Footer";
-import WhatsAppFloat from "@/components/home/Whatsapp";
+import Navbar from "@/componentes/navbar/Navbar";
+import Footer from "@/componentes/home/Footer";
+import WhatsAppFloat from "@/componentes/home/Whatsapp";
 
 export default function ClientLayout({
   children,

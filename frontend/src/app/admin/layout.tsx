@@ -1,13 +1,10 @@
 // app/admin/layout.tsx (o donde tengas AdminLayout)
 "use client";
 import { useRouter } from "next/navigation";
-import { useUserRole } from "@/hooks/useUserRole";
-import AdminNavbar from "@/components/admin/NavbarAdmin";
+import { useUserRole } from "@/hooks/use-user-role";
+import AdminNavbar from "@/componentes/admin/NavbarAdmin";
 import { ReactNode, useEffect, useState } from "react";
-import {  Toaster } from "react-hot-toast";
-
-
-
+import { Toaster } from "react-hot-toast";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { role, loading } = useUserRole();
@@ -31,23 +28,19 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#f5f0fa]">
       {/* Navbar arriba en móvil, lateral en desktop */}
-    <Toaster
-      position="top-right"
-      toastOptions={{
-        style: {
-          backgroundColor: "#5e3a8c",
-          color: "white",
-        },
-      }}
-    />
-     
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            backgroundColor: "#5e3a8c",
+            color: "white",
+          },
+        }}
+      />
+
       <AdminNavbar />
-     
-        <main className="flex-1 p-4 md:p-6">
-           
-          {children}
-          </main>
-   
+
+      <main className="flex-1 p-4 md:p-6">{children}</main>
     </div>
   );
 }

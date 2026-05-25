@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const { isAuthenticated, role, authLoaded} = useAuth();
+  const { isAuthenticated, role, authLoaded } = useAuth();
 
   useEffect(() => {
     if (!authLoaded) return;
@@ -16,10 +16,6 @@ export default function AuthCallbackPage() {
       router.push("/");
     }
   }, [isAuthenticated, role, authLoaded, router]);
- 
-
 
   return <div className="p-4">Redirigiendo...</div>;
 }
-
-

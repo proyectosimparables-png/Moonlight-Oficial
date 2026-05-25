@@ -1,5 +1,5 @@
 // src/app/(cliente)/search/page.tsx
-import { SearchResults } from "@/components/search";
+import { SearchResults } from "@/componentes/search";
 import { searchProductos } from "@/services/productos-service";
 import { Producto } from "@/types/productos";
 import Link from "next/link";
