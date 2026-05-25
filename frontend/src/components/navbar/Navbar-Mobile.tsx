@@ -173,15 +173,15 @@ const MENU: MenuItem[] = [
   {
     label: "¿Cómo comprar?",
     sub: [
-      { label: "Guía de Compra", path: "/como-comprar" },
-      { label: "Políticas de Compra", path: "/politicas-de-compras" },
-      { label: "Guía de Talles", path: "/guia-de-talles" },
-      { label: "Mayoristas", path: "/mayoristas" },
-      { label: "Preguntas Frecuentes", path: "/preguntas-frecuentes" },
+      { label: "Guía de Compra", path: "/how-to-buy" },
+      { label: "Políticas de Compra", path: "/privacy-policy" },
+      { label: "Guía de Talles", path: "/size-guide" },
+      { label: "Mayoristas", path: "/wholesale" },
+      { label: "Preguntas Frecuentes", path: "/faq" },
     ],
   },
-  { label: "¿Quiénes Somos?", path: "/quienes-somos" },
-  { label: "Experiencia Moonlight", path: "/comentar" },
+  { label: "¿Quiénes Somos?", path: "/about-us" },
+  { label: "Experiencia Moonlight", path: "/comment" },
   { label: "Army Club", path: "/army-club" },
   { label: "Calendario Lunar", path: "/calendario-lunar" },
 ];

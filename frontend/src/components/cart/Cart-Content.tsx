@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image"; // Importamos Image para renderizar a Jefecito 💤
 import CartItem from "./Cart-Item";
 import CartSummary from "./Cart-Summary";
 import { ModalConfirm } from "./Modal-Confirm";
@@ -35,15 +36,27 @@ export default function CartContent() {
           </button>
         </div>
 
-        {/* Si el carrito está vacío, mostramos un mensaje */}
+        {/* ====================================================================
+            ESTADO VACÍO: Con Jefecito Dormido 💤
+           ==================================================================== */}
         {state.cart.length === 0 ? (
-          <div className="text-center py-20 animate-in fade-in duration-500">
-            <p className="text-gray-400 mb-4 text-sm uppercase tracking-widest">
+          <div className="text-center py-16 animate-in fade-in duration-500 flex flex-col items-center justify-center">
+            <div className="mb-6 transition-transform hover:scale-105 duration-300">
+              <Image
+                src="/jefecito-dormido.png" // Apunta a public/jefecito-dormido.png
+                alt="Jefecito Dormido 💤"
+                width={200}
+                height={200}
+                priority
+                className="drop-shadow-sm object-contain mx-auto"
+              />
+            </div>
+            <p className="text-gray-400 mb-6 text-sm uppercase tracking-widest">
               Tu carrito está vacío
             </p>
             <button
               onClick={() => actions.router.push("/")}
-              className="bg-[#A186ED] text-white px-8 py-3 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-[#8e74d3] transition-colors"
+              className="bg-[#A186ED] text-white px-8 py-3 rounded-sm text-xs font-bold uppercase tracking-widest hover:bg-[#8e74d3] transition-colors shadow-sm"
             >
               Volver a la tienda
             </button>

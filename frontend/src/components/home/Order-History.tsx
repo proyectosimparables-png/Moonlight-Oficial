@@ -75,27 +75,28 @@ export default function HistorialCompras() {
     );
   }
 
+  // ====================================================================
+  // ESTADO VACÍO: Con Jefecito Enojado 🐾
+  // ====================================================================
   if (historial.length === 0) {
     return (
-      <div className="flex flex-col justify-center items-center min-h-[60vh] text-red-600 space-y-4">
-        <div className="w-24 h-24 flex justify-center items-center animate-bounce">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-24 w-24 text-red-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.5 6H19M7 13l-2-6M16 21a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z"
-            />
-          </svg>
+      <div className="flex flex-col justify-center items-center min-h-[60vh] text-center space-y-3 px-4">
+        <div className="transition-transform hover:scale-105 duration-300">
+          <Image
+            src="/jefecito-enojado.png" // Apunta a public/jefecito-enojado.png
+            alt="Jefecito Enojado"
+            width={200}
+            height={200}
+            priority
+            className="drop-shadow-lg object-contain mx-auto"
+          />
         </div>
-        <p className="text-xl font-semibold animate-pulse">
-          No tienes compras aún
+        <p className="text-xl font-semibold text-[#6c5b7b] mt-2">
+          ¡No tienes compras aún!
+        </p>
+        <p className="text-sm text-gray-500 max-w-xs mx-auto">
+          ¿Qué estás esperando para llevarte tus favoritos? Jefecito te está
+          vigilando 👀
         </p>
       </div>
     );

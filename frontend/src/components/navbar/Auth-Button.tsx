@@ -104,7 +104,7 @@ export const AuthButton = () => {
         </DropdownMenuItem>
 
         <DropdownMenuItem
-          onClick={() => router.push("/perfil")}
+          onClick={() => router.push("/profile")}
           className="cursor-pointer text-[#6c5b7b] gap-2"
         >
           <UserCircle className="h-4 w-4" /> Mi perfil

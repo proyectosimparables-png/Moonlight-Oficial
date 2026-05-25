@@ -54,7 +54,7 @@ export default async function RouterDinamicoPage({
   const rutasIgnoradas = [
     "admin",
     "login",
-    "carrito",
+    "cart",
     "cuenta",
     "productos",
     "favicon.ico",

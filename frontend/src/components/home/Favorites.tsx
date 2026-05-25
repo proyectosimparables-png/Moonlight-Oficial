@@ -4,6 +4,7 @@ import { Trash2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/context/Favorites-Context";
 import { useEffect, useState } from "react";
+import Image from "next/image"; // Importamos Image para renderizar a Jefecito
 import toast from "react-hot-toast";
 import ProductCard from "./Product-Card";
 import { Favorito } from "@/types/products";
@@ -40,13 +41,24 @@ export default function FavoritosList() {
     );
   }
 
+  // ====================================================================
+  // ESTADO VACÍO: Con Jefecito Triste 🐾
+  // ====================================================================
   if (favorites.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-[#7b5ca2]">
-        <StarBeat />
-        <p className="mt-4 text-lg font-medium">¡Aún no tienes favoritos! ⭐</p>
-        <p className="text-sm text-gray-500 mt-1">
-          Agrega productos con la estrella para verlos aquí 💫
+      <div className="flex flex-col items-center justify-center py-16 text-[#7b5ca2] text-center">
+        <div className="mb-4 transition-transform hover:scale-105 duration-300">
+          <Image
+            src="/jefecito-triste.png"
+            alt="Jefecito Triste"
+            width={200} // Tamaño ideal para que se aprecie el sticker
+            height={200}
+            priority
+            className="drop-shadow-lg object-contain mx-auto"
+          />
+        </div>
+        <p className="mt-2 text-lg font-medium text-[#6c5b7b]">
+          ¡Aún no tienes favoritos! ⭐
         </p>
       </div>
     );

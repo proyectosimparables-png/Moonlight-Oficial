@@ -373,8 +373,8 @@ export const NavbarDesktop = () => {
 
         {/* Links directos */}
         {[
-          { n: "¿Quiénes Somos?", h: "/quienes-somos" },
-          { n: "Experiencia Moonlight", h: "/comentar" },
+          { n: "¿Quiénes Somos?", h: "/about-us" },
+          { n: "Experiencia Moonlight", h: "/comment" },
           { n: "Army Club", h: "/army-club" },
           { n: "Calendario Lunar", h: "/calendario-lunar" },
         ].map((link) => (
@@ -396,11 +396,11 @@ export const NavbarDesktop = () => {
           </DropdownMenu.Trigger>
           <DropdownMenu.Content className="bg-[#fafcef] shadow-xl rounded-md py-2 text-sm text-[#7b5ca2] min-w-52 z-50 border border-purple-50">
             {[
-              { l: "Guía de Compra", h: "/como-comprar" },
-              { l: "Políticas", h: "/politicas-de-compras" },
-              { l: "Guía de Talles", h: "/guia-de-talles" },
-              { l: "Mayoristas", h: "/mayoristas" },
-              { l: "Preguntas", h: "/preguntas-frecuentes" },
+              { l: "Guía de Compra", h: "/how-to-buy" },
+              { l: "Políticas de Compra", h: "/privacy-policy" },
+              { l: "Guía de Talles", h: "/size-guide" },
+              { l: "Mayoristas", h: "/wholesale" },
+              { l: "Preguntas", h: "/faq" },
             ].map((i) => (
               <DropdownMenu.Item
                 key={i.h}
